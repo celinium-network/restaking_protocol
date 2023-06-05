@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package restaking_protocol.multistake.v1;
+
+import "google/protobuf/timestamp.proto";
+import "gogoproto/gogo.proto";
+import "cosmos_proto/cosmos.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+option go_package = "restaking_protocol/x/multistaking/types";
+
+message MultiStakingDenomWhiteList{
+    repeated string denom_list = 1;
+}
+
+message EquivalentMultiplierRecord {
+    int64 epoch_number = 1;
+    
+    string denom = 2;
+    
+    string multiplier = 3 [
+        (cosmos_proto.scalar)  = "cosmos.Dec",
+        (gogoproto.customtype) = "Dec",
+        (gogoproto.nullable)   = false
+    ];
+}
+
+message MultiStakingDelegation {
+    string delegator_address = 1;
+    
+    string validator_address = 2;
+
+    cosmos.base.v1beta1.Coin delegation_amount = 3 [
+      (gogoproto.nullable) = false,
+      (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coin"
+    ];
+
+    cosmos.base.v1beta1.Coin equivalent_staked_amount = 4
+        [ (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coin" ];
+}
+
+message MultiStakingAgent{
+    uint64 id = 1;
+
+    string stake_denom = 2;
+
+    string delegate_address = 3 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    string validator_address = 4 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    string withdraw_address = 5 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    string staked_amount = 6 [
+        (cosmos_proto.scalar)  = "cosmos.Int",
+        (gogoproto.customtype) = "Int",
+        (gogoproto.nullable)   = false
+    ];
+
+    string shares = 7 [
+        (cosmos_proto.scalar)  = "cosmos.Int",
+        (gogoproto.customtype) = "Int",
+        (gogoproto.nullable)   = false
+    ];
+    
+    string reward_amount = 8 [
+        (cosmos_proto.scalar)  = "cosmos.Int",
+        (gogoproto.customtype) = "Int",
+        (gogoproto.nullable)   = false
+    ];
+}
+
+message MultiStakingUnbonding{
+    uint64 agent_id = 1;
+
+    string delegator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; 
+    
+    repeated MultiStakingUnbondingEntry entries = 3 [(gogoproto.nullable) = false];
+}
+
+message MultiStakingUnbondingEntry{
+    google.protobuf.Timestamp completion_time = 1 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
+
+    cosmos.base.v1beta1.Coin initial_balance = 2
+        [(gogoproto.nullable) = false, (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coin" ];
+    
+    cosmos.base.v1beta1.Coin balance = 3
+        [(gogoproto.nullable) = false, (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coin" ];        
+}
+
+message DAPair{
+    string delegator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; 
+    uint64 agent_id = 2;
+}
+
+message DAPairs{
+    repeated DAPair pairs = 1 [(gogoproto.nullable) = false];
+}

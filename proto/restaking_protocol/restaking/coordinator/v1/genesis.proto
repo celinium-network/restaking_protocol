@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package restaking_protocol.restaking.coordinator.v1;
+
+option go_package = "restaking_protocol/x/restaking/coordinator/types";
+
+message GenesisState{
+    
+}
