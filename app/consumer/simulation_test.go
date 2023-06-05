@@ -140,7 +140,7 @@ func TestAppStateDeterminism(t *testing.T) {
 	config.AllInvariants = true
 
 	var (
-		r                    = rand.New(rand.NewSource(time.Now().Unix()))
+		r                    = rand.New(rand.NewSource(time.Now().Unix())) //nolint:gosec
 		numSeeds             = 3
 		numTimesToRunPerSeed = 5
 		appHashList          = make([]json.RawMessage, numTimesToRunPerSeed)

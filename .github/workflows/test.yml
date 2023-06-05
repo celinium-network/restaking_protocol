@@ -27,8 +27,8 @@ jobs:
     - name: Unit Test
       run: go test -v ./x/...
 
-    - name: E2E Test
-      run: go test -v ./tests/e2e/... -timeout 5h
+    - name: Integration Test
+      run: go test -v ./tests/integration/... 
 
     - name: Benchmark
       run: go test -benchmem -run=^$ -bench ^BenchmarkSimulation ./app/simulation -NumBlocks=200 -BlockSize 50 -Commit=true -Verbose=true -Enabled=true

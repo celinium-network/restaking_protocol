@@ -41,7 +41,7 @@ func (suite *KeeperTestSuite) TestProcessCompleteUnbonding() {
 	balanceBeforeUBComplete := suite.app.BankKeeper.GetBalance(suite.ctx, delegatorAccAddr, mockMultiRestakingDenom)
 	_, err := suite.app.MultiStakingKeeper.EndBlocker(suite.ctx)
 	suite.Require().NoError(err)
-	
+
 	balanceAfterUBComplete := suite.app.BankKeeper.GetBalance(suite.ctx, delegatorAccAddr, mockMultiRestakingDenom)
 
 	suite.True(balanceAfterUBComplete.Sub(balanceBeforeUBComplete).Amount.Equal(delCoin.Amount))
