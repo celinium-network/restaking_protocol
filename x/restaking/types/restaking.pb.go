@@ -5,6 +5,7 @@ package types
 
 import (
 	fmt "fmt"
+	types "github.com/cometbft/cometbft/abci/types"
 	_ "github.com/cosmos/cosmos-proto"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
@@ -24,24 +25,23 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-type ValidatorSetChangePacketData struct {
-	ValidatorUpdates []TendermintABCIValidatorUpdate `protobuf:"bytes,1,rep,name=validator_updates,json=validatorUpdates,proto3,customtype=TendermintABCIValidatorUpdate" json:"validator_updates" yaml:"validator_updates"`
-	ValsetUpdateId   uint64                          `protobuf:"varint,2,opt,name=valset_update_id,json=valsetUpdateId,proto3" json:"valset_update_id,omitempty"`
-	SlashAcks        []string                        `protobuf:"bytes,3,rep,name=slash_acks,json=slashAcks,proto3" json:"slash_acks,omitempty"`
+type ValidatorSetChangePacket struct {
+	ValidatorUpdates []types.ValidatorUpdate `protobuf:"bytes,1,rep,name=validator_updates,json=validatorUpdates,proto3" json:"validator_updates" yaml:"validator_updates"`
+	ValsetUpdateId   uint64                  `protobuf:"varint,2,opt,name=valset_update_id,json=valsetUpdateId,proto3" json:"valset_update_id,omitempty"`
 }
 
-func (m *ValidatorSetChangePacketData) Reset()         { *m = ValidatorSetChangePacketData{} }
-func (m *ValidatorSetChangePacketData) String() string { return proto.CompactTextString(m) }
-func (*ValidatorSetChangePacketData) ProtoMessage()    {}
-func (*ValidatorSetChangePacketData) Descriptor() ([]byte, []int) {
+func (m *ValidatorSetChangePacket) Reset()         { *m = ValidatorSetChangePacket{} }
+func (m *ValidatorSetChangePacket) String() string { return proto.CompactTextString(m) }
+func (*ValidatorSetChangePacket) ProtoMessage()    {}
+func (*ValidatorSetChangePacket) Descriptor() ([]byte, []int) {
 	return fileDescriptor_63af7fa0c4c2b658, []int{0}
 }
-func (m *ValidatorSetChangePacketData) XXX_Unmarshal(b []byte) error {
+func (m *ValidatorSetChangePacket) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ValidatorSetChangePacketData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ValidatorSetChangePacket) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_ValidatorSetChangePacketData.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ValidatorSetChangePacket.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -51,49 +51,48 @@ func (m *ValidatorSetChangePacketData) XXX_Marshal(b []byte, deterministic bool)
 		return b[:n], nil
 	}
 }
-func (m *ValidatorSetChangePacketData) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ValidatorSetChangePacketData.Merge(m, src)
+func (m *ValidatorSetChangePacket) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ValidatorSetChangePacket.Merge(m, src)
 }
-func (m *ValidatorSetChangePacketData) XXX_Size() int {
+func (m *ValidatorSetChangePacket) XXX_Size() int {
 	return m.Size()
 }
-func (m *ValidatorSetChangePacketData) XXX_DiscardUnknown() {
-	xxx_messageInfo_ValidatorSetChangePacketData.DiscardUnknown(m)
+func (m *ValidatorSetChangePacket) XXX_DiscardUnknown() {
+	xxx_messageInfo_ValidatorSetChangePacket.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ValidatorSetChangePacketData proto.InternalMessageInfo
+var xxx_messageInfo_ValidatorSetChangePacket proto.InternalMessageInfo
 
-func (m *ValidatorSetChangePacketData) GetValsetUpdateId() uint64 {
+func (m *ValidatorSetChangePacket) GetValidatorUpdates() []types.ValidatorUpdate {
+	if m != nil {
+		return m.ValidatorUpdates
+	}
+	return nil
+}
+
+func (m *ValidatorSetChangePacket) GetValsetUpdateId() uint64 {
 	if m != nil {
 		return m.ValsetUpdateId
 	}
 	return 0
 }
 
-func (m *ValidatorSetChangePacketData) GetSlashAcks() []string {
-	if m != nil {
-		return m.SlashAcks
-	}
-	return nil
+type ValidatorSetChangePackets struct {
+	Packets []ValidatorSetChangePacket `protobuf:"bytes,1,rep,name=packets,proto3" json:"packets"`
 }
 
-type CounterPartyVersion struct {
-	Version      string       `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	ValidatorSet ValidatorSet `protobuf:"bytes,2,opt,name=validator_set,json=validatorSet,proto3,customtype=ValidatorSet" json:"validator_set"`
-}
-
-func (m *CounterPartyVersion) Reset()         { *m = CounterPartyVersion{} }
-func (m *CounterPartyVersion) String() string { return proto.CompactTextString(m) }
-func (*CounterPartyVersion) ProtoMessage()    {}
-func (*CounterPartyVersion) Descriptor() ([]byte, []int) {
+func (m *ValidatorSetChangePackets) Reset()         { *m = ValidatorSetChangePackets{} }
+func (m *ValidatorSetChangePackets) String() string { return proto.CompactTextString(m) }
+func (*ValidatorSetChangePackets) ProtoMessage()    {}
+func (*ValidatorSetChangePackets) Descriptor() ([]byte, []int) {
 	return fileDescriptor_63af7fa0c4c2b658, []int{1}
 }
-func (m *CounterPartyVersion) XXX_Unmarshal(b []byte) error {
+func (m *ValidatorSetChangePackets) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *CounterPartyVersion) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ValidatorSetChangePackets) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_CounterPartyVersion.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ValidatorSetChangePackets.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -103,28 +102,28 @@ func (m *CounterPartyVersion) XXX_Marshal(b []byte, deterministic bool) ([]byte,
 		return b[:n], nil
 	}
 }
-func (m *CounterPartyVersion) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CounterPartyVersion.Merge(m, src)
+func (m *ValidatorSetChangePackets) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ValidatorSetChangePackets.Merge(m, src)
 }
-func (m *CounterPartyVersion) XXX_Size() int {
+func (m *ValidatorSetChangePackets) XXX_Size() int {
 	return m.Size()
 }
-func (m *CounterPartyVersion) XXX_DiscardUnknown() {
-	xxx_messageInfo_CounterPartyVersion.DiscardUnknown(m)
+func (m *ValidatorSetChangePackets) XXX_DiscardUnknown() {
+	xxx_messageInfo_ValidatorSetChangePackets.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_CounterPartyVersion proto.InternalMessageInfo
+var xxx_messageInfo_ValidatorSetChangePackets proto.InternalMessageInfo
 
-func (m *CounterPartyVersion) GetVersion() string {
+func (m *ValidatorSetChangePackets) GetPackets() []ValidatorSetChangePacket {
 	if m != nil {
-		return m.Version
+		return m.Packets
 	}
-	return ""
+	return nil
 }
 
 func init() {
-	proto.RegisterType((*ValidatorSetChangePacketData)(nil), "restaking_protocol.restaking.v1.ValidatorSetChangePacketData")
-	proto.RegisterType((*CounterPartyVersion)(nil), "restaking_protocol.restaking.v1.CounterPartyVersion")
+	proto.RegisterType((*ValidatorSetChangePacket)(nil), "restaking_protocol.restaking.v1.ValidatorSetChangePacket")
+	proto.RegisterType((*ValidatorSetChangePackets)(nil), "restaking_protocol.restaking.v1.ValidatorSetChangePackets")
 }
 
 func init() {
@@ -132,32 +131,29 @@ func init() {
 }
 
 var fileDescriptor_63af7fa0c4c2b658 = []byte{
-	// 347 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x91, 0xc1, 0x4e, 0xc2, 0x40,
-	0x10, 0x86, 0xbb, 0x62, 0x34, 0xdd, 0xa0, 0xd1, 0xca, 0xa1, 0x12, 0x69, 0x49, 0xe3, 0xa1, 0x27,
-	0x08, 0xf1, 0xa4, 0x07, 0x13, 0x8a, 0x17, 0x6e, 0xa4, 0x2a, 0x07, 0x2f, 0xcd, 0xda, 0x6e, 0x4a,
-	0x6d, 0xe9, 0x92, 0xdd, 0xa1, 0x91, 0xb7, 0xf0, 0xb1, 0x38, 0x72, 0xd3, 0x78, 0x20, 0x06, 0xde,
-	0xc0, 0x27, 0x30, 0x74, 0xc1, 0x62, 0xf0, 0x36, 0xff, 0xf7, 0xff, 0x33, 0x9d, 0xee, 0xe0, 0x26,
-	0xa7, 0x02, 0x48, 0x1c, 0xa5, 0xa1, 0x37, 0xe2, 0x0c, 0x98, 0xcf, 0x92, 0x02, 0x35, 0xb3, 0x56,
-	0x21, 0x1a, 0xb9, 0xaf, 0x99, 0xbb, 0x0d, 0x8d, 0x22, 0x93, 0xb5, 0xaa, 0xe7, 0x3e, 0x13, 0x43,
-	0x26, 0xa4, 0xdb, 0x94, 0x42, 0xf6, 0x56, 0x2b, 0x21, 0x0b, 0x99, 0xe4, 0xab, 0x4a, 0x52, 0xeb,
-	0x1d, 0xe1, 0x8b, 0x3e, 0x49, 0xa2, 0x80, 0x00, 0xe3, 0xf7, 0x14, 0x3a, 0x03, 0x92, 0x86, 0xb4,
-	0x47, 0xfc, 0x98, 0xc2, 0x1d, 0x01, 0xa2, 0xa5, 0xf8, 0x34, 0xdb, 0xf8, 0xde, 0x78, 0x14, 0x10,
-	0xa0, 0x42, 0x47, 0xf5, 0x92, 0xad, 0x3a, 0xed, 0xe9, 0xdc, 0x54, 0x3e, 0xe7, 0x66, 0xed, 0x81,
-	0xa6, 0x01, 0xe5, 0xc3, 0x28, 0x85, 0xb6, 0xd3, 0xe9, 0xfe, 0x8e, 0x7b, 0xcc, 0xd3, 0xdf, 0x73,
-	0x53, 0x9f, 0x90, 0x61, 0x72, 0x63, 0xed, 0xcc, 0xb1, 0xdc, 0x93, 0xec, 0x6f, 0x58, 0x68, 0x36,
-	0x5e, 0x31, 0x41, 0x61, 0x1d, 0xf2, 0xa2, 0x40, 0xdf, 0xab, 0x23, 0x7b, 0xdf, 0x3d, 0x96, 0x5c,
-	0x06, 0xbb, 0x81, 0x56, 0xc3, 0x58, 0x24, 0x44, 0x0c, 0x3c, 0xe2, 0xc7, 0x42, 0x2f, 0xad, 0x56,
-	0x72, 0xd5, 0x9c, 0xb4, 0xfd, 0x58, 0x58, 0x2f, 0xf8, 0xac, 0xc3, 0xc6, 0x29, 0x50, 0xde, 0x23,
-	0x1c, 0x26, 0x7d, 0xca, 0x45, 0xc4, 0x52, 0x4d, 0xc7, 0x87, 0x99, 0x2c, 0x75, 0x54, 0x47, 0xb6,
-	0xea, 0x6e, 0xa4, 0x76, 0x8d, 0x8f, 0x8a, 0x0d, 0x05, 0x85, 0xfc, 0xb3, 0xaa, 0x53, 0x59, 0xff,
-	0x65, 0x79, 0xfb, 0x99, 0xdc, 0x72, 0xb6, 0xa5, 0x9c, 0xdb, 0xe9, 0xc2, 0x40, 0xb3, 0x85, 0x81,
-	0xbe, 0x16, 0x06, 0x7a, 0x5b, 0x1a, 0xca, 0x6c, 0x69, 0x28, 0x1f, 0x4b, 0x43, 0x79, 0xba, 0xfc,
-	0xe7, 0xc4, 0xaf, 0x5b, 0x47, 0x86, 0xc9, 0x88, 0x8a, 0xe7, 0x83, 0xdc, 0xbb, 0xfa, 0x09, 0x00,
-	0x00, 0xff, 0xff, 0xcb, 0x87, 0x51, 0x47, 0x11, 0x02, 0x00, 0x00,
+	// 304 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xd2, 0x2f, 0x4a, 0x2d, 0x2e,
+	0x49, 0xcc, 0xce, 0xcc, 0x4b, 0x8f, 0x2f, 0x28, 0xca, 0x2f, 0xc9, 0x4f, 0xce, 0xcf, 0x41, 0x08,
+	0xe9, 0x97, 0x19, 0x22, 0x38, 0x7a, 0x60, 0x79, 0x21, 0x79, 0x4c, 0x0d, 0x7a, 0x08, 0x35, 0x65,
+	0x86, 0x52, 0x92, 0xc9, 0xf9, 0xc5, 0xb9, 0xf9, 0xc5, 0x10, 0x59, 0x7d, 0x08, 0x07, 0xa2, 0x57,
+	0x4a, 0x24, 0x3d, 0x3f, 0x3d, 0x1f, 0x22, 0x0e, 0x62, 0x41, 0x45, 0xa5, 0x4b, 0x52, 0xf3, 0x52,
+	0x52, 0x8b, 0x72, 0x33, 0xf3, 0x4a, 0xf4, 0x13, 0x93, 0x92, 0x33, 0xf5, 0x4b, 0x2a, 0x0b, 0x52,
+	0xa1, 0x5a, 0x94, 0xb6, 0x32, 0x72, 0x49, 0x84, 0x25, 0xe6, 0x64, 0xa6, 0x24, 0x96, 0xe4, 0x17,
+	0x05, 0xa7, 0x96, 0x38, 0x67, 0x24, 0xe6, 0xa5, 0xa7, 0x06, 0x24, 0x26, 0x67, 0xa7, 0x96, 0x08,
+	0xe5, 0x73, 0x09, 0x96, 0xc1, 0xe4, 0xe2, 0x4b, 0x0b, 0x52, 0x12, 0x4b, 0x52, 0x8b, 0x25, 0x18,
+	0x15, 0x98, 0x35, 0xb8, 0x8d, 0x14, 0xf4, 0x10, 0xa6, 0xea, 0x81, 0x4c, 0xd5, 0x83, 0x9b, 0x12,
+	0x0a, 0x56, 0xe8, 0xa4, 0x70, 0xe2, 0x9e, 0x3c, 0xc3, 0xa7, 0x7b, 0xf2, 0x12, 0x95, 0x89, 0xb9,
+	0x39, 0x56, 0x4a, 0x18, 0x06, 0x29, 0x05, 0x09, 0x94, 0xa1, 0x6a, 0x29, 0x16, 0xd2, 0xe0, 0x02,
+	0x89, 0x15, 0xa7, 0x96, 0x40, 0x15, 0xc5, 0x67, 0xa6, 0x48, 0x30, 0x29, 0x30, 0x6a, 0xb0, 0x04,
+	0xf1, 0x41, 0xc4, 0x21, 0x0a, 0x3d, 0x53, 0x94, 0xca, 0xb8, 0x24, 0x71, 0x39, 0xbb, 0x58, 0x28,
+	0x92, 0x8b, 0xbd, 0x00, 0xc2, 0x84, 0xba, 0xd6, 0x52, 0x8f, 0x40, 0xa8, 0xea, 0xe1, 0x32, 0xcc,
+	0x89, 0x05, 0xe4, 0x8d, 0x20, 0x98, 0x79, 0x4e, 0x76, 0x27, 0x1e, 0xc9, 0x31, 0x5e, 0x78, 0x24,
+	0xc7, 0xf8, 0xe0, 0x91, 0x1c, 0xe3, 0x84, 0xc7, 0x72, 0x0c, 0x17, 0x1e, 0xcb, 0x31, 0xdc, 0x78,
+	0x2c, 0xc7, 0x10, 0xa5, 0x82, 0x25, 0xa6, 0x2b, 0x90, 0xe2, 0x1a, 0x1c, 0xea, 0x49, 0x6c, 0x60,
+	0x39, 0x63, 0x40, 0x00, 0x00, 0x00, 0xff, 0xff, 0x15, 0x0a, 0xa0, 0xb1, 0x18, 0x02, 0x00, 0x00,
 }
 
-func (m *ValidatorSetChangePacketData) Marshal() (dAtA []byte, err error) {
+func (m *ValidatorSetChangePacket) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -167,25 +163,16 @@ func (m *ValidatorSetChangePacketData) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ValidatorSetChangePacketData) MarshalTo(dAtA []byte) (int, error) {
+func (m *ValidatorSetChangePacket) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ValidatorSetChangePacketData) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ValidatorSetChangePacket) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if len(m.SlashAcks) > 0 {
-		for iNdEx := len(m.SlashAcks) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.SlashAcks[iNdEx])
-			copy(dAtA[i:], m.SlashAcks[iNdEx])
-			i = encodeVarintRestaking(dAtA, i, uint64(len(m.SlashAcks[iNdEx])))
-			i--
-			dAtA[i] = 0x1a
-		}
-	}
 	if m.ValsetUpdateId != 0 {
 		i = encodeVarintRestaking(dAtA, i, uint64(m.ValsetUpdateId))
 		i--
@@ -194,11 +181,11 @@ func (m *ValidatorSetChangePacketData) MarshalToSizedBuffer(dAtA []byte) (int, e
 	if len(m.ValidatorUpdates) > 0 {
 		for iNdEx := len(m.ValidatorUpdates) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size := m.ValidatorUpdates[iNdEx].Size()
-				i -= size
-				if _, err := m.ValidatorUpdates[iNdEx].MarshalTo(dAtA[i:]); err != nil {
+				size, err := m.ValidatorUpdates[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
 					return 0, err
 				}
+				i -= size
 				i = encodeVarintRestaking(dAtA, i, uint64(size))
 			}
 			i--
@@ -208,7 +195,7 @@ func (m *ValidatorSetChangePacketData) MarshalToSizedBuffer(dAtA []byte) (int, e
 	return len(dAtA) - i, nil
 }
 
-func (m *CounterPartyVersion) Marshal() (dAtA []byte, err error) {
+func (m *ValidatorSetChangePackets) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -218,32 +205,29 @@ func (m *CounterPartyVersion) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CounterPartyVersion) MarshalTo(dAtA []byte) (int, error) {
+func (m *ValidatorSetChangePackets) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *CounterPartyVersion) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ValidatorSetChangePackets) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	{
-		size := m.ValidatorSet.Size()
-		i -= size
-		if _, err := m.ValidatorSet.MarshalTo(dAtA[i:]); err != nil {
-			return 0, err
+	if len(m.Packets) > 0 {
+		for iNdEx := len(m.Packets) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Packets[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintRestaking(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
 		}
-		i = encodeVarintRestaking(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x12
-	if len(m.Version) > 0 {
-		i -= len(m.Version)
-		copy(dAtA[i:], m.Version)
-		i = encodeVarintRestaking(dAtA, i, uint64(len(m.Version)))
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -259,7 +243,7 @@ func encodeVarintRestaking(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *ValidatorSetChangePacketData) Size() (n int) {
+func (m *ValidatorSetChangePacket) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -274,27 +258,21 @@ func (m *ValidatorSetChangePacketData) Size() (n int) {
 	if m.ValsetUpdateId != 0 {
 		n += 1 + sovRestaking(uint64(m.ValsetUpdateId))
 	}
-	if len(m.SlashAcks) > 0 {
-		for _, s := range m.SlashAcks {
-			l = len(s)
-			n += 1 + l + sovRestaking(uint64(l))
-		}
-	}
 	return n
 }
 
-func (m *CounterPartyVersion) Size() (n int) {
+func (m *ValidatorSetChangePackets) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.Version)
-	if l > 0 {
-		n += 1 + l + sovRestaking(uint64(l))
+	if len(m.Packets) > 0 {
+		for _, e := range m.Packets {
+			l = e.Size()
+			n += 1 + l + sovRestaking(uint64(l))
+		}
 	}
-	l = m.ValidatorSet.Size()
-	n += 1 + l + sovRestaking(uint64(l))
 	return n
 }
 
@@ -304,7 +282,7 @@ func sovRestaking(x uint64) (n int) {
 func sozRestaking(x uint64) (n int) {
 	return sovRestaking(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ValidatorSetChangePacketData) Unmarshal(dAtA []byte) error {
+func (m *ValidatorSetChangePacket) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -327,17 +305,17 @@ func (m *ValidatorSetChangePacketData) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ValidatorSetChangePacketData: wiretype end group for non-group")
+			return fmt.Errorf("proto: ValidatorSetChangePacket: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ValidatorSetChangePacketData: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ValidatorSetChangePacket: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ValidatorUpdates", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowRestaking
@@ -347,24 +325,22 @@ func (m *ValidatorSetChangePacketData) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthRestaking
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthRestaking
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			var v TendermintABCIValidatorUpdate
-			m.ValidatorUpdates = append(m.ValidatorUpdates, v)
+			m.ValidatorUpdates = append(m.ValidatorUpdates, types.ValidatorUpdate{})
 			if err := m.ValidatorUpdates[len(m.ValidatorUpdates)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -388,38 +364,6 @@ func (m *ValidatorSetChangePacketData) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SlashAcks", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowRestaking
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthRestaking
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthRestaking
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.SlashAcks = append(m.SlashAcks, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipRestaking(dAtA[iNdEx:])
@@ -441,7 +385,7 @@ func (m *ValidatorSetChangePacketData) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CounterPartyVersion) Unmarshal(dAtA []byte) error {
+func (m *ValidatorSetChangePackets) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -464,17 +408,17 @@ func (m *CounterPartyVersion) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: CounterPartyVersion: wiretype end group for non-group")
+			return fmt.Errorf("proto: ValidatorSetChangePackets: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CounterPartyVersion: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ValidatorSetChangePackets: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Packets", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowRestaking
@@ -484,55 +428,23 @@ func (m *CounterPartyVersion) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthRestaking
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthRestaking
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Version = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ValidatorSet", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowRestaking
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthRestaking
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthRestaking
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.ValidatorSet.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.Packets = append(m.Packets, ValidatorSetChangePacket{})
+			if err := m.Packets[len(m.Packets)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

@@ -191,15 +191,6 @@ func (k Keeper) GetUnderlyingConnection(ctx sdk.Context, srcPortID, srcChannelID
 	return channel.ConnectionHops[0], nil
 }
 
-func (k Keeper) ParseCounterPartyVersion(version string) (*restaking.CounterPartyVersion, error) {
-	var cpv restaking.CounterPartyVersion
-	err := k.cdc.Unmarshal([]byte(version), &cpv)
-	if err != nil {
-		return nil, err
-	}
-	return &cpv, nil
-}
-
 func (k Keeper) VerifyConsumerValidatorSet(ctx sdk.Context, clientID string, valSet restaking.ValidatorSet) error {
 	consensusState, found := k.clientKeeper.GetLatestClientConsensusState(ctx, clientID)
 	if !found {

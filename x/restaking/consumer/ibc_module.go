@@ -32,19 +32,20 @@ func (am AppModule) OnChanOpenInit(
 	return restaking.Version, nil
 }
 
-// OnChanOpenConfirm implements types.IBCModule
-func (AppModule) OnChanOpenConfirm(ctx sdk.Context, portID string, channelID string) error {
-	return nil
-}
-
 // OnChanOpenAck implements types.IBCModule
-func (AppModule) OnChanOpenAck(
+func (am AppModule) OnChanOpenAck(
 	ctx sdk.Context,
 	portID string,
 	channelID string,
 	counterpartyChannelID string,
 	counterpartyVersion string,
 ) error {
+	am.keeper.SetCoordinatorChannelID(ctx, channelID)
+	return nil
+}
+
+// OnChanOpenConfirm implements types.IBCModule
+func (am AppModule) OnChanOpenConfirm(ctx sdk.Context, portID string, channelID string) error {
 	return nil
 }
 

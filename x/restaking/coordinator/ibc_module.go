@@ -127,8 +127,11 @@ func (AppModule) OnChanCloseInit(ctx sdk.Context, portID string, channelID strin
 }
 
 // OnRecvPacket implements types.IBCModule
-func (AppModule) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, relayer sdk.AccAddress) exported.Acknowledgement {
-	panic("unimplemented")
+func (am AppModule) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, relayer sdk.AccAddress) exported.Acknowledgement {
+	var consumerValidatorSetChange restaking.ValidatorSetChangePacket
+
+	am.cdc.Unmarshal(packet.Data, &consumerValidatorSetChange)
+	return nil
 }
 
 // OnTimeoutPacket implements types.IBCModule
