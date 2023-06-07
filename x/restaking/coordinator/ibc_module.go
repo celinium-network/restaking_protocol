@@ -1,6 +1,8 @@
 package coordinator
 
 import (
+	"fmt"
+
 	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
@@ -128,10 +130,19 @@ func (AppModule) OnChanCloseInit(ctx sdk.Context, portID string, channelID strin
 
 // OnRecvPacket implements types.IBCModule
 func (am AppModule) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, relayer sdk.AccAddress) exported.Acknowledgement {
-	var consumerValidatorSetChange restaking.ValidatorSetChangePacket
+	var (
+		ack                        exported.Acknowledgement
+		consumerValidatorSetChange restaking.ValidatorSetChange
+	)
 
-	am.cdc.Unmarshal(packet.Data, &consumerValidatorSetChange)
-	return nil
+	if err := am.cdc.Unmarshal(packet.Data, &consumerValidatorSetChange); err != nil {
+		errAck := channeltypes.NewErrorAcknowledgement(fmt.Errorf("cannot unmarshal CCV packet data"))
+		ack = &errAck
+	} else {
+		ack = am.keeper.OnRecvConsumerValidatorSetChange(ctx, packet, consumerValidatorSetChange)
+	}
+
+	return ack
 }
 
 // OnTimeoutPacket implements types.IBCModule

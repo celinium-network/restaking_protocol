@@ -25,23 +25,23 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-type ValidatorSetChangePacket struct {
+type ValidatorSetChange struct {
 	ValidatorUpdates []types.ValidatorUpdate `protobuf:"bytes,1,rep,name=validator_updates,json=validatorUpdates,proto3" json:"validator_updates" yaml:"validator_updates"`
 	ValsetUpdateId   uint64                  `protobuf:"varint,2,opt,name=valset_update_id,json=valsetUpdateId,proto3" json:"valset_update_id,omitempty"`
 }
 
-func (m *ValidatorSetChangePacket) Reset()         { *m = ValidatorSetChangePacket{} }
-func (m *ValidatorSetChangePacket) String() string { return proto.CompactTextString(m) }
-func (*ValidatorSetChangePacket) ProtoMessage()    {}
-func (*ValidatorSetChangePacket) Descriptor() ([]byte, []int) {
+func (m *ValidatorSetChange) Reset()         { *m = ValidatorSetChange{} }
+func (m *ValidatorSetChange) String() string { return proto.CompactTextString(m) }
+func (*ValidatorSetChange) ProtoMessage()    {}
+func (*ValidatorSetChange) Descriptor() ([]byte, []int) {
 	return fileDescriptor_63af7fa0c4c2b658, []int{0}
 }
-func (m *ValidatorSetChangePacket) XXX_Unmarshal(b []byte) error {
+func (m *ValidatorSetChange) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ValidatorSetChangePacket) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ValidatorSetChange) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_ValidatorSetChangePacket.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ValidatorSetChange.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -51,48 +51,48 @@ func (m *ValidatorSetChangePacket) XXX_Marshal(b []byte, deterministic bool) ([]
 		return b[:n], nil
 	}
 }
-func (m *ValidatorSetChangePacket) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ValidatorSetChangePacket.Merge(m, src)
+func (m *ValidatorSetChange) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ValidatorSetChange.Merge(m, src)
 }
-func (m *ValidatorSetChangePacket) XXX_Size() int {
+func (m *ValidatorSetChange) XXX_Size() int {
 	return m.Size()
 }
-func (m *ValidatorSetChangePacket) XXX_DiscardUnknown() {
-	xxx_messageInfo_ValidatorSetChangePacket.DiscardUnknown(m)
+func (m *ValidatorSetChange) XXX_DiscardUnknown() {
+	xxx_messageInfo_ValidatorSetChange.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ValidatorSetChangePacket proto.InternalMessageInfo
+var xxx_messageInfo_ValidatorSetChange proto.InternalMessageInfo
 
-func (m *ValidatorSetChangePacket) GetValidatorUpdates() []types.ValidatorUpdate {
+func (m *ValidatorSetChange) GetValidatorUpdates() []types.ValidatorUpdate {
 	if m != nil {
 		return m.ValidatorUpdates
 	}
 	return nil
 }
 
-func (m *ValidatorSetChangePacket) GetValsetUpdateId() uint64 {
+func (m *ValidatorSetChange) GetValsetUpdateId() uint64 {
 	if m != nil {
 		return m.ValsetUpdateId
 	}
 	return 0
 }
 
-type ValidatorSetChangePackets struct {
-	Packets []ValidatorSetChangePacket `protobuf:"bytes,1,rep,name=packets,proto3" json:"packets"`
+type ValidatorSetChanges struct {
+	ValidatorSetChanges []ValidatorSetChange `protobuf:"bytes,1,rep,name=validator_set_changes,json=validatorSetChanges,proto3" json:"validator_set_changes"`
 }
 
-func (m *ValidatorSetChangePackets) Reset()         { *m = ValidatorSetChangePackets{} }
-func (m *ValidatorSetChangePackets) String() string { return proto.CompactTextString(m) }
-func (*ValidatorSetChangePackets) ProtoMessage()    {}
-func (*ValidatorSetChangePackets) Descriptor() ([]byte, []int) {
+func (m *ValidatorSetChanges) Reset()         { *m = ValidatorSetChanges{} }
+func (m *ValidatorSetChanges) String() string { return proto.CompactTextString(m) }
+func (*ValidatorSetChanges) ProtoMessage()    {}
+func (*ValidatorSetChanges) Descriptor() ([]byte, []int) {
 	return fileDescriptor_63af7fa0c4c2b658, []int{1}
 }
-func (m *ValidatorSetChangePackets) XXX_Unmarshal(b []byte) error {
+func (m *ValidatorSetChanges) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ValidatorSetChangePackets) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ValidatorSetChanges) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_ValidatorSetChangePackets.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ValidatorSetChanges.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -102,28 +102,28 @@ func (m *ValidatorSetChangePackets) XXX_Marshal(b []byte, deterministic bool) ([
 		return b[:n], nil
 	}
 }
-func (m *ValidatorSetChangePackets) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ValidatorSetChangePackets.Merge(m, src)
+func (m *ValidatorSetChanges) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ValidatorSetChanges.Merge(m, src)
 }
-func (m *ValidatorSetChangePackets) XXX_Size() int {
+func (m *ValidatorSetChanges) XXX_Size() int {
 	return m.Size()
 }
-func (m *ValidatorSetChangePackets) XXX_DiscardUnknown() {
-	xxx_messageInfo_ValidatorSetChangePackets.DiscardUnknown(m)
+func (m *ValidatorSetChanges) XXX_DiscardUnknown() {
+	xxx_messageInfo_ValidatorSetChanges.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ValidatorSetChangePackets proto.InternalMessageInfo
+var xxx_messageInfo_ValidatorSetChanges proto.InternalMessageInfo
 
-func (m *ValidatorSetChangePackets) GetPackets() []ValidatorSetChangePacket {
+func (m *ValidatorSetChanges) GetValidatorSetChanges() []ValidatorSetChange {
 	if m != nil {
-		return m.Packets
+		return m.ValidatorSetChanges
 	}
 	return nil
 }
 
 func init() {
-	proto.RegisterType((*ValidatorSetChangePacket)(nil), "restaking_protocol.restaking.v1.ValidatorSetChangePacket")
-	proto.RegisterType((*ValidatorSetChangePackets)(nil), "restaking_protocol.restaking.v1.ValidatorSetChangePackets")
+	proto.RegisterType((*ValidatorSetChange)(nil), "restaking_protocol.restaking.v1.ValidatorSetChange")
+	proto.RegisterType((*ValidatorSetChanges)(nil), "restaking_protocol.restaking.v1.ValidatorSetChanges")
 }
 
 func init() {
@@ -131,29 +131,30 @@ func init() {
 }
 
 var fileDescriptor_63af7fa0c4c2b658 = []byte{
-	// 304 bytes of a gzipped FileDescriptorProto
+	// 305 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xd2, 0x2f, 0x4a, 0x2d, 0x2e,
 	0x49, 0xcc, 0xce, 0xcc, 0x4b, 0x8f, 0x2f, 0x28, 0xca, 0x2f, 0xc9, 0x4f, 0xce, 0xcf, 0x41, 0x08,
 	0xe9, 0x97, 0x19, 0x22, 0x38, 0x7a, 0x60, 0x79, 0x21, 0x79, 0x4c, 0x0d, 0x7a, 0x08, 0x35, 0x65,
 	0x86, 0x52, 0x92, 0xc9, 0xf9, 0xc5, 0xb9, 0xf9, 0xc5, 0x10, 0x59, 0x7d, 0x08, 0x07, 0xa2, 0x57,
 	0x4a, 0x24, 0x3d, 0x3f, 0x3d, 0x1f, 0x22, 0x0e, 0x62, 0x41, 0x45, 0xa5, 0x4b, 0x52, 0xf3, 0x52,
 	0x52, 0x8b, 0x72, 0x33, 0xf3, 0x4a, 0xf4, 0x13, 0x93, 0x92, 0x33, 0xf5, 0x4b, 0x2a, 0x0b, 0x52,
-	0xa1, 0x5a, 0x94, 0xb6, 0x32, 0x72, 0x49, 0x84, 0x25, 0xe6, 0x64, 0xa6, 0x24, 0x96, 0xe4, 0x17,
-	0x05, 0xa7, 0x96, 0x38, 0x67, 0x24, 0xe6, 0xa5, 0xa7, 0x06, 0x24, 0x26, 0x67, 0xa7, 0x96, 0x08,
-	0xe5, 0x73, 0x09, 0x96, 0xc1, 0xe4, 0xe2, 0x4b, 0x0b, 0x52, 0x12, 0x4b, 0x52, 0x8b, 0x25, 0x18,
-	0x15, 0x98, 0x35, 0xb8, 0x8d, 0x14, 0xf4, 0x10, 0xa6, 0xea, 0x81, 0x4c, 0xd5, 0x83, 0x9b, 0x12,
-	0x0a, 0x56, 0xe8, 0xa4, 0x70, 0xe2, 0x9e, 0x3c, 0xc3, 0xa7, 0x7b, 0xf2, 0x12, 0x95, 0x89, 0xb9,
-	0x39, 0x56, 0x4a, 0x18, 0x06, 0x29, 0x05, 0x09, 0x94, 0xa1, 0x6a, 0x29, 0x16, 0xd2, 0xe0, 0x02,
-	0x89, 0x15, 0xa7, 0x96, 0x40, 0x15, 0xc5, 0x67, 0xa6, 0x48, 0x30, 0x29, 0x30, 0x6a, 0xb0, 0x04,
-	0xf1, 0x41, 0xc4, 0x21, 0x0a, 0x3d, 0x53, 0x94, 0xca, 0xb8, 0x24, 0x71, 0x39, 0xbb, 0x58, 0x28,
-	0x92, 0x8b, 0xbd, 0x00, 0xc2, 0x84, 0xba, 0xd6, 0x52, 0x8f, 0x40, 0xa8, 0xea, 0xe1, 0x32, 0xcc,
-	0x89, 0x05, 0xe4, 0x8d, 0x20, 0x98, 0x79, 0x4e, 0x76, 0x27, 0x1e, 0xc9, 0x31, 0x5e, 0x78, 0x24,
-	0xc7, 0xf8, 0xe0, 0x91, 0x1c, 0xe3, 0x84, 0xc7, 0x72, 0x0c, 0x17, 0x1e, 0xcb, 0x31, 0xdc, 0x78,
-	0x2c, 0xc7, 0x10, 0xa5, 0x82, 0x25, 0xa6, 0x2b, 0x90, 0xe2, 0x1a, 0x1c, 0xea, 0x49, 0x6c, 0x60,
-	0x39, 0x63, 0x40, 0x00, 0x00, 0x00, 0xff, 0xff, 0x15, 0x0a, 0xa0, 0xb1, 0x18, 0x02, 0x00, 0x00,
+	0xa1, 0x5a, 0x94, 0xd6, 0x33, 0x72, 0x09, 0x85, 0x25, 0xe6, 0x64, 0xa6, 0x24, 0x96, 0xe4, 0x17,
+	0x05, 0xa7, 0x96, 0x38, 0x67, 0x24, 0xe6, 0xa5, 0xa7, 0x0a, 0xe5, 0x73, 0x09, 0x96, 0xc1, 0x44,
+	0xe3, 0x4b, 0x0b, 0x52, 0x12, 0x4b, 0x52, 0x8b, 0x25, 0x18, 0x15, 0x98, 0x35, 0xb8, 0x8d, 0x14,
+	0xf4, 0x10, 0xe6, 0xe9, 0x81, 0xcc, 0xd3, 0x83, 0xeb, 0x0f, 0x05, 0x2b, 0x74, 0x52, 0x38, 0x71,
+	0x4f, 0x9e, 0xe1, 0xd3, 0x3d, 0x79, 0x89, 0xca, 0xc4, 0xdc, 0x1c, 0x2b, 0x25, 0x0c, 0x83, 0x94,
+	0x82, 0x04, 0xca, 0x50, 0xb5, 0x14, 0x0b, 0x69, 0x70, 0x81, 0xc4, 0x8a, 0x53, 0x4b, 0xa0, 0x8a,
+	0xe2, 0x33, 0x53, 0x24, 0x98, 0x14, 0x18, 0x35, 0x58, 0x82, 0xf8, 0x20, 0xe2, 0x10, 0x85, 0x9e,
+	0x29, 0x4a, 0x2d, 0x8c, 0x5c, 0xc2, 0x98, 0x2e, 0x2e, 0x16, 0xca, 0xe5, 0x12, 0x45, 0xd8, 0x04,
+	0x32, 0x28, 0x19, 0x22, 0x01, 0x75, 0xb6, 0xb1, 0x1e, 0x81, 0x80, 0xd5, 0xc3, 0x34, 0xd4, 0x89,
+	0x05, 0xe4, 0x93, 0x20, 0xe1, 0x32, 0x4c, 0xeb, 0x9c, 0xec, 0x4e, 0x3c, 0x92, 0x63, 0xbc, 0xf0,
+	0x48, 0x8e, 0xf1, 0xc1, 0x23, 0x39, 0xc6, 0x09, 0x8f, 0xe5, 0x18, 0x2e, 0x3c, 0x96, 0x63, 0xb8,
+	0xf1, 0x58, 0x8e, 0x21, 0x4a, 0x05, 0x4b, 0x94, 0x57, 0x20, 0x45, 0x3a, 0x38, 0xf8, 0x93, 0xd8,
+	0xc0, 0x72, 0xc6, 0x80, 0x00, 0x00, 0x00, 0xff, 0xff, 0xd1, 0xf9, 0xe8, 0x3d, 0x21, 0x02, 0x00,
+	0x00,
 }
 
-func (m *ValidatorSetChangePacket) Marshal() (dAtA []byte, err error) {
+func (m *ValidatorSetChange) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -163,12 +164,12 @@ func (m *ValidatorSetChangePacket) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ValidatorSetChangePacket) MarshalTo(dAtA []byte) (int, error) {
+func (m *ValidatorSetChange) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ValidatorSetChangePacket) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ValidatorSetChange) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -195,7 +196,7 @@ func (m *ValidatorSetChangePacket) MarshalToSizedBuffer(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *ValidatorSetChangePackets) Marshal() (dAtA []byte, err error) {
+func (m *ValidatorSetChanges) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -205,20 +206,20 @@ func (m *ValidatorSetChangePackets) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ValidatorSetChangePackets) MarshalTo(dAtA []byte) (int, error) {
+func (m *ValidatorSetChanges) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ValidatorSetChangePackets) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ValidatorSetChanges) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if len(m.Packets) > 0 {
-		for iNdEx := len(m.Packets) - 1; iNdEx >= 0; iNdEx-- {
+	if len(m.ValidatorSetChanges) > 0 {
+		for iNdEx := len(m.ValidatorSetChanges) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.Packets[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.ValidatorSetChanges[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -243,7 +244,7 @@ func encodeVarintRestaking(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *ValidatorSetChangePacket) Size() (n int) {
+func (m *ValidatorSetChange) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -261,14 +262,14 @@ func (m *ValidatorSetChangePacket) Size() (n int) {
 	return n
 }
 
-func (m *ValidatorSetChangePackets) Size() (n int) {
+func (m *ValidatorSetChanges) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if len(m.Packets) > 0 {
-		for _, e := range m.Packets {
+	if len(m.ValidatorSetChanges) > 0 {
+		for _, e := range m.ValidatorSetChanges {
 			l = e.Size()
 			n += 1 + l + sovRestaking(uint64(l))
 		}
@@ -282,7 +283,7 @@ func sovRestaking(x uint64) (n int) {
 func sozRestaking(x uint64) (n int) {
 	return sovRestaking(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ValidatorSetChangePacket) Unmarshal(dAtA []byte) error {
+func (m *ValidatorSetChange) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -305,10 +306,10 @@ func (m *ValidatorSetChangePacket) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ValidatorSetChangePacket: wiretype end group for non-group")
+			return fmt.Errorf("proto: ValidatorSetChange: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ValidatorSetChangePacket: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ValidatorSetChange: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -385,7 +386,7 @@ func (m *ValidatorSetChangePacket) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ValidatorSetChangePackets) Unmarshal(dAtA []byte) error {
+func (m *ValidatorSetChanges) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -408,15 +409,15 @@ func (m *ValidatorSetChangePackets) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ValidatorSetChangePackets: wiretype end group for non-group")
+			return fmt.Errorf("proto: ValidatorSetChanges: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ValidatorSetChangePackets: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ValidatorSetChanges: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Packets", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ValidatorSetChanges", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -443,8 +444,8 @@ func (m *ValidatorSetChangePackets) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Packets = append(m.Packets, ValidatorSetChangePacket{})
-			if err := m.Packets[len(m.Packets)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.ValidatorSetChanges = append(m.ValidatorSetChanges, ValidatorSetChange{})
+			if err := m.ValidatorSetChanges[len(m.ValidatorSetChanges)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

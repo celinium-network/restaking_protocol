@@ -155,12 +155,12 @@ func (s *IntegrationTestSuite) RelayIBCPacket(path *ibctesting.Path, events []ab
 			offset := channelProcessed[channelID]
 			for ; offset < len(packets); offset++ {
 
-				midAckMsg, _ := chainRecvPacket(recvChain, path.EndpointB, &packets[offset])
+				midAckMsg, _ := chainRecvPacket(recvChain, path.EndpointA, &packets[offset])
 				if midAckMsg == nil {
 					continue
 				}
 
-				midRecvMsg, _ := chainRecvAck(sendChain, path.EndpointA, midAckMsg)
+				midRecvMsg, _ := chainRecvAck(sendChain, path.EndpointB, midAckMsg)
 				if midRecvMsg == nil {
 					continue
 				}
@@ -196,8 +196,8 @@ func chainRecvPacket(chain *ibctesting.TestChain, endpoint *ibctesting.Endpoint,
 		return nil, err
 	}
 
-	// chain.NextBlock()
-	// endpoint.UpdateClient()
+	chain.NextBlock()
+	endpoint.UpdateClient()
 
 	return assembleAckPacketFromEvents(chain, msgRecvPacket.Packet, ctx.EventManager().Events())
 }

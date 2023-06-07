@@ -1,12 +1,8 @@
 package keeper
 
 import (
-	"bytes"
-	"fmt"
-
-	tmtypes "github.com/cometbft/cometbft/types"
-
 	errorsmod "cosmossdk.io/errors"
+	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -77,12 +73,6 @@ func (k Keeper) GetConsumerClientID(ctx sdk.Context, chainID string) ([]byte, bo
 func (k Keeper) SetConsumerClientID(ctx sdk.Context, chainID, clientID string) {
 	store := ctx.KVStore(k.storeKey)
 	store.Set(types.ConsumerClientIDKey(chainID), []byte(clientID))
-}
-
-func (k Keeper) SetConsumerClientValidatorSet(ctx sdk.Context, chainID string, valSet restaking.ValidatorSet) {
-	store := ctx.KVStore(k.storeKey)
-	bz := k.cdc.MustMarshal(&valSet)
-	store.Set(types.ConsumerValidatorSetKey(chainID), bz)
 }
 
 func (k Keeper) SetConsumerAdditionProposal(ctx sdk.Context, prop *types.ConsumerAdditionProposal) {
@@ -191,25 +181,39 @@ func (k Keeper) GetUnderlyingConnection(ctx sdk.Context, srcPortID, srcChannelID
 	return channel.ConnectionHops[0], nil
 }
 
-func (k Keeper) VerifyConsumerValidatorSet(ctx sdk.Context, clientID string, valSet restaking.ValidatorSet) error {
-	consensusState, found := k.clientKeeper.GetLatestClientConsensusState(ctx, clientID)
-	if !found {
-		return fmt.Errorf("client consensus status is not exist %s", clientID)
-	}
-
-	tmConsensusState, ok := consensusState.(*ibctm.ConsensusState)
-	if !ok {
-		return fmt.Errorf("client consensus must be kind of tendermint %s", clientID)
-	}
-
-	tmValSet, err := tmtypes.ValidatorSetFromProto(&valSet)
+func (k Keeper) GetConsumerClientIDByChannel(ctx sdk.Context, srcPortID, srcChannelID string) (string, error) {
+	connectionID, err := k.GetUnderlyingConnection(ctx, srcPortID, srcChannelID)
 	if err != nil {
-		return err
+		return "", err
+	}
+	clientID, _, err := k.GetUnderlyingClient(ctx, connectionID)
+	if err != nil {
+		return "", err
+	}
+	return clientID, nil
+}
+
+func (k Keeper) GetConsumerValidator(ctx sdk.Context, clientID string) ([]abci.ValidatorUpdate, bool) {
+	var vus types.ConsumerValidatorUpdates
+
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.ConsumerValidatorSetKey(clientID))
+	if bz == nil {
+		return nil, false
 	}
 
-	if !bytes.Equal(tmConsensusState.NextValidatorsHash, tmValSet.Hash()) {
-		return fmt.Errorf("validator hash mismatch %s", clientID)
+	k.cdc.MustUnmarshal(bz, &vus)
+
+	return vus.ValidatorUpdates, true
+}
+
+func (k Keeper) SetConsumerValidator(ctx sdk.Context, clientID string, vus abci.ValidatorUpdates) {
+	vsc := types.ConsumerValidatorUpdates{
+		ValidatorUpdates: vus,
 	}
 
-	return nil
+	bz := k.cdc.MustMarshal(&vsc)
+	store := ctx.KVStore(k.storeKey)
+
+	store.Set(types.ConsumerValidatorSetKey(clientID), bz)
 }

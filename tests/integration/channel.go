@@ -29,13 +29,13 @@ func (s *IntegrationTestSuite) TestChannelInit() {
 	err = s.path.EndpointB.ChanOpenConfirm()
 	s.Require().NoError(err)
 
-	err = s.path.EndpointA.UpdateClient()
-	s.Require().NoError(err)
+	// err = s.path.EndpointA.UpdateClient()
+	// s.Require().NoError(err)
+
+	// err = s.path.EndpointB.UpdateClient()
+	// s.Require().NoError(err)
 
 	consumerUserAddr := s.path.EndpointA.Chain.SenderAccount.GetAddress()
-
-	err = s.path.EndpointB.UpdateClient()
-	s.Require().NoError(err)
 
 	s.RelayIBCPacket(s.path, events, consumerUserAddr.String())
 

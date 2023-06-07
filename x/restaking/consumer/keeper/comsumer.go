@@ -28,9 +28,7 @@ func (k Keeper) QueueValidatorSetChangePackets(ctx sdk.Context) {
 
 	var valUpdates []abci.ValidatorUpdate
 
-	// The first packet should contains all validators
 	if valUpdateID == 0 {
-		// TODO maybe loop too mach ？
 		vals := k.standaloneStakingKeeper.GetLastValidators(ctx)
 		for _, v := range vals {
 			validatorUpdate := v.ABCIValidatorUpdateZero()
@@ -42,7 +40,7 @@ func (k Keeper) QueueValidatorSetChangePackets(ctx sdk.Context) {
 	}
 
 	// TODO apply delegation/undelegate operation for valUpdates ?
-	vsc := restaking.ValidatorSetChangePacket{
+	vsc := restaking.ValidatorSetChange{
 		ValidatorUpdates: valUpdates,
 		ValsetUpdateId:   valUpdateID,
 	}

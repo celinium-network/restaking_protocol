@@ -18,7 +18,7 @@ const (
 
 	ConsumerClientIDPrefix
 
-	ConsumerValidatorSetPrefix
+	ConsumerValidatorUpdatesPrefix
 
 	PortByteKey
 )
@@ -32,7 +32,7 @@ func ConsumerClientIDKey(chainID string) []byte {
 }
 
 func ConsumerValidatorSetKey(chainID string) []byte {
-	return append([]byte{ConsumerValidatorSetPrefix}, []byte(chainID)...)
+	return append([]byte{ConsumerValidatorUpdatesPrefix}, []byte(chainID)...)
 }
 
 func PortKey() []byte {

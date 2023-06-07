@@ -121,20 +121,20 @@ func (k Keeper) SetValidatorSetUpdateID(ctx sdk.Context, valUpdateID uint64) {
 	store.Set(types.GetValidatorSetUpdateIDKey(), bz)
 }
 
-func (k Keeper) GetPendingVSCPackets(ctx sdk.Context) []restaking.ValidatorSetChangePacket {
-	var packets restaking.ValidatorSetChangePackets
+func (k Keeper) GetPendingVSCPackets(ctx sdk.Context) []restaking.ValidatorSetChange {
+	var packets restaking.ValidatorSetChanges
 
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetPendingValidatorChangeSetKey())
 	if bz == nil {
-		return []restaking.ValidatorSetChangePacket{}
+		return []restaking.ValidatorSetChange{}
 	}
 	if err := packets.Unmarshal(bz); err != nil {
 		// An error here would indicate something is very wrong,
 		// the PendingVSCPackets are assumed to be correctly serialized in AppendPendingVSCPackets.
 		panic(fmt.Errorf("cannot unmarshal pending validator set changes: %w", err))
 	}
-	return packets.Packets
+	return packets.ValidatorSetChanges
 }
 
 func (k Keeper) DeletePendingVSCPackets(ctx sdk.Context) {
@@ -142,11 +142,11 @@ func (k Keeper) DeletePendingVSCPackets(ctx sdk.Context) {
 	store.Delete(types.GetPendingValidatorChangeSetKey())
 }
 
-func (k Keeper) AppendPendingVSCPackets(ctx sdk.Context, addedPackets ...restaking.ValidatorSetChangePacket) {
+func (k Keeper) AppendPendingVSCPackets(ctx sdk.Context, addedPackets ...restaking.ValidatorSetChange) {
 	packets := append(k.GetPendingVSCPackets(ctx), addedPackets...)
 
 	store := ctx.KVStore(k.storeKey)
-	newPackets := restaking.ValidatorSetChangePackets{Packets: packets}
+	newPackets := restaking.ValidatorSetChanges{ValidatorSetChanges: packets}
 	buf, err := newPackets.Marshal()
 	if err != nil {
 		// An error here would indicate something is very wrong,

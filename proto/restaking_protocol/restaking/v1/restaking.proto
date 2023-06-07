@@ -9,7 +9,7 @@ import "tendermint/abci/types.proto";
 option go_package = "restaking_protocol/x/restaking/types";
 
 
-message ValidatorSetChangePacket{
+message ValidatorSetChange{
     repeated .tendermint.abci.ValidatorUpdate validator_updates = 1 [
       (gogoproto.nullable) = false,
       (gogoproto.moretags) = "yaml:\"validator_updates\""
@@ -17,6 +17,6 @@ message ValidatorSetChangePacket{
     uint64 valset_update_id = 2;
 }
 
-message ValidatorSetChangePackets{
-    repeated ValidatorSetChangePacket packets = 1 [(gogoproto.nullable) = false];
+message ValidatorSetChanges{
+    repeated ValidatorSetChange validator_set_changes = 1 [(gogoproto.nullable) = false];
 }
