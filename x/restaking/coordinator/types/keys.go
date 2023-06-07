@@ -11,6 +11,8 @@ const (
 	RouterKey = ModuleName
 
 	QuerierRoute = ModuleName
+
+	StringListSplitter = "|"
 )
 
 const (
@@ -20,8 +22,20 @@ const (
 
 	ConsumerValidatorUpdatesPrefix
 
+	ConsumerRestakingTokens
+
+	ConsumerRewardTokens
+
+	OperatorPrefix
+
+	OperatorIDByteKey
+
 	PortByteKey
 )
+
+func PortKey() []byte {
+	return []byte{PortByteKey}
+}
 
 func ConsumerAdditionProposalKey(chainID string) []byte {
 	return append([]byte{ConsumerAdditionProposalPrefix}, []byte(chainID)...)
@@ -35,6 +49,14 @@ func ConsumerValidatorSetKey(chainID string) []byte {
 	return append([]byte{ConsumerValidatorUpdatesPrefix}, []byte(chainID)...)
 }
 
-func PortKey() []byte {
-	return []byte{PortByteKey}
+func ConsumerRestakingTokensKey(chainID string) []byte {
+	return append([]byte{ConsumerRestakingTokens}, []byte(chainID)...)
+}
+
+func ConsumerRewardTokensKey(chainID string) []byte {
+	return append([]byte{ConsumerRewardTokens}, []byte(chainID)...)
+}
+
+func OperatorKey(operatorAddr string) []byte {
+	return append([]byte{OperatorPrefix}, []byte(operatorAddr)...)
 }

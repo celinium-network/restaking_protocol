@@ -59,7 +59,7 @@ func CreateConsumerAdditionalProposal(path *ibctesting.Path, consumerChain *ibct
 		UnbondingPeriod:       tmClientCfg.UnbondingPeriod,
 		TimeoutPeriod:         tmClientCfg.TrustingPeriod,
 		TransferTimeoutPeriod: tmClientCfg.MaxClockDrift,
-		AvailableCoinDenoms:   []string{"stake"},
+		RestakingTokens:       []string{"stake"},
 		RewardCoinDenom:       []string{"stake"},
 	}
 }

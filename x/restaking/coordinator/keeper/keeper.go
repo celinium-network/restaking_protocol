@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	"strings"
+
 	errorsmod "cosmossdk.io/errors"
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -216,4 +218,47 @@ func (k Keeper) SetConsumerValidator(ctx sdk.Context, clientID string, vus abci.
 	store := ctx.KVStore(k.storeKey)
 
 	store.Set(types.ConsumerValidatorSetKey(clientID), bz)
+}
+
+func (k Keeper) SetConsumerRestakingToken(ctx sdk.Context, clientID string, tokens []string) {
+	store := ctx.KVStore(k.storeKey)
+	store.Set(types.ConsumerRestakingTokensKey(clientID), []byte(strings.Join(tokens, types.StringListSplitter)))
+}
+
+func (k Keeper) GetConsumerRestakingToken(ctx sdk.Context, clientID string) []string {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.ConsumerRestakingTokensKey(clientID))
+
+	return strings.Split(string(bz), types.StringListSplitter)
+}
+
+func (k Keeper) SetConsumerRewardToken(ctx sdk.Context, clientID string, tokens []string) {
+	store := ctx.KVStore(k.storeKey)
+	store.Set(types.ConsumerRewardTokensKey(clientID), []byte(strings.Join(tokens, types.StringListSplitter)))
+}
+
+func (k Keeper) GetConsumerRewardToken(ctx sdk.Context, clientID string) []string {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.ConsumerRewardTokensKey(clientID))
+
+	return strings.Split(string(bz), types.StringListSplitter)
+}
+
+func (k Keeper) SetOperator(ctx sdk.Context, operator *types.Operator) {
+	store := ctx.KVStore(k.storeKey)
+	bz := k.cdc.MustMarshal(operator)
+	store.Set(types.OperatorKey(operator.OperatorAddress), bz)
+}
+
+func (k Keeper) GetOperator(ctx sdk.Context, addr string) (*types.Operator, bool) {
+	store := ctx.KVStore(k.storeKey)
+
+	bz := store.Get(types.OperatorKey(addr))
+	if bz == nil {
+		return nil, false
+	}
+	var operator types.Operator
+	k.cdc.MustUnmarshal(bz, &operator)
+
+	return &operator, true
 }

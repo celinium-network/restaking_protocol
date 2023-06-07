@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package restaking_protocol.restaking.coordinator.v1;
+
+import "gogoproto/gogo.proto";
+import "cosmos_proto/cosmos.proto";
+import "tendermint/crypto/keys.proto";
+
+option go_package = "restaking_protocol/x/restaking/coordinator/types";
+
+message MsgRegisterOperator{
+    option (gogoproto.goproto_getters)  = false;
+
+    repeated string ConsumerChainIDs  = 1;
+
+    repeated .tendermint.crypto.PublicKey consumer_validator_pks = 2 [(gogoproto.nullable) = false];
+
+    string restaking_denom = 3;
+
+    string sender = 4 [(cosmos_proto.scalar) = "cosmos.AddressString"]; 
+}
