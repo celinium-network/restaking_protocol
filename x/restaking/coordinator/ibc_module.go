@@ -116,6 +116,7 @@ func (am AppModule) OnChanOpenConfirm(ctx sdk.Context, portID string, channelID 
 	am.keeper.SetConsumerRestakingToken(ctx, clientID, proposal.RestakingTokens)
 	am.keeper.SetConsumerRewardToken(ctx, clientID, proposal.RewardTokens) // TODO maybe not useful
 	am.keeper.SetConsumerClientID(ctx, tmClient.ChainId, clientID)
+	am.keeper.SetConsumerClientIDToChannel(ctx, clientID, channelID)
 
 	am.keeper.DeleteConsumerAdditionProposal(ctx, tmClient.ChainId)
 

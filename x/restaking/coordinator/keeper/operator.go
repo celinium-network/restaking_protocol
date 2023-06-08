@@ -92,7 +92,7 @@ func (k Keeper) Delegate(ctx sdk.Context, delegator sdk.AccAddress, operatorAccA
 		return err
 	}
 
-	delegatorRecord, found := k.GetOperatorDelegateRecord(ctx, uint64(ctx.BlockHeight()))
+	delegatorRecord, found := k.GetOperatorDelegateRecord(ctx, uint64(ctx.BlockHeight()), operatorAddress)
 	if !found {
 		delegatorRecord = &types.OperatorDelegationRecord{
 			OperatorAddress:  operatorAddress,

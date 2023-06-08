@@ -30,6 +30,8 @@ const (
 
 	ConsumerRewardTokens
 
+	ConsumerClientToChannelPrefix
+
 	OperatorPrefix
 
 	OperatorIDByteKey
@@ -39,6 +41,8 @@ const (
 	DelegationRecordPrefix
 
 	OperatorSharesPrefix
+
+	IBCCallbackPrefix
 )
 
 func PortKey() []byte {
@@ -65,16 +69,25 @@ func ConsumerRewardTokensKey(chainID string) []byte {
 	return append([]byte{ConsumerRewardTokens}, []byte(chainID)...)
 }
 
+func ConsumerClientToChannelKey(clientID string) []byte {
+	return append([]byte{ConsumerClientToChannelPrefix}, []byte(clientID)...)
+}
+
 func OperatorKey(operatorAddr string) []byte {
 	return append([]byte{OperatorPrefix}, []byte(operatorAddr)...)
 }
 
-func DelegationRecordKey(blockHeight uint64) []byte {
-	sdk.Uint64ToBigEndian(blockHeight)
-	return append([]byte{DelegationRecordPrefix}, sdk.Uint64ToBigEndian(blockHeight)...)
+func DelegationRecordKey(blockHeight uint64, operatorAddr string) []byte {
+	bz := sdk.Uint64ToBigEndian(blockHeight)
+	return append([]byte{DelegationRecordPrefix}, []byte(operatorAddr+string(bz))...)
 }
 
 func OperatorSharesKey(ownerAddr, operatorAddr string) []byte {
 	// TODO address string in key should has length as prefix ?
 	return append([]byte{OperatorSharesPrefix}, []byte(ownerAddr+operatorAddr)...)
+}
+
+func IBCCallbackKey(channelID, portID string, seq uint64) []byte {
+	bz := sdk.Uint64ToBigEndian(seq)
+	return append([]byte{IBCCallbackPrefix}, []byte(channelID+portID+string(bz))...)
 }

@@ -80,6 +80,20 @@ func (k Keeper) SetConsumerClientID(ctx sdk.Context, chainID, clientID string) {
 	store.Set(types.ConsumerClientIDKey(chainID), []byte(clientID))
 }
 
+func (k Keeper) SetConsumerClientIDToChannel(ctx sdk.Context, clientID, channelID string) {
+	store := ctx.KVStore(k.storeKey)
+	store.Set(types.ConsumerClientIDKey(clientID), []byte(channelID))
+}
+
+func (k Keeper) GetConsumerClientIDToChannel(ctx sdk.Context, clientID string) (string, bool) {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.ConsumerClientIDKey(clientID))
+	if bz == nil {
+		return "", false
+	}
+	return string(bz), true
+}
+
 func (k Keeper) SetConsumerAdditionProposal(ctx sdk.Context, prop *types.ConsumerAdditionProposal) {
 	store := ctx.KVStore(k.storeKey)
 	bz := k.cdc.MustMarshal(prop)
@@ -267,10 +281,10 @@ func (k Keeper) GetOperator(ctx sdk.Context, addr string) (*types.Operator, bool
 }
 
 // TODO convert blockHeight to epoch?
-func (k Keeper) GetOperatorDelegateRecord(ctx sdk.Context, blockHeight uint64) (*types.OperatorDelegationRecord, bool) {
+func (k Keeper) GetOperatorDelegateRecord(ctx sdk.Context, blockHeight uint64, operatorAddr string) (*types.OperatorDelegationRecord, bool) {
 	store := ctx.KVStore(k.storeKey)
 
-	bz := store.Get(types.DelegationRecordKey(blockHeight))
+	bz := store.Get(types.DelegationRecordKey(blockHeight, operatorAddr))
 	if bz == nil {
 		return nil, false
 	}
@@ -283,7 +297,7 @@ func (k Keeper) GetOperatorDelegateRecord(ctx sdk.Context, blockHeight uint64) (
 func (k Keeper) SetOperatorDelegateRecord(ctx sdk.Context, blockHeight uint64, record *types.OperatorDelegationRecord) {
 	store := ctx.KVStore(k.storeKey)
 	bz := k.cdc.MustMarshal(record)
-	store.Set(types.DelegationRecordKey(blockHeight), bz)
+	store.Set(types.DelegationRecordKey(blockHeight, record.OperatorAddress), bz)
 }
 
 func (k Keeper) SetDelegation(ctx sdk.Context, ownerAddr, operatorAddr string, delegation *types.Delegation) {
@@ -316,4 +330,10 @@ func (k Keeper) sendCoinsFromAccountToAccount(
 	}
 
 	return k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, receiverAddr, amt)
+}
+
+func (k Keeper) SetCallback(ctx sdk.Context, channelID, portID string, seq uint64, callback types.IBCCallback) {
+	store := ctx.KVStore(k.storeKey)
+	bz := k.cdc.MustMarshal(&callback)
+	store.Set(types.IBCCallbackKey(channelID, portID, seq), bz)
 }

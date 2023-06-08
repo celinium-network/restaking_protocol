@@ -18,3 +18,7 @@ const (
 	OpDelRecordPending OperatorDelegationRecordStatus = iota
 	OpDelRecordProcessing
 )
+
+const (
+	InterChainDelegateCall CallType = iota
+)
