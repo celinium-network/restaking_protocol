@@ -493,7 +493,7 @@ func New(
 
 	app.RestakingCoordinatorKeeper = coordinatorkeeper.NewKeeper(
 		appCodec, keys[coordinatortypes.StoreKey],
-		scopedRestakingCoordinatorKeeper, app.IBCKeeper.ChannelKeeper,
+		scopedRestakingCoordinatorKeeper, app.BankKeeper, app.IBCKeeper.ChannelKeeper,
 		&app.IBCKeeper.PortKeeper, app.IBCKeeper.ConnectionKeeper,
 		app.IBCKeeper.ClientKeeper, app.TransferKeeper)
 

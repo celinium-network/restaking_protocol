@@ -74,6 +74,53 @@ func generateOperatorAddress(ctx sdk.Context) *authtypes.ModuleAccount {
 	buf := []byte(types.ModuleName)
 	buf = append(buf, header.AppHash...)
 	buf = append(buf, header.DataHash...)
+	buf = append(buf, ctx.TxBytes()...)
 
 	return authtypes.NewEmptyModuleAccount(string(buf), authtypes.Staking)
+}
+
+func (k Keeper) Delegate(ctx sdk.Context, delegator sdk.AccAddress, operatorAccAddr sdk.AccAddress, amount math.Int) error {
+	operatorAddress := operatorAccAddr.String()
+	operator, found := k.GetOperator(ctx, operatorAddress)
+	if !found {
+		return errorsmod.Wrap(types.ErrUnknownOperator, fmt.Sprintf("operator address %s", operatorAddress))
+	}
+
+	if err := k.sendCoinsFromAccountToAccount(
+		ctx, delegator, operatorAccAddr, sdk.Coins{sdk.NewCoin(operator.RestakingDenom, amount)},
+	); err != nil {
+		return err
+	}
+
+	delegatorRecord, found := k.GetOperatorDelegateRecord(ctx, uint64(ctx.BlockHeight()))
+	if !found {
+		delegatorRecord = &types.OperatorDelegationRecord{
+			OperatorAddress:  operatorAddress,
+			DelegationAmount: math.ZeroInt(),
+			Status:           types.OpDelRecordPending,
+			IbcCallbackIds:   []string{},
+		}
+	}
+
+	addedShares := operator.Shares.Mul(amount).Quo(operator.RestakedAmount.Add(amount))
+	operator.Shares = operator.Shares.Add(addedShares)
+
+	delegatorRecord.DelegationAmount = delegatorRecord.DelegationAmount.Add(amount)
+	k.SetOperatorDelegateRecord(ctx, uint64(ctx.BlockHeight()), delegatorRecord)
+
+	delegatorAddress := delegator.String()
+	delegation, found := k.GetDelegation(ctx, delegatorAddress, operatorAddress)
+	if !found {
+		delegation = &types.Delegation{
+			Delegator: delegatorAddress,
+			Operator:  operatorAddress,
+			Shares:    math.ZeroInt(),
+		}
+	}
+
+	// TODO shares should be math.Dec?
+	delegation.Shares = delegation.Shares.Add(addedShares)
+
+	k.SetDelegation(ctx, delegatorAddress, operatorAddress, delegation)
+	return nil
 }

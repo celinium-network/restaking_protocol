@@ -10,4 +10,5 @@ var (
 	ErrUnknownConsumer            = errorsmod.Register(ModuleName, 3, "")
 	ErrNotExistedValidator        = errorsmod.Register(ModuleName, 4, "")
 	ErrUnsupportedRestakingToken  = errorsmod.Register(ModuleName, 5, "The consumer do't support the restaking token")
+	ErrUnknownOperator            = errorsmod.Register(ModuleName, 6, "")
 )

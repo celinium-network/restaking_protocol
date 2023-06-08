@@ -75,3 +75,42 @@ message OperatedValidator{
 
     .tendermint.crypto.PublicKey validator_pk = 2 [(gogoproto.nullable) = false];
 }
+
+message OperatorDelegationRecord {
+    string operator_address = 1[(cosmos_proto.scalar) = "cosmos.AddressString"];
+    
+    string delegation_amount = 2 [
+        (cosmos_proto.scalar)  = "cosmos.Int",
+        (gogoproto.customtype) = "Int",
+        (gogoproto.nullable)   = false
+    ];
+
+    uint32 status = 3 [
+        (gogoproto.customtype) = "OperatorDelegationRecordStatus",
+        (gogoproto.nullable)   = false
+    ];
+
+    repeated string ibcCallbackIds = 4;
+}
+
+message Delegation{
+    string delegator = 1[(cosmos_proto.scalar) = "cosmos.AddressString"];
+    
+    string operator = 2[(cosmos_proto.scalar) = "cosmos.AddressString"];
+    
+    string shares = 3 [
+        (cosmos_proto.scalar)  = "cosmos.Int",
+        (gogoproto.customtype) = "Int",
+        (gogoproto.nullable)   = false
+    ];
+}
+
+message IBCCallback{
+    // The type of the callback operation.
+    uint32 callType = 1 [
+        (gogoproto.customtype) = "CallType",
+        (gogoproto.nullable) = false
+    ];
+    // The arguments of the callback, serialized as a string.
+    string args = 2;
+}

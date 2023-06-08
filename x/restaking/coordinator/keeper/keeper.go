@@ -28,6 +28,7 @@ type Keeper struct {
 	cdc          codec.Codec
 	paramSpace   paramtypes.Subspace
 	scopedKeeper ibcexported.ScopedKeeper
+	bankKeeper   restaking.BankKeeper
 
 	channelKeeper     restaking.ChannelKeeper
 	portKeeper        restaking.PortKeeper
@@ -40,6 +41,7 @@ func NewKeeper(
 	cdc codec.Codec,
 	storeKey storetypes.StoreKey,
 	scopedKeeper ibcexported.ScopedKeeper,
+	bankKeeper restaking.BankKeeper,
 	channelKeeper restaking.ChannelKeeper,
 	portKeeper restaking.PortKeeper,
 	connectionKeeper restaking.ConnectionKeeper,
@@ -55,6 +57,7 @@ func NewKeeper(
 		storeKey:          storeKey,
 		cdc:               cdc,
 		scopedKeeper:      scopedKeeper,
+		bankKeeper:        bankKeeper,
 		channelKeeper:     channelKeeper,
 		portKeeper:        portKeeper,
 		connectionKeeper:  connectionKeeper,
@@ -261,4 +264,56 @@ func (k Keeper) GetOperator(ctx sdk.Context, addr string) (*types.Operator, bool
 	k.cdc.MustUnmarshal(bz, &operator)
 
 	return &operator, true
+}
+
+// TODO convert blockHeight to epoch?
+func (k Keeper) GetOperatorDelegateRecord(ctx sdk.Context, blockHeight uint64) (*types.OperatorDelegationRecord, bool) {
+	store := ctx.KVStore(k.storeKey)
+
+	bz := store.Get(types.DelegationRecordKey(blockHeight))
+	if bz == nil {
+		return nil, false
+	}
+	var record types.OperatorDelegationRecord
+	k.cdc.Unmarshal(bz, &record)
+
+	return &record, true
+}
+
+func (k Keeper) SetOperatorDelegateRecord(ctx sdk.Context, blockHeight uint64, record *types.OperatorDelegationRecord) {
+	store := ctx.KVStore(k.storeKey)
+	bz := k.cdc.MustMarshal(record)
+	store.Set(types.DelegationRecordKey(blockHeight), bz)
+}
+
+func (k Keeper) SetDelegation(ctx sdk.Context, ownerAddr, operatorAddr string, delegation *types.Delegation) {
+	store := ctx.KVStore(k.storeKey)
+	bz := k.cdc.MustMarshal(delegation)
+
+	store.Set(types.OperatorSharesKey(ownerAddr, operatorAddr), bz)
+}
+
+func (k Keeper) GetDelegation(ctx sdk.Context, ownerAddr, operatorAddr string) (*types.Delegation, bool) {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.OperatorSharesKey(ownerAddr, operatorAddr))
+	if bz == nil {
+		return nil, false
+	}
+
+	var delegation types.Delegation
+	k.cdc.MustUnmarshal(bz, &delegation)
+	return &delegation, true
+}
+
+func (k Keeper) sendCoinsFromAccountToAccount(
+	ctx sdk.Context,
+	senderAddr sdk.AccAddress,
+	receiverAddr sdk.AccAddress,
+	amt sdk.Coins,
+) error {
+	if err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, senderAddr, types.ModuleName, amt); err != nil {
+		return err
+	}
+
+	return k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, receiverAddr, amt)
 }

@@ -7,7 +7,14 @@ import (
 )
 
 type (
-	Int                        = sdkmath.Int
-	Dec                        = sdk.Dec
-	TendermintLightClientState = ibctm.ClientState
+	Int                            = sdkmath.Int
+	Dec                            = sdk.Dec
+	TendermintLightClientState     = ibctm.ClientState
+	OperatorDelegationRecordStatus = uint32
+	CallType                       = uint32
+)
+
+const (
+	OpDelRecordPending OperatorDelegationRecordStatus = iota
+	OpDelRecordProcessing
 )
