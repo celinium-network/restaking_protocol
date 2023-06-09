@@ -4,29 +4,32 @@ package restaking_protocol.restaking.v1;
 
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
+import "tendermint/abci/types.proto";
+import "tendermint/crypto/keys.proto";
 
 option go_package = "restaking_protocol/x/restaking/types";
 
-message ValidatorSetChangePacketData {
-    repeated string validator_updates = 1 [
+
+message ValidatorSetChange{
+    repeated .tendermint.abci.ValidatorUpdate validator_updates = 1 [
       (gogoproto.nullable) = false,
-      (gogoproto.customtype) = "TendermintABCIValidatorUpdate",
       (gogoproto.moretags) = "yaml:\"validator_updates\""
     ];
-
     uint64 valset_update_id = 2;
-    // consensus address of consumer chain validators
-    // successfully slashed on the provider chain
-    
-    repeated string slash_acks = 3;
-  }
-  
-  
-message CounterPartyVersion{
-    string version = 1;
+}
 
-    string validator_set = 2 [
-      (gogoproto.nullable) = false,
-      (gogoproto.customtype) = "ValidatorSet"
+message ValidatorSetChanges{
+    repeated ValidatorSetChange validator_set_changes = 1 [(gogoproto.nullable) = false];
+}
+
+message Delegation{
+    string operator_address = 1;
+
+    .tendermint.crypto.PublicKey validator_pk = 2 [(gogoproto.nullable) = false];
+  
+    string amount = 3 [
+        (cosmos_proto.scalar)  = "cosmos.Int",
+        (gogoproto.customtype) = "Int",
+        (gogoproto.nullable)   = false
     ];
 }

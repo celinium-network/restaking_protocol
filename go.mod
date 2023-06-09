@@ -13,6 +13,7 @@ require (
 	github.com/cosmos/gogoproto v1.4.8
 	github.com/cosmos/ibc-go/v7 v7.0.0
 	github.com/gogo/protobuf v1.3.2
+	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.3
 	github.com/gorilla/mux v1.8.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
@@ -20,6 +21,7 @@ require (
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.2
+	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 	google.golang.org/genproto/googleapis/api v0.0.0-20230530153820-e85fd2cbaebc
 	google.golang.org/grpc v1.55.0
 	google.golang.org/protobuf v1.30.0
@@ -77,7 +79,6 @@ require (
 	github.com/gogo/googleapis v1.4.1 // indirect
 	github.com/golang/glog v1.1.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
-	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.1.2 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
@@ -146,7 +147,6 @@ require (
 	go.etcd.io/bbolt v1.3.7 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	golang.org/x/crypto v0.7.0 // indirect
-	golang.org/x/exp v0.0.0-20230321023759-10a507213a29 // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/oauth2 v0.8.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect

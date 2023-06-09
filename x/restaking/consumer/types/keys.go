@@ -12,3 +12,23 @@ const (
 
 	QuerierRoute = ModuleName
 )
+
+const (
+	ValidatorSetUpdateIDKey = iota
+
+	ValidatorSetChangeSet
+
+	CoordinatorChannelID
+)
+
+func GetValidatorSetUpdateIDKey() []byte {
+	return []byte{ValidatorSetUpdateIDKey}
+}
+
+func GetPendingValidatorChangeSetKey() []byte {
+	return []byte{ValidatorSetChangeSet}
+}
+
+func GetCoordinatorChannelIDKey() []byte {
+	return []byte{CoordinatorChannelID}
+}

@@ -1,19 +1,16 @@
 package keeper
 
 import (
-	"bytes"
-	"fmt"
-
-	tmtypes "github.com/cometbft/cometbft/types"
+	"strings"
 
 	errorsmod "cosmossdk.io/errors"
+	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
-	ibctransferkeeper "github.com/cosmos/ibc-go/v7/modules/apps/transfer/keeper"
 	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
 	conntypes "github.com/cosmos/ibc-go/v7/modules/core/03-connection/types"
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
@@ -29,24 +26,26 @@ type Keeper struct {
 	storeKey     storetypes.StoreKey
 	cdc          codec.Codec
 	paramSpace   paramtypes.Subspace
-	scopedKeeper ibcexported.ScopedKeeper
+	scopedKeeper restaking.ScopedKeeper
+	bankKeeper   restaking.BankKeeper
 
 	channelKeeper     restaking.ChannelKeeper
 	portKeeper        restaking.PortKeeper
 	connectionKeeper  restaking.ConnectionKeeper
 	clientKeeper      restaking.ClientKeeper
-	ibcTransferKeeper ibctransferkeeper.Keeper
+	ibcTransferKeeper restaking.IBCTransferKeeper
 }
 
 func NewKeeper(
 	cdc codec.Codec,
 	storeKey storetypes.StoreKey,
-	scopedKeeper ibcexported.ScopedKeeper,
+	scopedKeeper restaking.ScopedKeeper,
+	bankKeeper restaking.BankKeeper,
 	channelKeeper restaking.ChannelKeeper,
 	portKeeper restaking.PortKeeper,
 	connectionKeeper restaking.ConnectionKeeper,
 	clientKeeper restaking.ClientKeeper,
-	ibcTransferKeeper ibctransferkeeper.Keeper,
+	ibcTransferKeeper restaking.IBCTransferKeeper,
 ) Keeper {
 	// set KeyTable if it has not already been set
 	// if !paramSpace.HasKeyTable() {
@@ -57,6 +56,7 @@ func NewKeeper(
 		storeKey:          storeKey,
 		cdc:               cdc,
 		scopedKeeper:      scopedKeeper,
+		bankKeeper:        bankKeeper,
 		channelKeeper:     channelKeeper,
 		portKeeper:        portKeeper,
 		connectionKeeper:  connectionKeeper,
@@ -79,10 +79,18 @@ func (k Keeper) SetConsumerClientID(ctx sdk.Context, chainID, clientID string) {
 	store.Set(types.ConsumerClientIDKey(chainID), []byte(clientID))
 }
 
-func (k Keeper) SetConsumerClientValidatorSet(ctx sdk.Context, chainID string, valSet restaking.ValidatorSet) {
+func (k Keeper) SetConsumerClientIDToChannel(ctx sdk.Context, clientID, channelID string) {
 	store := ctx.KVStore(k.storeKey)
-	bz := k.cdc.MustMarshal(&valSet)
-	store.Set(types.ConsumerValidatorSetKey(chainID), bz)
+	store.Set(types.ConsumerClientIDKey(clientID), []byte(channelID))
+}
+
+func (k Keeper) GetConsumerClientIDToChannel(ctx sdk.Context, clientID string) (string, bool) {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.ConsumerClientIDKey(clientID))
+	if bz == nil {
+		return "", false
+	}
+	return string(bz), true
 }
 
 func (k Keeper) SetConsumerAdditionProposal(ctx sdk.Context, prop *types.ConsumerAdditionProposal) {
@@ -191,34 +199,169 @@ func (k Keeper) GetUnderlyingConnection(ctx sdk.Context, srcPortID, srcChannelID
 	return channel.ConnectionHops[0], nil
 }
 
-func (k Keeper) ParseCounterPartyVersion(version string) (*restaking.CounterPartyVersion, error) {
-	var cpv restaking.CounterPartyVersion
-	err := k.cdc.Unmarshal([]byte(version), &cpv)
+func (k Keeper) GetConsumerClientIDByChannel(ctx sdk.Context, srcPortID, srcChannelID string) (string, error) {
+	connectionID, err := k.GetUnderlyingConnection(ctx, srcPortID, srcChannelID)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return &cpv, nil
+	clientID, _, err := k.GetUnderlyingClient(ctx, connectionID)
+	if err != nil {
+		return "", err
+	}
+	return clientID, nil
 }
 
-func (k Keeper) VerifyConsumerValidatorSet(ctx sdk.Context, clientID string, valSet restaking.ValidatorSet) error {
-	consensusState, found := k.clientKeeper.GetLatestClientConsensusState(ctx, clientID)
-	if !found {
-		return fmt.Errorf("client consensus status is not exist %s", clientID)
+func (k Keeper) GetConsumerValidator(ctx sdk.Context, clientID string) ([]abci.ValidatorUpdate, bool) {
+	var vus types.ConsumerValidatorUpdates
+
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.ConsumerValidatorSetKey(clientID))
+	if bz == nil {
+		return nil, false
 	}
 
-	tmConsensusState, ok := consensusState.(*ibctm.ConsensusState)
-	if !ok {
-		return fmt.Errorf("client consensus must be kind of tendermint %s", clientID)
+	k.cdc.MustUnmarshal(bz, &vus)
+
+	return vus.ValidatorUpdates, true
+}
+
+func (k Keeper) SetConsumerValidator(ctx sdk.Context, clientID string, vus abci.ValidatorUpdates) {
+	vsc := types.ConsumerValidatorUpdates{
+		ValidatorUpdates: vus,
 	}
 
-	tmValSet, err := tmtypes.ValidatorSetFromProto(&valSet)
-	if err != nil {
+	bz := k.cdc.MustMarshal(&vsc)
+	store := ctx.KVStore(k.storeKey)
+
+	store.Set(types.ConsumerValidatorSetKey(clientID), bz)
+}
+
+func (k Keeper) SetConsumerRestakingToken(ctx sdk.Context, clientID string, tokens []string) {
+	store := ctx.KVStore(k.storeKey)
+	store.Set(types.ConsumerRestakingTokensKey(clientID), []byte(strings.Join(tokens, types.StringListSplitter)))
+}
+
+func (k Keeper) GetConsumerRestakingToken(ctx sdk.Context, clientID string) []string {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.ConsumerRestakingTokensKey(clientID))
+
+	return strings.Split(string(bz), types.StringListSplitter)
+}
+
+func (k Keeper) SetConsumerRewardToken(ctx sdk.Context, clientID string, tokens []string) {
+	store := ctx.KVStore(k.storeKey)
+	store.Set(types.ConsumerRewardTokensKey(clientID), []byte(strings.Join(tokens, types.StringListSplitter)))
+}
+
+func (k Keeper) GetConsumerRewardToken(ctx sdk.Context, clientID string) []string {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.ConsumerRewardTokensKey(clientID))
+
+	return strings.Split(string(bz), types.StringListSplitter)
+}
+
+func (k Keeper) SetOperator(ctx sdk.Context, operator *types.Operator) {
+	store := ctx.KVStore(k.storeKey)
+	bz := k.cdc.MustMarshal(operator)
+	store.Set(types.OperatorKey(operator.OperatorAddress), bz)
+}
+
+func (k Keeper) GetOperator(ctx sdk.Context, addr string) (*types.Operator, bool) {
+	store := ctx.KVStore(k.storeKey)
+
+	bz := store.Get(types.OperatorKey(addr))
+	if bz == nil {
+		return nil, false
+	}
+	var operator types.Operator
+	k.cdc.MustUnmarshal(bz, &operator)
+
+	return &operator, true
+}
+
+func (k Keeper) GetAllOperators(ctx sdk.Context) (operators []types.Operator) {
+	store := ctx.KVStore(k.storeKey)
+	iterator := sdk.KVStorePrefixIterator(store, []byte{types.OperatorPrefix})
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		bz := iterator.Value()
+		var op types.Operator
+		k.cdc.MustUnmarshal(bz, &op)
+		operators = append(operators, op)
+	}
+
+	return operators
+}
+
+// TODO convert blockHeight to epoch?
+func (k Keeper) GetOperatorDelegateRecord(ctx sdk.Context, blockHeight uint64, operatorAddr string) (*types.OperatorDelegationRecord, bool) {
+	store := ctx.KVStore(k.storeKey)
+
+	bz := store.Get(types.DelegationRecordKey(blockHeight, operatorAddr))
+	if bz == nil {
+		return nil, false
+	}
+	var record types.OperatorDelegationRecord
+	k.cdc.Unmarshal(bz, &record)
+
+	return &record, true
+}
+
+func (k Keeper) SetOperatorDelegateRecord(ctx sdk.Context, blockHeight uint64, record *types.OperatorDelegationRecord) {
+	store := ctx.KVStore(k.storeKey)
+	bz := k.cdc.MustMarshal(record)
+	store.Set(types.DelegationRecordKey(blockHeight, record.OperatorAddress), bz)
+}
+
+func (k Keeper) SetDelegation(ctx sdk.Context, ownerAddr, operatorAddr string, delegation *types.Delegation) {
+	store := ctx.KVStore(k.storeKey)
+	bz := k.cdc.MustMarshal(delegation)
+
+	store.Set(types.OperatorSharesKey(ownerAddr, operatorAddr), bz)
+}
+
+func (k Keeper) GetDelegation(ctx sdk.Context, ownerAddr, operatorAddr string) (*types.Delegation, bool) {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.OperatorSharesKey(ownerAddr, operatorAddr))
+	if bz == nil {
+		return nil, false
+	}
+
+	var delegation types.Delegation
+	k.cdc.MustUnmarshal(bz, &delegation)
+	return &delegation, true
+}
+
+func (k Keeper) sendCoinsFromAccountToAccount(
+	ctx sdk.Context,
+	senderAddr sdk.AccAddress,
+	receiverAddr sdk.AccAddress,
+	amt sdk.Coins,
+) error {
+	if err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, senderAddr, types.ModuleName, amt); err != nil {
 		return err
 	}
 
-	if !bytes.Equal(tmConsensusState.NextValidatorsHash, tmValSet.Hash()) {
-		return fmt.Errorf("validator hash mismatch %s", clientID)
-	}
+	return k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, receiverAddr, amt)
+}
 
-	return nil
+func (k Keeper) SetCallback(ctx sdk.Context, channelID, portID string, seq uint64, callback types.IBCCallback) {
+	store := ctx.KVStore(k.storeKey)
+	bz := k.cdc.MustMarshal(&callback)
+	store.Set(types.IBCCallbackKey(channelID, portID, seq), bz)
+}
+
+func (k Keeper) GetCallback(ctx sdk.Context, channelID, portID string, seq uint64) (*types.IBCCallback, bool) {
+	var callback types.IBCCallback
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.IBCCallbackKey(channelID, portID, seq))
+	if bz == nil {
+		return nil, false
+	}
+	err := k.cdc.Unmarshal(bz, &callback)
+	if err != nil {
+		return nil, false
+	}
+	return &callback, true
 }

@@ -1,6 +1,8 @@
 package coordinator
 
 import (
+	"fmt"
+
 	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
@@ -10,6 +12,7 @@ import (
 	"github.com/cosmos/ibc-go/v7/modules/core/exported"
 
 	"github.com/celinium-network/restaking_protocol/x/restaking/coordinator/keeper"
+	"github.com/celinium-network/restaking_protocol/x/restaking/coordinator/types"
 	restaking "github.com/celinium-network/restaking_protocol/x/restaking/types"
 )
 
@@ -105,14 +108,28 @@ func (am AppModule) OnChanOpenConfirm(ctx sdk.Context, portID string, channelID 
 		return err
 	}
 
+	proposal, found := am.keeper.GetConsumerAdditionProposal(ctx, tmClient.ChainId)
+	if !found {
+		return types.ErrAdditionalProposalNotFound
+	}
+
+	am.keeper.SetConsumerRestakingToken(ctx, clientID, proposal.RestakingTokens)
+	am.keeper.SetConsumerRewardToken(ctx, clientID, proposal.RewardTokens) // TODO maybe not useful
 	am.keeper.SetConsumerClientID(ctx, tmClient.ChainId, clientID)
+	am.keeper.SetConsumerClientIDToChannel(ctx, clientID, channelID)
+
 	am.keeper.DeleteConsumerAdditionProposal(ctx, tmClient.ChainId)
 
 	return nil
 }
 
 // OnAcknowledgementPacket implements types.IBCModule
-func (AppModule) OnAcknowledgementPacket(ctx sdk.Context, packet channeltypes.Packet, acknowledgement []byte, relayer sdk.AccAddress) error {
+func (AppModule) OnAcknowledgementPacket(
+	ctx sdk.Context,
+	packet channeltypes.Packet,
+	acknowledgement []byte,
+	relayer sdk.AccAddress,
+) error {
 	panic("unimplemented")
 }
 
@@ -127,8 +144,24 @@ func (AppModule) OnChanCloseInit(ctx sdk.Context, portID string, channelID strin
 }
 
 // OnRecvPacket implements types.IBCModule
-func (AppModule) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, relayer sdk.AccAddress) exported.Acknowledgement {
-	panic("unimplemented")
+func (am AppModule) OnRecvPacket(
+	ctx sdk.Context,
+	packet channeltypes.Packet,
+	relayer sdk.AccAddress,
+) exported.Acknowledgement {
+	var (
+		ack                        exported.Acknowledgement
+		consumerValidatorSetChange restaking.ValidatorSetChange
+	)
+
+	if err := am.cdc.Unmarshal(packet.Data, &consumerValidatorSetChange); err != nil {
+		errAck := channeltypes.NewErrorAcknowledgement(fmt.Errorf("cannot unmarshal CCV packet data"))
+		ack = &errAck
+	} else {
+		ack = am.keeper.OnRecvConsumerValidatorSetChange(ctx, packet, consumerValidatorSetChange)
+	}
+
+	return ack
 }
 
 // OnTimeoutPacket implements types.IBCModule
@@ -144,7 +177,8 @@ func validateRestakingChannelParams(
 	portID string,
 ) error {
 	if order != channeltypes.ORDERED {
-		return errorsmod.Wrapf(channeltypes.ErrInvalidChannelOrdering, "expected %s channel, got %s ", channeltypes.ORDERED, order)
+		return errorsmod.Wrapf(channeltypes.ErrInvalidChannelOrdering,
+			"expected %s channel, got %s ", channeltypes.ORDERED, order)
 	}
 
 	boundPort := keeper.GetPort(ctx)

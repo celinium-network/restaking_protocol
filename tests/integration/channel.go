@@ -14,7 +14,30 @@ func (s *IntegrationTestSuite) TestChannelInit() {
 	ctx := s.rsCoordinatorChain.GetContext()
 	app.RestakingCoordinatorKeeper.SetConsumerAdditionProposal(ctx, proposal)
 
-	s.coordinator.Setup(s.path)
+	s.coordinator.SetupConnections(s.path)
+
+	err := s.path.EndpointA.ChanOpenInit()
+	s.Require().NoError(err)
+
+	err = s.path.EndpointB.ChanOpenTry()
+	s.Require().NoError(err)
+
+	events := s.ChanOpenAck(s.path.EndpointA)
+
+	// Consumer send validatorSet information to coordinator.
+	// So we must get ibc packet from events which emit in `EndBlock` and relay it to coordinator
+	err = s.path.EndpointB.ChanOpenConfirm()
+	s.Require().NoError(err)
+
+	// err = s.path.EndpointA.UpdateClient()
+	// s.Require().NoError(err)
+
+	// err = s.path.EndpointB.UpdateClient()
+	// s.Require().NoError(err)
+
+	consumerUserAddr := s.path.EndpointA.Chain.SenderAccount.GetAddress()
+
+	s.RelayIBCPacket(s.path, events, consumerUserAddr.String())
 
 	ctx = s.rsCoordinatorChain.GetContext()
 	_, found := app.RestakingCoordinatorKeeper.GetConsumerAdditionProposal(ctx, s.rsConsumerChain.ChainID)
@@ -36,7 +59,7 @@ func CreateConsumerAdditionalProposal(path *ibctesting.Path, consumerChain *ibct
 		UnbondingPeriod:       tmClientCfg.UnbondingPeriod,
 		TimeoutPeriod:         tmClientCfg.TrustingPeriod,
 		TransferTimeoutPeriod: tmClientCfg.MaxClockDrift,
-		AvailableCoinDenoms:   []string{"stake"},
-		RewardCoinDenom:       []string{"stake"},
+		RestakingTokens:       []string{"stake"},
+		RewardTokens:          []string{"stake"},
 	}
 }

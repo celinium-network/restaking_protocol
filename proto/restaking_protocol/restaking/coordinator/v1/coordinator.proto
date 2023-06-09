@@ -6,6 +6,8 @@ import "gogoproto/gogo.proto";
 import "google/protobuf/duration.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos_proto/cosmos.proto";
+import "tendermint/abci/types.proto";
+import "tendermint/crypto/keys.proto";
 
 option go_package = "restaking_protocol/x/restaking/coordinator/types";
 
@@ -28,9 +30,9 @@ message ConsumerAdditionProposal{
     google.protobuf.Duration transfer_timeout_period = 6
         [(gogoproto.nullable) = false, (gogoproto.stdduration) = true];
 
-    repeated string available_coin_denoms = 7;
+    repeated string restaking_tokens = 7;
 
-    repeated string reward_coin_denom = 8;
+    repeated string reward_tokens = 8;
 }
 
 message Operator{
@@ -38,9 +40,10 @@ message Operator{
 
     string operator_address = 2[(cosmos_proto.scalar) = "cosmos.AddressString"]; 
 
-    cosmos.base.v1beta1.Coin restaked_tokens = 3 [
-        (gogoproto.nullable) = false,
-        (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coin"
+    string restaked_amount = 3 [
+        (cosmos_proto.scalar)  = "cosmos.Int",
+        (gogoproto.customtype) = "Int",
+        (gogoproto.nullable)   = false
     ];
   
     string shares = 4 [
@@ -49,7 +52,9 @@ message Operator{
         (gogoproto.nullable)   = false
     ];
 
-    repeated string validators = 5 [(cosmos_proto.scalar) = "cosmos.AddressString"]; 
+    repeated OperatedValidator operated_validators = 5 [(gogoproto.nullable)   = false] ;
+
+    string owner = 6 [(cosmos_proto.scalar) = "cosmos.AddressString"]; 
 }
 
 message Params{
@@ -58,3 +63,54 @@ message Params{
     ];
 }
 
+message ConsumerValidatorUpdates{
+    repeated .tendermint.abci.ValidatorUpdate validator_updates = 1 [
+      (gogoproto.nullable) = false,
+      (gogoproto.moretags) = "yaml:\"validator_updates\""
+    ];
+}
+
+message OperatedValidator{
+    string chainID  = 1;
+
+    .tendermint.crypto.PublicKey validator_pk = 2 [(gogoproto.nullable) = false];
+}
+
+message OperatorDelegationRecord {
+    string operator_address = 1[(cosmos_proto.scalar) = "cosmos.AddressString"];
+    
+    string delegation_amount = 2 [
+        (cosmos_proto.scalar)  = "cosmos.Int",
+        (gogoproto.customtype) = "Int",
+        (gogoproto.nullable)   = false
+    ];
+
+    uint32 status = 3 [
+        (gogoproto.customtype) = "OperatorDelegationRecordStatus",
+        (gogoproto.nullable)   = false
+    ];
+
+    repeated string ibcCallbackIds = 4;
+}
+
+message Delegation{
+    string delegator = 1[(cosmos_proto.scalar) = "cosmos.AddressString"];
+    
+    string operator = 2[(cosmos_proto.scalar) = "cosmos.AddressString"];
+    
+    string shares = 3 [
+        (cosmos_proto.scalar)  = "cosmos.Int",
+        (gogoproto.customtype) = "Int",
+        (gogoproto.nullable)   = false
+    ];
+}
+
+message IBCCallback{
+    // The type of the callback operation.
+    uint32 callType = 1 [
+        (gogoproto.customtype) = "CallType",
+        (gogoproto.nullable) = false
+    ];
+    // The arguments of the callback, serialized as a string.
+    string args = 2;
+}

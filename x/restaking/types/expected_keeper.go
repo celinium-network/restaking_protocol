@@ -1,8 +1,11 @@
 package types
 
 import (
+	"context"
 	"time"
 
+	abci "github.com/cometbft/cometbft/abci/types"
+	transfertype "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
 	conntypes "github.com/cosmos/ibc-go/v7/modules/core/03-connection/types"
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
@@ -51,6 +54,8 @@ type ScopedKeeper interface {
 }
 
 type StakingKeeper interface {
+	GetValidatorUpdates(ctx sdk.Context) []abci.ValidatorUpdate
+	UnbondingCanComplete(ctx sdk.Context, id uint64) error
 	UnbondingTime(ctx sdk.Context) time.Duration
 	GetValidatorByConsAddr(ctx sdk.Context, consAddr sdk.ConsAddress) (validator stakingtypes.Validator, found bool)
 	GetLastValidatorPower(ctx sdk.Context, operator sdk.ValAddress) (power int64)
@@ -61,8 +66,10 @@ type StakingKeeper interface {
 	GetValidator(ctx sdk.Context, addr sdk.ValAddress) (validator stakingtypes.Validator, found bool)
 	IterateLastValidatorPowers(ctx sdk.Context, cb func(addr sdk.ValAddress, power int64) (stop bool))
 	PowerReduction(ctx sdk.Context) math.Int
+	PutUnbondingOnHold(ctx sdk.Context, id uint64) error
 	IterateValidators(ctx sdk.Context, f func(index int64, validator stakingtypes.ValidatorI) (stop bool))
 	Validator(ctx sdk.Context, addr sdk.ValAddress) stakingtypes.ValidatorI
+	IsValidatorJailed(ctx sdk.Context, addr sdk.ConsAddress) bool
 	ValidatorByConsAddr(ctx sdk.Context, consAddr sdk.ConsAddress) stakingtypes.ValidatorI
 	Delegation(ctx sdk.Context, addr sdk.AccAddress, valAddr sdk.ValAddress) stakingtypes.DelegationI
 	MaxValidators(ctx sdk.Context) uint32
@@ -91,9 +98,18 @@ type BankKeeper interface {
 	GetBalance(ctx sdk.Context, addr sdk.AccAddress, denom string) sdk.Coin
 	GetAllBalances(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
 	SendCoinsFromModuleToModule(ctx sdk.Context, senderModule, recipientModule string, amt sdk.Coins) error
+	SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
+	SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
 }
 
 // AccountKeeper defines the expected account keeper used for simulations
 type AccountKeeper interface {
 	GetModuleAccount(ctx sdk.Context, name string) auth.ModuleAccountI
+}
+
+type IBCTransferKeeper interface {
+	Transfer(
+		context.Context,
+		*transfertype.MsgTransfer,
+	) (*transfertype.MsgTransferResponse, error)
 }
