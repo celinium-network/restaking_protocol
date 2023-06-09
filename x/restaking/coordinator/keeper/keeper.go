@@ -11,7 +11,6 @@ import (
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
-	ibctransferkeeper "github.com/cosmos/ibc-go/v7/modules/apps/transfer/keeper"
 	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
 	conntypes "github.com/cosmos/ibc-go/v7/modules/core/03-connection/types"
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
@@ -27,26 +26,26 @@ type Keeper struct {
 	storeKey     storetypes.StoreKey
 	cdc          codec.Codec
 	paramSpace   paramtypes.Subspace
-	scopedKeeper ibcexported.ScopedKeeper
+	scopedKeeper restaking.ScopedKeeper
 	bankKeeper   restaking.BankKeeper
 
 	channelKeeper     restaking.ChannelKeeper
 	portKeeper        restaking.PortKeeper
 	connectionKeeper  restaking.ConnectionKeeper
 	clientKeeper      restaking.ClientKeeper
-	ibcTransferKeeper ibctransferkeeper.Keeper
+	ibcTransferKeeper restaking.IBCTransferKeeper
 }
 
 func NewKeeper(
 	cdc codec.Codec,
 	storeKey storetypes.StoreKey,
-	scopedKeeper ibcexported.ScopedKeeper,
+	scopedKeeper restaking.ScopedKeeper,
 	bankKeeper restaking.BankKeeper,
 	channelKeeper restaking.ChannelKeeper,
 	portKeeper restaking.PortKeeper,
 	connectionKeeper restaking.ConnectionKeeper,
 	clientKeeper restaking.ClientKeeper,
-	ibcTransferKeeper ibctransferkeeper.Keeper,
+	ibcTransferKeeper restaking.IBCTransferKeeper,
 ) Keeper {
 	// set KeyTable if it has not already been set
 	// if !paramSpace.HasKeyTable() {

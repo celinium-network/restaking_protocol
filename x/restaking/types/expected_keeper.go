@@ -1,9 +1,11 @@
 package types
 
 import (
+	"context"
 	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
+	transfertype "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
 	conntypes "github.com/cosmos/ibc-go/v7/modules/core/03-connection/types"
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
@@ -103,4 +105,11 @@ type BankKeeper interface {
 // AccountKeeper defines the expected account keeper used for simulations
 type AccountKeeper interface {
 	GetModuleAccount(ctx sdk.Context, name string) auth.ModuleAccountI
+}
+
+type IBCTransferKeeper interface {
+	Transfer(
+		context.Context,
+		*transfertype.MsgTransfer,
+	) (*transfertype.MsgTransferResponse, error)
 }
