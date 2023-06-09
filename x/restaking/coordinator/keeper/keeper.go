@@ -279,6 +279,21 @@ func (k Keeper) GetOperator(ctx sdk.Context, addr string) (*types.Operator, bool
 	return &operator, true
 }
 
+func (k Keeper) GetAllOperators(ctx sdk.Context) (operators []types.Operator) {
+	store := ctx.KVStore(k.storeKey)
+	iterator := sdk.KVStorePrefixIterator(store, []byte{types.OperatorPrefix})
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		bz := iterator.Value()
+		var op types.Operator
+		k.cdc.MustUnmarshal(bz, &op)
+		operators = append(operators, op)
+	}
+
+	return operators
+}
+
 // TODO convert blockHeight to epoch?
 func (k Keeper) GetOperatorDelegateRecord(ctx sdk.Context, blockHeight uint64, operatorAddr string) (*types.OperatorDelegationRecord, bool) {
 	store := ctx.KVStore(k.storeKey)
@@ -335,4 +350,18 @@ func (k Keeper) SetCallback(ctx sdk.Context, channelID, portID string, seq uint6
 	store := ctx.KVStore(k.storeKey)
 	bz := k.cdc.MustMarshal(&callback)
 	store.Set(types.IBCCallbackKey(channelID, portID, seq), bz)
+}
+
+func (k Keeper) GetCallback(ctx sdk.Context, channelID, portID string, seq uint64) (*types.IBCCallback, bool) {
+	var callback types.IBCCallback
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.IBCCallbackKey(channelID, portID, seq))
+	if bz == nil {
+		return nil, false
+	}
+	err := k.cdc.Unmarshal(bz, &callback)
+	if err != nil {
+		return nil, false
+	}
+	return &callback, true
 }

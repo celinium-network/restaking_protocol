@@ -55,7 +55,7 @@ func (k Keeper) RegisterOperator(ctx sdk.Context, msg types.MsgRegisterOperator)
 
 	operator := types.Operator{
 		RestakingDenom:     msg.RestakingDenom,
-		OperatorAddress:    operatorAccount.String(),
+		OperatorAddress:    operatorAccount.Address,
 		RestakedAmount:     math.ZeroInt(),
 		Shares:             math.ZeroInt(),
 		OperatedValidators: operatedValidators,
@@ -102,7 +102,13 @@ func (k Keeper) Delegate(ctx sdk.Context, delegator sdk.AccAddress, operatorAccA
 		}
 	}
 
-	addedShares := operator.Shares.Mul(amount).Quo(operator.RestakedAmount.Add(amount))
+	var addedShares math.Int
+	if operator.RestakedAmount.IsZero() {
+		addedShares = amount
+	} else {
+		addedShares = operator.Shares.Mul(amount).Quo(operator.RestakedAmount.Add(amount))
+	}
+
 	operator.Shares = operator.Shares.Add(addedShares)
 
 	delegatorRecord.DelegationAmount = delegatorRecord.DelegationAmount.Add(amount)
