@@ -5,6 +5,7 @@ package restaking_protocol.restaking.v1;
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "tendermint/abci/types.proto";
+import "tendermint/crypto/keys.proto";
 
 option go_package = "restaking_protocol/x/restaking/types";
 
@@ -19,4 +20,16 @@ message ValidatorSetChange{
 
 message ValidatorSetChanges{
     repeated ValidatorSetChange validator_set_changes = 1 [(gogoproto.nullable) = false];
+}
+
+message Delegation{
+    string operator_address = 1;
+
+    .tendermint.crypto.PublicKey validator_pk = 2 [(gogoproto.nullable) = false];
+  
+    string amount = 3 [
+        (cosmos_proto.scalar)  = "cosmos.Int",
+        (gogoproto.customtype) = "Int",
+        (gogoproto.nullable)   = false
+    ];
 }

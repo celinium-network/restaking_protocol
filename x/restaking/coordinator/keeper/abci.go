@@ -91,7 +91,28 @@ func (k Keeper) InterChainDelegate(ctx sdk.Context, operator *types.Operator, am
 
 		// TODO correct TIMEOUT
 		timeout := time.Minute * 10
-		seq, err := restaking.SendIBCPacket(ctx, k.scopedKeeper, k.channelKeeper, channel, restaking.CoordinatorPortID, nil, timeout)
+
+		restakingDelegation := restaking.Delegation{
+			OperatorAddress: operator.OperatorAddress,
+			ValidatorPk:     va.ValidatorPk,
+			Amount:          amount,
+		}
+
+		restakingDelegationBz, err := k.cdc.Marshal(&restakingDelegation)
+		if err != nil {
+			ctx.Logger().Error("marshal restaking.Delegation has err: ", err)
+			// TODO continue ?
+			continue
+		}
+		seq, err := restaking.SendIBCPacket(
+			ctx,
+			k.scopedKeeper,
+			k.channelKeeper,
+			channel,
+			restaking.CoordinatorPortID,
+			restakingDelegationBz,
+			timeout,
+		)
 		if err != nil {
 			ctx.Logger().Error("send ibc packet has error:", err)
 		}
