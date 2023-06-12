@@ -58,11 +58,11 @@ func (k Keeper) ProcessPendingOperatorDelegationRecord(ctx sdk.Context) {
 			ctx.Logger().Error("operator not found, operator address: ", key)
 			continue
 		}
-		k.InterChainDelegate(ctx, operator, amount)
+		k.SendDelegation(ctx, operator, amount)
 	}
 }
 
-func (k Keeper) InterChainDelegate(ctx sdk.Context, operator *types.Operator, amount math.Int) {
+func (k Keeper) SendDelegation(ctx sdk.Context, operator *types.Operator, amount math.Int) {
 	if amount.IsZero() {
 		return
 	}
@@ -92,13 +92,20 @@ func (k Keeper) InterChainDelegate(ctx sdk.Context, operator *types.Operator, am
 		// TODO correct TIMEOUT
 		timeout := time.Minute * 10
 
-		restakingDelegation := restaking.Delegation{
+		delegationPacket := restaking.DelegationPacket{
 			OperatorAddress: operator.OperatorAddress,
 			ValidatorPk:     va.ValidatorPk,
 			Amount:          amount,
 		}
 
-		restakingDelegationBz, err := k.cdc.Marshal(&restakingDelegation)
+		restakingPacket, err := restaking.BuildRestakingProtocolPacket(k.cdc, delegationPacket)
+		if err != nil {
+			ctx.Logger().Error("marshal restaking.Delegation has err: ", err)
+			// TODO continue ?
+			continue
+		}
+
+		restakingProtocolPacketBz, err := k.cdc.Marshal(restakingPacket)
 		if err != nil {
 			ctx.Logger().Error("marshal restaking.Delegation has err: ", err)
 			// TODO continue ?
@@ -110,7 +117,7 @@ func (k Keeper) InterChainDelegate(ctx sdk.Context, operator *types.Operator, am
 			k.channelKeeper,
 			channel,
 			restaking.CoordinatorPortID,
-			restakingDelegationBz,
+			restakingProtocolPacketBz,
 			timeout,
 		)
 		if err != nil {

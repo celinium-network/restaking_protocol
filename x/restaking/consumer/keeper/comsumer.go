@@ -79,3 +79,4 @@ func (k Keeper) SendValidatorSetChangePackets(ctx sdk.Context) {
 
 	k.DeletePendingVSCPackets(ctx)
 }
+

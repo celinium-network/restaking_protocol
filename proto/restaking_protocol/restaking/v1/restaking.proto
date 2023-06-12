@@ -22,7 +22,7 @@ message ValidatorSetChanges{
     repeated ValidatorSetChange validator_set_changes = 1 [(gogoproto.nullable) = false];
 }
 
-message Delegation{
+message DelegationPacket{
     string operator_address = 1;
 
     .tendermint.crypto.PublicKey validator_pk = 2 [(gogoproto.nullable) = false];
@@ -32,4 +32,14 @@ message Delegation{
         (gogoproto.customtype) = "Int",
         (gogoproto.nullable)   = false
     ];
+}
+
+message RestakingPacket{
+    enum PacketType{
+        Delegation = 0;
+    }
+    
+    PacketType type = 1;
+
+    string data = 2;
 }
