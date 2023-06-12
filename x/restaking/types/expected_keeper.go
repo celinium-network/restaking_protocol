@@ -18,6 +18,8 @@ import (
 	evidencetypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+
+	multistakingtypes "github.com/celinium-network/restaking_protocol/x/multistaking/types"
 )
 
 // ChannelKeeper defines the expected IBC channel keeper
@@ -112,4 +114,8 @@ type IBCTransferKeeper interface {
 		context.Context,
 		*transfertype.MsgTransfer,
 	) (*transfertype.MsgTransferResponse, error)
+}
+
+type MultiStakingKeeper interface {
+	MultiStakingDelegate(ctx sdk.Context, msg multistakingtypes.MsgMultiStakingDelegate) error
 }

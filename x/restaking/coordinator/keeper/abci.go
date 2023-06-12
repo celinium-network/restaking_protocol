@@ -62,6 +62,7 @@ func (k Keeper) ProcessPendingOperatorDelegationRecord(ctx sdk.Context) {
 	}
 }
 
+// TODO change amount type from math.Int to sdk.Coin
 func (k Keeper) SendDelegation(ctx sdk.Context, operator *types.Operator, amount math.Int) {
 	if amount.IsZero() {
 		return
@@ -95,7 +96,7 @@ func (k Keeper) SendDelegation(ctx sdk.Context, operator *types.Operator, amount
 		delegationPacket := restaking.DelegationPacket{
 			OperatorAddress: operator.OperatorAddress,
 			ValidatorPk:     va.ValidatorPk,
-			Amount:          amount,
+			Amount:          sdk.NewCoin(operator.RestakingDenom, amount),
 		}
 
 		restakingPacket, err := restaking.BuildRestakingProtocolPacket(k.cdc, delegationPacket)

@@ -2,12 +2,21 @@ package keeper
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
+	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
+	"github.com/cosmos/ibc-go/v7/modules/core/exported"
+
+	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
+
+	multistakingtypes "github.com/celinium-network/restaking_protocol/x/multistaking/types"
+	"github.com/celinium-network/restaking_protocol/x/restaking/consumer/types"
 	restaking "github.com/celinium-network/restaking_protocol/x/restaking/types"
 )
 
@@ -67,9 +76,6 @@ func (k Keeper) SendValidatorSetChangePackets(ctx sdk.Context) {
 		_, err := restaking.SendIBCPacket(ctx, k.scopedKeeper, k.channelKeeper, channelID, restaking.ConsumerPortID, bz, time.Minute*10)
 		if err != nil {
 			if clienttypes.ErrClientNotActive.Is(err) {
-				// IBC client is expired!
-				// leave the packet data stored to be sent once the client is upgraded
-				// the client cannot expire during iteration (in the middle of a block)
 				ctx.Logger().Debug("IBC client is expired, cannot send VSC, leaving packet data stored:")
 				return
 			}
@@ -80,3 +86,77 @@ func (k Keeper) SendValidatorSetChangePackets(ctx sdk.Context) {
 	k.DeletePendingVSCPackets(ctx)
 }
 
+func (k Keeper) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, data *restaking.RestakingPacket) exported.Acknowledgement {
+	var ack exported.Acknowledgement
+
+	switch data.Type {
+	case 0:
+		var restakingDelegatePacket restaking.DelegationPacket
+		k.cdc.MustUnmarshal(packet.Data, &restakingDelegatePacket)
+		k.HandleRestakingDelegationPacket(ctx, packet, &restakingDelegatePacket)
+	default:
+		return channeltypes.NewErrorAcknowledgement(fmt.Errorf("unknown restaking protocol packet type"))
+	}
+
+	return ack
+}
+
+func (k Keeper) HandleRestakingDelegationPacket(
+	ctx sdk.Context,
+	packet channeltypes.Packet,
+	delegation *restaking.DelegationPacket,
+) error {
+	channelID, err := k.GetCoordinatorChannelID(ctx)
+	if err != nil {
+		return err
+	}
+
+	if strings.Compare(packet.SourceChannel, channelID) != 0 {
+		return types.ErrUnknownPacketChannel
+	}
+
+	validatorPkBz := k.cdc.MustMarshal(&delegation.ValidatorPk)
+	operatorLocalAddress, found := k.GetOperatorLocalAddress(ctx, delegation.OperatorAddress, validatorPkBz)
+	if !found {
+		operatorLocalAccount := k.generateOperatorAccount(
+			ctx,
+			packet.SourceChannel,
+			packet.SourcePort,
+			delegation.OperatorAddress,
+			validatorPkBz,
+		)
+
+		operatorLocalAddress = operatorLocalAccount.GetAddress()
+	}
+
+	sdkVaPk, err := cryptocodec.FromTmProtoPublicKey(delegation.ValidatorPk)
+	if err != nil {
+		return err
+	}
+
+	valAddress := sdk.ValAddress(sdkVaPk.Address().Bytes())
+
+	return k.multiStakingKeeper.MultiStakingDelegate(ctx, multistakingtypes.MsgMultiStakingDelegate{
+		DelegatorAddress: operatorLocalAddress.String(),
+		ValidatorAddress: valAddress.String(),
+		Amount:           delegation.Amount,
+	})
+}
+
+func (k Keeper) generateOperatorAccount(
+	ctx sdk.Context,
+	channel, portID, operatorAddress string,
+	validatorPk []byte,
+) authtypes.AccountI {
+	header := ctx.BlockHeader()
+
+	buf := []byte(types.ModuleName)
+	buf = append(buf, header.AppHash...)
+	buf = append(buf, header.DataHash...)
+	buf = append(buf, []byte(channel)...)
+	buf = append(buf, []byte(portID)...)
+	buf = append(buf, []byte(operatorAddress)...)
+	buf = append(buf, validatorPk...)
+
+	return authtypes.NewEmptyModuleAccount(string(buf), authtypes.Staking)
+}

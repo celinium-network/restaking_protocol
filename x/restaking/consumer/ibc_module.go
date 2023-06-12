@@ -84,8 +84,14 @@ func (AppModule) OnChanOpenTry(
 }
 
 // OnRecvPacket implements types.IBCModule
-func (AppModule) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, relayer sdk.AccAddress) exported.Acknowledgement {
-	return nil
+func (am AppModule) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, relayer sdk.AccAddress) exported.Acknowledgement {
+	var restakingProtocolPacket restaking.RestakingPacket
+	err := am.cdc.Unmarshal(packet.Data, &restakingProtocolPacket)
+	if err != nil {
+		return channeltypes.NewErrorAcknowledgement(err)
+	}
+
+	return am.keeper.OnRecvPacket(ctx, packet, &restakingProtocolPacket)
 }
 
 // OnTimeoutPacket implements types.IBCModule

@@ -6,9 +6,9 @@ import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "tendermint/abci/types.proto";
 import "tendermint/crypto/keys.proto";
+import "cosmos/base/v1beta1/coin.proto";
 
 option go_package = "restaking_protocol/x/restaking/types";
-
 
 message ValidatorSetChange{
     repeated .tendermint.abci.ValidatorUpdate validator_updates = 1 [
@@ -27,10 +27,9 @@ message DelegationPacket{
 
     .tendermint.crypto.PublicKey validator_pk = 2 [(gogoproto.nullable) = false];
   
-    string amount = 3 [
-        (cosmos_proto.scalar)  = "cosmos.Int",
-        (gogoproto.customtype) = "Int",
-        (gogoproto.nullable)   = false
+    cosmos.base.v1beta1.Coin amount = 3[ 
+        (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coin",
+        (gogoproto.nullable) = false
     ];
 }
 

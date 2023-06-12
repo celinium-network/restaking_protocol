@@ -33,6 +33,8 @@ type Keeper struct {
 	slashingKeeper          restaking.SlashingKeeper
 	bankKeeper              restaking.BankKeeper
 	authKeeper              restaking.AccountKeeper
+
+	multiStakingKeeper restaking.MultiStakingKeeper
 }
 
 func NewKeeper(
@@ -48,6 +50,7 @@ func NewKeeper(
 	slashingKeeper restaking.SlashingKeeper,
 	bankKeeper restaking.BankKeeper,
 	authKeeper restaking.AccountKeeper,
+	multiStakingKeeper restaking.MultiStakingKeeper,
 ) Keeper {
 	k := Keeper{
 		storeKey:                storeKey,
@@ -62,6 +65,7 @@ func NewKeeper(
 		slashingKeeper:          slashingKeeper,
 		bankKeeper:              bankKeeper,
 		authKeeper:              authKeeper,
+		multiStakingKeeper:      multiStakingKeeper,
 	}
 	return k
 }
@@ -168,4 +172,24 @@ func (k Keeper) GetCoordinatorChannelID(ctx sdk.Context) (string, error) {
 		return "", types.ErrRestakingChannelNotFound
 	}
 	return string(bz), nil
+}
+
+func (k Keeper) GetOperatorLocalAddress(ctx sdk.Context, operatorAddress string, validatorPk []byte) (addr sdk.AccAddress, found bool) {
+	store := ctx.KVStore(k.storeKey)
+
+	bz := store.Get(types.OperatorAddressKey(validatorPk, operatorAddress))
+	if bz == nil {
+		return addr, false
+	}
+	addr, err := sdk.AccAddressFromBech32(string(bz))
+	if err != nil {
+		return addr, false
+	}
+
+	return addr, true
+}
+
+func (k Keeper) SetOperatorLocalAddress(ctx sdk.Context, operatorAddress string, validatorPk []byte, localAddress sdk.AccAddress) {
+	store := ctx.KVStore(k.storeKey)
+	store.Set(types.OperatorAddressKey(validatorPk, operatorAddress), []byte(localAddress.String()))
 }

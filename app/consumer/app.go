@@ -520,7 +520,7 @@ func New(
 		app.IBCKeeper.ChannelKeeper, &app.IBCKeeper.PortKeeper,
 		app.IBCKeeper.ConnectionKeeper, app.IBCKeeper.ClientKeeper,
 		app.TransferKeeper, app.StakingKeeper,
-		app.SlashingKeeper, app.BankKeeper, app.AccountKeeper)
+		app.SlashingKeeper, app.BankKeeper, app.AccountKeeper, app.MultiStakingKeeper)
 
 	restakingConsumerIBCModule := consumer.NewAppModule(appCodec, app.RestakingConsumerKeeper)
 
