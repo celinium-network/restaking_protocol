@@ -9,7 +9,7 @@ import (
 	rscoordinatortypes "github.com/celinium-network/restaking_protocol/x/restaking/coordinator/types"
 )
 
-func (s *IntegrationTestSuite) xTestChannelInit() {
+func (s *IntegrationTestSuite) TestChannelInit() {
 	proposal := CreateConsumerAdditionalProposal(s.path, s.rsConsumerChain)
 	app := getCoordinatorApp(s.rsCoordinatorChain)
 	ctx := s.rsCoordinatorChain.GetContext()

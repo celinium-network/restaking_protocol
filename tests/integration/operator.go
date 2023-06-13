@@ -10,7 +10,7 @@ import (
 	rscoordinatortypes "github.com/celinium-network/restaking_protocol/x/restaking/coordinator/types"
 )
 
-func (s *IntegrationTestSuite) xTestRegisterOperator() {
+func (s *IntegrationTestSuite) TestRegisterOperator() {
 	proposal := CreateConsumerAdditionalProposal(s.path, s.rsConsumerChain)
 	coordApp := getCoordinatorApp(s.rsCoordinatorChain)
 	coordCtx := s.rsCoordinatorChain.GetContext()
