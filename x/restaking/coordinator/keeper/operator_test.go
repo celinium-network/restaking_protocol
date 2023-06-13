@@ -2,26 +2,15 @@ package keeper_test
 
 import (
 	abci "github.com/cometbft/cometbft/abci/types"
-	cryptocodec "github.com/cometbft/cometbft/crypto/encoding"
 	tmprotocrypto "github.com/cometbft/cometbft/proto/tendermint/crypto"
 	"github.com/golang/mock/gomock"
 
-	sdkmock "github.com/cosmos/cosmos-sdk/testutil/mock"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	cryptoutil "github.com/celinium-network/restaking_protocol/testutil/crypto"
 	"github.com/celinium-network/restaking_protocol/x/restaking/coordinator/types"
 )
-
-func mockTmProtoPublicKey() (tmprotocrypto.PublicKey, error) {
-	pv := sdkmock.NewPV()
-	cpv, err := pv.GetPubKey()
-	if err != nil {
-		return tmprotocrypto.PublicKey{}, err
-	}
-
-	return cryptocodec.PubKeyToProto(cpv)
-}
 
 func (s *KeeperTestSuite) setupConsumerChain(
 	ctx sdk.Context,
@@ -57,7 +46,7 @@ func (s *KeeperTestSuite) TestRegisterOperator() {
 	for i := 0; i < len(consumerChainIDs); i++ {
 		keeper.SetConsumerClientID(ctx, consumerChainIDs[i], consumerClientIDs[i])
 
-		tmProtoPk, err := mockTmProtoPublicKey()
+		tmProtoPk, err := cryptoutil.CreateTmProtoPublicKey()
 		s.Require().NoError(err)
 		tmPubkeys = append(tmPubkeys, tmProtoPk)
 
@@ -86,7 +75,7 @@ func (s *KeeperTestSuite) TestDelegate() {
 
 	var validatorPks []tmprotocrypto.PublicKey
 	for i := 0; i < 3; i++ {
-		pk, err := mockTmProtoPublicKey()
+		pk, err := cryptoutil.CreateTmProtoPublicKey()
 		s.Require().NoError(err)
 		validatorPks = append(validatorPks, pk)
 	}

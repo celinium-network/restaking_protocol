@@ -10,9 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	ibctransferkeeper "github.com/cosmos/ibc-go/v7/modules/apps/transfer/keeper"
 	host "github.com/cosmos/ibc-go/v7/modules/core/24-host"
-	"github.com/cosmos/ibc-go/v7/modules/core/exported"
 
 	"github.com/celinium-network/restaking_protocol/x/restaking/consumer/types"
 	restaking "github.com/celinium-network/restaking_protocol/x/restaking/types"
@@ -21,13 +19,13 @@ import (
 type Keeper struct {
 	storeKey     storetypes.StoreKey
 	cdc          codec.Codec
-	scopedKeeper exported.ScopedKeeper
+	scopedKeeper restaking.ScopedKeeper
 
 	channelKeeper     restaking.ChannelKeeper
 	portKeeper        restaking.PortKeeper
 	connectionKeeper  restaking.ConnectionKeeper
 	clientKeeper      restaking.ClientKeeper
-	ibcTransferKeeper ibctransferkeeper.Keeper
+	ibcTransferKeeper restaking.IBCTransferKeeper
 
 	standaloneStakingKeeper restaking.StakingKeeper
 	slashingKeeper          restaking.SlashingKeeper
@@ -40,15 +38,15 @@ type Keeper struct {
 func NewKeeper(
 	storeKey storetypes.StoreKey,
 	cdc codec.Codec,
-	scopedKeeper exported.ScopedKeeper,
+	scopedKeeper restaking.ScopedKeeper,
 	channelKeeper restaking.ChannelKeeper,
 	portKeeper restaking.PortKeeper,
 	connectionKeeper restaking.ConnectionKeeper,
 	clientKeeper restaking.ClientKeeper,
-	ibcTransferKeeper ibctransferkeeper.Keeper,
+	ibcTransferKeeper restaking.IBCTransferKeeper,
+	bankKeeper restaking.BankKeeper,
 	standaloneStakingKeeper restaking.StakingKeeper,
 	slashingKeeper restaking.SlashingKeeper,
-	bankKeeper restaking.BankKeeper,
 	authKeeper restaking.AccountKeeper,
 	multiStakingKeeper restaking.MultiStakingKeeper,
 ) Keeper {
@@ -187,6 +185,26 @@ func (k Keeper) GetOperatorLocalAddress(ctx sdk.Context, operatorAddress string,
 	}
 
 	return addr, true
+}
+
+func (k Keeper) GetOrCreateOperatorLocalAddress(
+	ctx sdk.Context,
+	srcChannel, srcPort, operatorAddress string,
+	validatorPk []byte,
+) sdk.AccAddress {
+	operatorLocalAddress, found := k.GetOperatorLocalAddress(ctx, operatorAddress, validatorPk)
+	if !found {
+		operatorLocalAccount := k.GenerateOperatorAccount(
+			ctx,
+			srcChannel,
+			srcPort,
+			operatorAddress,
+			validatorPk,
+		)
+
+		operatorLocalAddress = operatorLocalAccount.GetAddress()
+	}
+	return operatorLocalAddress
 }
 
 func (k Keeper) SetOperatorLocalAddress(ctx sdk.Context, operatorAddress string, validatorPk []byte, localAddress sdk.AccAddress) {

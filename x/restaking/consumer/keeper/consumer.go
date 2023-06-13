@@ -116,18 +116,7 @@ func (k Keeper) HandleRestakingDelegationPacket(
 	}
 
 	validatorPkBz := k.cdc.MustMarshal(&delegation.ValidatorPk)
-	operatorLocalAddress, found := k.GetOperatorLocalAddress(ctx, delegation.OperatorAddress, validatorPkBz)
-	if !found {
-		operatorLocalAccount := k.generateOperatorAccount(
-			ctx,
-			packet.SourceChannel,
-			packet.SourcePort,
-			delegation.OperatorAddress,
-			validatorPkBz,
-		)
-
-		operatorLocalAddress = operatorLocalAccount.GetAddress()
-	}
+	operatorLocalAddress := k.GetOrCreateOperatorLocalAddress(ctx, packet.SourceChannel, packet.SourcePort, delegation.OperatorAddress, validatorPkBz)
 
 	sdkVaPk, err := cryptocodec.FromTmProtoPublicKey(delegation.ValidatorPk)
 	if err != nil {
@@ -143,7 +132,7 @@ func (k Keeper) HandleRestakingDelegationPacket(
 	})
 }
 
-func (k Keeper) generateOperatorAccount(
+func (k Keeper) GenerateOperatorAccount(
 	ctx sdk.Context,
 	channel, portID, operatorAddress string,
 	validatorPk []byte,

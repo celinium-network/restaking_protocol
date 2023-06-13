@@ -12,6 +12,7 @@ import (
 	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
 	host "github.com/cosmos/ibc-go/v7/modules/core/24-host"
 
+	cryptoutil "github.com/celinium-network/restaking_protocol/testutil/crypto"
 	"github.com/celinium-network/restaking_protocol/x/restaking/coordinator/types"
 	restaking "github.com/celinium-network/restaking_protocol/x/restaking/types"
 )
@@ -27,7 +28,7 @@ func (s *KeeperTestSuite) TestProcessPendingOperatorDelegationRecord() {
 		keeper.SetConsumerClientID(ctx, consumerChainIDs[i], consumerClientIDs[i])
 		keeper.SetConsumerClientIDToChannel(ctx, consumerClientIDs[i], consumerChannels[i])
 
-		tmProtoPk, err := mockTmProtoPublicKey()
+		tmProtoPk, err := cryptoutil.CreateTmProtoPublicKey()
 		s.Require().NoError(err)
 		tmPubkeys = append(tmPubkeys, tmProtoPk)
 
