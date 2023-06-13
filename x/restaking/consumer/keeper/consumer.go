@@ -33,11 +33,11 @@ func (k Keeper) QueueValidatorSetChangePackets(ctx sdk.Context) {
 		return
 	}
 
-	valUpdateID := k.GetValidatorSetUpdateID(ctx)
+	valsetUpdateID := k.GetValidatorSetUpdateID(ctx)
 
 	var valUpdates []abci.ValidatorUpdate
 
-	if valUpdateID == 0 {
+	if valsetUpdateID == 0 {
 		vals := k.standaloneStakingKeeper.GetLastValidators(ctx)
 		for _, v := range vals {
 			validatorUpdate := v.ABCIValidatorUpdateZero()
@@ -51,13 +51,13 @@ func (k Keeper) QueueValidatorSetChangePackets(ctx sdk.Context) {
 	// TODO apply delegation/undelegate operation for valUpdates ?
 	vsc := restaking.ValidatorSetChange{
 		ValidatorUpdates: valUpdates,
-		ValsetUpdateId:   valUpdateID,
+		ValsetUpdateId:   valsetUpdateID,
 	}
 
 	k.AppendPendingVSCPackets(ctx, vsc)
 
-	valUpdateID++
-	k.SetValidatorSetUpdateID(ctx, valUpdateID)
+	valsetUpdateID++
+	k.SetValidatorSetUpdateID(ctx, valsetUpdateID)
 }
 
 func (k Keeper) SendValidatorSetChangePackets(ctx sdk.Context) {
