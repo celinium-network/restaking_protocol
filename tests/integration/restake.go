@@ -47,15 +47,20 @@ func (s *IntegrationTestSuite) TestDelegation() {
 	path.EndpointA, path.EndpointB = path.EndpointB, path.EndpointA
 	s.RelayIBCPacket(s.path, events, user.String())
 
-	// consumerApp := getConsumerApp(s.rsConsumerChain)
-	// consumerCtx := s.rsConsumerChain.GetContext()
-	// consumerKeeper := consumerApp.RestakingConsumerKeeper
+	consumerApp := getConsumerApp(s.rsConsumerChain)
+	consumerCtx := s.rsConsumerChain.GetContext()
+	consumerKeeper := consumerApp.RestakingConsumerKeeper
 
-	// validatorPkBz := consumerApp.AppCodec().MustMarshal(&operator.OperatedValidators[0].ValidatorPk)
-	// localOperatorAccAddr, found := consumerKeeper.GetOperatorLocalAddress(consumerCtx, operator.OperatorAddress, validatorPkBz)
-	// s.Require().True(found)
+	validatorPkBz := consumerApp.AppCodec().MustMarshal(&operator.OperatedValidators[0].ValidatorPk)
+	localOperatorAccAddr, found := consumerKeeper.GetOperatorLocalAddress(consumerCtx, operator.OperatorAddress, validatorPkBz)
+	s.Require().True(found)
 
-	// delegations := consumerApp.StakingKeeper.GetDelegatorDelegations(consumerCtx, localOperatorAccAddr, 10)
-	// s.Require().Equal(len(delegations), 1)
-	// s.Require().Equal(delegations[0].DelegatorAddress, localOperatorAccAddr.String())
+	agents := consumerApp.MultiStakingKeeper.GetAllAgent(consumerCtx)
+
+	agentAccAddr := sdk.MustAccAddressFromBech32(agents[0].DelegateAddress)
+
+	delegations := consumerApp.StakingKeeper.GetDelegatorDelegations(consumerCtx, agentAccAddr, 10)
+	s.Require().Equal(len(delegations), 1)
+	shares := consumerApp.MultiStakingKeeper.GetMultiStakingShares(consumerCtx, agents[0].Id, localOperatorAccAddr.String())
+	s.Require().True(shares.Equal(amount))
 }
