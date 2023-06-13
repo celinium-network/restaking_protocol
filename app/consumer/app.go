@@ -196,6 +196,7 @@ var (
 		govtypes.ModuleName:            {authtypes.Burner},
 		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
 		multistakingtypes.ModuleName:   {authtypes.Minter, authtypes.Burner},
+		consumertypes.ModuleName:       {authtypes.Minter, authtypes.Burner},
 	}
 )
 
@@ -516,7 +517,7 @@ func New(
 	app.EvidenceKeeper = *evidenceKeeper
 
 	app.RestakingConsumerKeeper = consumerkeeper.NewKeeper(
-		keys[epochstypes.StoreKey], appCodec, scopedRestakingConsumerKeeper,
+		keys[epochstypes.StoreKey], appCodec, &scopedRestakingConsumerKeeper,
 		app.IBCKeeper.ChannelKeeper, &app.IBCKeeper.PortKeeper,
 		app.IBCKeeper.ConnectionKeeper, app.IBCKeeper.ClientKeeper,
 		app.TransferKeeper, app.BankKeeper, app.StakingKeeper,

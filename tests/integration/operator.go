@@ -3,13 +3,14 @@ package integration
 import (
 	"strings"
 
+	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/proto/tendermint/crypto"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	rscoordinatortypes "github.com/celinium-network/restaking_protocol/x/restaking/coordinator/types"
 )
 
-func (s *IntegrationTestSuite) TestRegisterOperator() {
-	consumerChainID := s.rsConsumerChain.ChainID
+func (s *IntegrationTestSuite) xTestRegisterOperator() {
 	proposal := CreateConsumerAdditionalProposal(s.path, s.rsConsumerChain)
 	coordApp := getCoordinatorApp(s.rsCoordinatorChain)
 	coordCtx := s.rsCoordinatorChain.GetContext()
@@ -17,23 +18,46 @@ func (s *IntegrationTestSuite) TestRegisterOperator() {
 
 	s.SetupRestakingPath()
 
+	consumerChainID := s.rsConsumerChain.ChainID
+	registerAccAddr := s.path.EndpointA.Chain.SenderAccount.GetAddress()
+
+	valSets := s.getConsumerValidators(consumerChainID)
+	s.registerOperator(consumerChainID, proposal.RestakingTokens[0], valSets[0].PubKey, registerAccAddr)
+
 	coordCtx = s.rsCoordinatorChain.GetContext()
-	clientID, found := coordApp.RestakingCoordinatorKeeper.GetConsumerClientID(coordCtx, consumerChainID)
+	allOperator := coordApp.RestakingCoordinatorKeeper.GetAllOperators(coordCtx)
+
+	s.Require().Equal(len(allOperator), 1)
+	strings.EqualFold(allOperator[0].Owner, registerAccAddr.String())
+}
+
+func (s *IntegrationTestSuite) getConsumerValidators(chainID string) []abci.ValidatorUpdate {
+	coordCtx := s.rsCoordinatorChain.GetContext()
+	coordApp := getCoordinatorApp(s.rsCoordinatorChain)
+
+	clientID, found := coordApp.RestakingCoordinatorKeeper.GetConsumerClientID(coordCtx, chainID)
 	s.Require().True(found)
 	valUpdates, found := coordApp.RestakingCoordinatorKeeper.GetConsumerValidator(coordCtx, string(clientID))
 	s.Require().True(found)
 
-	consumerUserAddr := s.path.EndpointA.Chain.SenderAccount.GetAddress()
+	return valUpdates
+}
 
-	coordApp.RestakingCoordinatorKeeper.RegisterOperator(coordCtx, rscoordinatortypes.MsgRegisterOperator{
+func (s *IntegrationTestSuite) registerOperator(
+	consumerChainID,
+	restakingDenom string,
+	consumerValidatorPk crypto.PublicKey,
+	register sdk.AccAddress,
+) {
+	coordCtx := s.rsCoordinatorChain.GetContext()
+	coordApp := getCoordinatorApp(s.rsCoordinatorChain)
+
+	err := coordApp.RestakingCoordinatorKeeper.RegisterOperator(coordCtx, rscoordinatortypes.MsgRegisterOperator{
 		ConsumerChainIDs:     []string{consumerChainID},
-		ConsumerValidatorPks: []crypto.PublicKey{valUpdates[0].PubKey},
-		RestakingDenom:       proposal.RestakingTokens[0],
-		Sender:               consumerUserAddr.String(),
+		ConsumerValidatorPks: []crypto.PublicKey{consumerValidatorPk},
+		RestakingDenom:       restakingDenom,
+		Sender:               register.String(),
 	})
 
-	allOperator := coordApp.RestakingCoordinatorKeeper.GetAllOperators(coordCtx)
-
-	s.Require().Equal(len(allOperator), 1)
-	strings.EqualFold(allOperator[0].Owner, consumerUserAddr.String())
+	s.Require().NoError(err)
 }

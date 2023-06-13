@@ -7,13 +7,12 @@ import (
 
 	abci "github.com/cometbft/cometbft/abci/types"
 
+	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 	"github.com/cosmos/ibc-go/v7/modules/core/exported"
-
-	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 
 	multistakingtypes "github.com/celinium-network/restaking_protocol/x/multistaking/types"
 	"github.com/celinium-network/restaking_protocol/x/restaking/consumer/types"
@@ -86,13 +85,13 @@ func (k Keeper) SendValidatorSetChangePackets(ctx sdk.Context) {
 	k.DeletePendingVSCPackets(ctx)
 }
 
-func (k Keeper) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, data *restaking.RestakingPacket) exported.Acknowledgement {
+func (k Keeper) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, restakingPacket *restaking.RestakingPacket) exported.Acknowledgement {
 	var ack exported.Acknowledgement
 
-	switch data.Type {
+	switch restakingPacket.Type {
 	case 0:
 		var restakingDelegatePacket restaking.DelegationPacket
-		k.cdc.MustUnmarshal(packet.Data, &restakingDelegatePacket)
+		k.cdc.MustUnmarshal([]byte(restakingPacket.Data), &restakingDelegatePacket)
 		k.HandleRestakingDelegationPacket(ctx, packet, &restakingDelegatePacket)
 	default:
 		return channeltypes.NewErrorAcknowledgement(fmt.Errorf("unknown restaking protocol packet type"))
@@ -118,16 +117,33 @@ func (k Keeper) HandleRestakingDelegationPacket(
 	validatorPkBz := k.cdc.MustMarshal(&delegation.ValidatorPk)
 	operatorLocalAddress := k.GetOrCreateOperatorLocalAddress(ctx, packet.SourceChannel, packet.SourcePort, delegation.OperatorAddress, validatorPkBz)
 
+	k.SetOperatorLocalAddress(ctx, delegation.OperatorAddress, validatorPkBz, operatorLocalAddress)
+	
 	sdkVaPk, err := cryptocodec.FromTmProtoPublicKey(delegation.ValidatorPk)
 	if err != nil {
 		return err
 	}
 
-	valAddress := sdk.ValAddress(sdkVaPk.Address().Bytes())
+	consAddress := sdk.ConsAddress(sdkVaPk.Address())
+	validator, found := k.standaloneStakingKeeper.GetValidatorByConsAddr(ctx, consAddress)
+	if !found {
+		return types.ErrUnknownValidator
+	}
+
+	// TODO how to delegate to validator
+	// (1) adjust delegation of staking module ?
+	// (2) mint coins and delegate by multistaking module
+	if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.Coins{delegation.Amount}); err != nil {
+		return err
+	}
+
+	if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, operatorLocalAddress, sdk.Coins{delegation.Amount}); err != nil {
+		return err
+	}
 
 	return k.multiStakingKeeper.MultiStakingDelegate(ctx, multistakingtypes.MsgMultiStakingDelegate{
 		DelegatorAddress: operatorLocalAddress.String(),
-		ValidatorAddress: valAddress.String(),
+		ValidatorAddress: validator.OperatorAddress,
 		Amount:           delegation.Amount,
 	})
 }

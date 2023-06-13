@@ -158,7 +158,7 @@ func (am AppModule) OnRecvPacket(
 		errAck := channeltypes.NewErrorAcknowledgement(fmt.Errorf("cannot unmarshal CCV packet data"))
 		ack = &errAck
 	} else {
-		ack = am.keeper.OnRecvConsumerValidatorSetChange(ctx, packet, consumerValidatorSetChange)
+		ack = am.keeper.OnRecvConsumerValSetUpdates(ctx, packet, consumerValidatorSetChange)
 	}
 
 	return ack

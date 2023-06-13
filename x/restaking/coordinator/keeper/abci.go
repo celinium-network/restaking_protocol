@@ -99,14 +99,13 @@ func (k Keeper) SendDelegation(ctx sdk.Context, operator *types.Operator, amount
 			Amount:          sdk.NewCoin(operator.RestakingDenom, amount),
 		}
 
-		restakingPacket, err := restaking.BuildRestakingProtocolPacket(k.cdc, delegationPacket)
-		if err != nil {
-			ctx.Logger().Error("marshal restaking.Delegation has err: ", err)
-			// TODO continue ?
-			continue
+		bz := k.cdc.MustMarshal(&delegationPacket)
+		restakingPacket := restaking.RestakingPacket{
+			Type: 0,
+			Data: string(bz),
 		}
 
-		restakingProtocolPacketBz, err := k.cdc.Marshal(restakingPacket)
+		restakingProtocolPacketBz, err := k.cdc.Marshal(&restakingPacket)
 		if err != nil {
 			ctx.Logger().Error("marshal restaking.Delegation has err: ", err)
 			// TODO continue ?
