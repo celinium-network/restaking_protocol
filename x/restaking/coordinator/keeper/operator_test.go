@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"cosmossdk.io/math"
 	abci "github.com/cometbft/cometbft/abci/types"
 	tmprotocrypto "github.com/cometbft/cometbft/proto/tendermint/crypto"
 	"github.com/golang/mock/gomock"
@@ -124,4 +125,44 @@ func (s *KeeperTestSuite) TestDelegate() {
 	s.Require().True(opDelegationRecord.DelegationAmount.Equal(delegateAmt))
 	s.Require().Equal(opDelegationRecord.Status, types.OpDelRecordPending)
 	s.Require().Equal(len(opDelegationRecord.IbcCallbackIds), 0)
+}
+
+func (s *KeeperTestSuite) TestUndelegate() {
+	operator := s.mockOperator()
+	ctx, keeper := s.ctx, s.coordinatorKeeper
+
+	accounts := simtestutil.CreateIncrementalAccounts(1)
+	delegatorAccAddr := accounts[0]
+	delegatorAddress := delegatorAccAddr.String()
+
+	// TODO maybe become a mock function like: mockDelegation
+	delegateAmt := math.NewIntFromUint64(100000)
+	keeper.SetDelegation(ctx, delegatorAddress, operator.OperatorAddress, &types.Delegation{
+		Delegator: delegatorAddress,
+		Operator:  operator.OperatorAddress,
+		Shares:    delegateAmt,
+	})
+	operator.Shares = delegateAmt
+	operator.RestakedAmount = delegateAmt
+	keeper.SetOperator(ctx, operator)
+
+	operatorAccAddr := sdk.MustAccAddressFromBech32(operator.OperatorAddress)
+
+	err := keeper.Undelegate(ctx, delegatorAccAddr, operatorAccAddr, delegateAmt)
+	s.Require().NoError(err)
+
+	// check UnbondDelegationRecord
+	record, found := keeper.GetOperatorUndelegationRecord(ctx, uint64(ctx.BlockHeight()), operator.OperatorAddress)
+	s.Require().True(found)
+	s.Require().Equal(record.Status, types.OpUndelegationRecordPending)
+	s.Require().Equal(len(record.UnbondingEntryIds), 1)
+	s.Require().True(record.UndelegationAmount.Equal(delegateAmt))
+
+	unbonding, found := keeper.GetUnbondingDelegation(ctx, delegatorAccAddr, operatorAccAddr)
+	s.Require().True(found)
+	s.Require().Equal(len(unbonding.Entries), 1)
+
+	unbondingEntry := unbonding.Entries[0]
+	s.Require().Equal(unbondingEntry.Id, record.UnbondingEntryIds[0])
+	s.True(unbondingEntry.Amount.Amount.Equal(delegateAmt))
 }

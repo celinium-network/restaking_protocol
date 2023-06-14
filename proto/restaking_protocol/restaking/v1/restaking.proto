@@ -33,7 +33,7 @@ message DelegationPacket{
     ];
 }
 
-message UnDelegationPacket{
+message UndelegationPacket{
     string operator_address = 1;
 
     .tendermint.crypto.PublicKey validator_pk = 2 [(gogoproto.nullable) = false];

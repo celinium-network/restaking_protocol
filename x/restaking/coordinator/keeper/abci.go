@@ -14,6 +14,8 @@ import (
 
 func (k Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) {
 	k.ProcessPendingOperatorDelegationRecord(ctx)
+
+	k.ProcessPendingOperatorUndelegationRecord(ctx)
 }
 
 func (k Keeper) ProcessPendingOperatorDelegationRecord(ctx sdk.Context) {
@@ -225,7 +227,7 @@ func (k Keeper) SendUndelegation(ctx sdk.Context, operator *types.Operator, amou
 		// TODO correct TIMEOUT
 		timeout := time.Minute * 10
 
-		delegationPacket := restaking.DelegationPacket{
+		delegationPacket := restaking.UndelegationPacket{
 			OperatorAddress: operator.OperatorAddress,
 			ValidatorPk:     va.ValidatorPk,
 			Amount:          sdk.NewCoin(operator.RestakingDenom, amount),
