@@ -93,6 +93,46 @@ message OperatorDelegationRecord {
     repeated string ibcCallbackIds = 4;
 }
 
+message OperatorUndelegationRecord {
+    string operator_address = 1[(cosmos_proto.scalar) = "cosmos.AddressString"];
+    
+    string undelegation_amount = 2 [
+        (cosmos_proto.scalar)  = "cosmos.Int",
+        (gogoproto.customtype) = "Int",
+        (gogoproto.nullable)   = false
+    ];
+
+    uint32 status = 3 [
+        (gogoproto.customtype) = "OperatorUndelegationRecordStatus",
+        (gogoproto.nullable)   = false
+    ];
+
+    repeated string ibcCallbackIds = 4;
+
+    repeated  uint64 unbondingEntryIds = 5;
+}
+
+message UnbondingEntry{
+    uint64 id = 1;
+
+    cosmos.base.v1beta1.Coin amount = 2[ 
+        (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coin",
+        (gogoproto.nullable) = false
+    ];
+    
+    uint64 create_height = 3;
+
+    uint64 complete_time = 4;
+}
+
+message UnbondingDelegation{
+    string delegator_address = 1[(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    string operator_address = 2[(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    repeated UnbondingEntry entries  = 3 [(gogoproto.nullable) = false];
+}
+
 message Delegation{
     string delegator = 1[(cosmos_proto.scalar) = "cosmos.AddressString"];
     

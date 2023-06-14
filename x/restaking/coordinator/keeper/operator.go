@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"encoding/binary"
 	"fmt"
 
 	"golang.org/x/exp/slices"
@@ -112,6 +113,7 @@ func (k Keeper) Delegate(ctx sdk.Context, delegator sdk.AccAddress, operatorAccA
 	operator.Shares = operator.Shares.Add(addedShares)
 
 	delegatorRecord.DelegationAmount = delegatorRecord.DelegationAmount.Add(amount)
+	// TODO maybe use epoch replace blockHight
 	k.SetOperatorDelegateRecord(ctx, uint64(ctx.BlockHeight()), delegatorRecord)
 
 	delegatorAddress := delegator.String()
@@ -126,7 +128,126 @@ func (k Keeper) Delegate(ctx sdk.Context, delegator sdk.AccAddress, operatorAccA
 
 	// TODO shares should be math.Dec?
 	delegation.Shares = delegation.Shares.Add(addedShares)
-
 	k.SetDelegation(ctx, delegatorAddress, operatorAddress, delegation)
 	return nil
+}
+
+func (k Keeper) Undelegate(
+	ctx sdk.Context,
+	delegator, operatorAccAddr sdk.AccAddress,
+	amount math.Int,
+) error {
+	operatorAddress := operatorAccAddr.String()
+	operator, found := k.GetOperator(ctx, operatorAddress)
+	if !found {
+		return errorsmod.Wrapf(types.ErrUnknownOperator, "operator address %s", operatorAddress)
+	}
+
+	// TODO check entry UnbondingDelegationEntry length? Set by module params?
+
+	delegatorAddress := delegator.String()
+	delegation, found := k.GetDelegation(ctx, delegatorAddress, operatorAddress)
+	if !found {
+		return errorsmod.Wrapf(types.ErrInsufficientDelegation, "delegation is't existed")
+	}
+
+	removedShared := operator.RestakedAmount.Mul(operator.Shares).Quo(amount)
+	if delegation.Shares.LT(removedShared) {
+		return errorsmod.Wrapf(types.ErrInsufficientDelegation, "remove shares too much")
+	}
+
+	operator.Shares = operator.Shares.Sub(removedShared)
+	delegation.Shares = delegation.Shares.Sub(removedShared)
+
+	k.SetOperator(ctx, operator)
+	k.SetDelegation(ctx, delegatorAddress, operatorAddress, delegation)
+
+	blockHeight := uint64(ctx.BlockHeight())
+	undelegationRecord, found := k.GetOperatorUndelegationRecord(ctx, blockHeight, operatorAddress)
+	if !found {
+		undelegationRecord = &types.OperatorUndelegationRecord{
+			OperatorAddress:    operatorAddress,
+			UndelegationAmount: math.ZeroInt(),
+			Status:             types.OpUndelegationRecordPending,
+			IbcCallbackIds:     []string{},
+		}
+	}
+
+	undelegationRecord.UndelegationAmount = undelegationRecord.UndelegationAmount.Add(amount)
+
+	entryID := k.SetUnbondingDelegationEntry(ctx, blockHeight, delegator, operatorAccAddr, sdk.NewCoin(operator.RestakingDenom, amount))
+
+	undelegationRecord.UnbondingEntryIds = append(undelegationRecord.UnbondingEntryIds, entryID)
+
+	// TODO maybe use epoch replace blockHight
+	k.SetOperatorUndelegationRecord(ctx, blockHeight, undelegationRecord)
+
+	return nil
+}
+
+func (k Keeper) SetUnbondingDelegationEntry(ctx sdk.Context, creationHeight uint64, delAddr sdk.AccAddress, opAddr sdk.AccAddress, balance sdk.Coin) (entryID uint64) {
+	ubd, found := k.GetUnbondingDelegation(ctx, delAddr, opAddr)
+	id := k.IncrementUnbondingID(ctx)
+
+	if found {
+		ubd.AddEntry(creationHeight, balance, id)
+	} else {
+		ubd = types.NewUnbondingDelegation(delAddr, opAddr, creationHeight, balance, id)
+	}
+
+	k.SetUnbondingDelegation(ctx, ubd)
+
+	return id
+}
+
+func (k Keeper) GetUnbondingDelegation(ctx sdk.Context, delAddr sdk.AccAddress, opAddr sdk.AccAddress) (ubd types.UnbondingDelegation, found bool) {
+	store := ctx.KVStore(k.storeKey)
+	key := types.GetUBDKey(delAddr, opAddr)
+	value := store.Get(key)
+
+	if value == nil {
+		return ubd, false
+	}
+
+	k.cdc.MustUnmarshal(value, &ubd)
+
+	return ubd, true
+}
+
+func (k Keeper) SetUnbondingDelegation(ctx sdk.Context, ubd types.UnbondingDelegation) {
+	delAddr := sdk.MustAccAddressFromBech32(ubd.DelegatorAddress)
+
+	store := ctx.KVStore(k.storeKey)
+	bz := k.cdc.MustMarshal(&ubd)
+	valAddr := sdk.MustAccAddressFromBech32(ubd.OperatorAddress)
+	key := types.GetUBDKey(delAddr, valAddr)
+
+	store.Set(key, bz)
+}
+
+func (k Keeper) IncrementUnbondingID(ctx sdk.Context) (unbondingID uint64) {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get([]byte{types.UnbondingIDKey})
+	if bz != nil {
+		unbondingID = binary.BigEndian.Uint64(bz)
+	}
+
+	unbondingID++
+
+	// Convert back into bytes for storage
+	bz = make([]byte, 8)
+	binary.BigEndian.PutUint64(bz, unbondingID)
+
+	store.Set([]byte{types.UnbondingIDKey}, bz)
+
+	return unbondingID
+}
+
+func (k Keeper) SetUnbondingDelegationByUnbondingID(ctx sdk.Context, ubd types.UnbondingDelegation, id uint64) {
+	store := ctx.KVStore(k.storeKey)
+	delAddr := sdk.MustAccAddressFromBech32(ubd.DelegatorAddress)
+	valAddr := sdk.MustAccAddressFromBech32(ubd.OperatorAddress)
+
+	ubdKey := types.GetUBDKey(delAddr, valAddr)
+	store.Set(types.GetUnbondingIndexKey(id), ubdKey)
 }

@@ -33,9 +33,21 @@ message DelegationPacket{
     ];
 }
 
+message UnDelegationPacket{
+    string operator_address = 1;
+
+    .tendermint.crypto.PublicKey validator_pk = 2 [(gogoproto.nullable) = false];
+  
+    cosmos.base.v1beta1.Coin amount = 3[ 
+        (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coin",
+        (gogoproto.nullable) = false
+    ];
+}
+
 message RestakingPacket{
     enum PacketType{
         Delegation = 0;
+        Undelegation = 1;
     }
     
     PacketType type = 1;

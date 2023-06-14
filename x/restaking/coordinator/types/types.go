@@ -7,11 +7,12 @@ import (
 )
 
 type (
-	Int                            = sdkmath.Int
-	Dec                            = sdk.Dec
-	TendermintLightClientState     = ibctm.ClientState
-	OperatorDelegationRecordStatus = uint32
-	CallType                       = uint32
+	Int                              = sdkmath.Int
+	Dec                              = sdk.Dec
+	TendermintLightClientState       = ibctm.ClientState
+	OperatorDelegationRecordStatus   = uint32
+	OperatorUndelegationRecordStatus = uint32
+	CallType                         = uint32
 )
 
 const (
@@ -20,5 +21,11 @@ const (
 )
 
 const (
+	OpUndelegationRecordPending OperatorUndelegationRecordStatus = iota
+	OpUndelegationRecordProcessing
+)
+
+const (
 	InterChainDelegateCall CallType = iota
+	InterChainUndelegateCall
 )

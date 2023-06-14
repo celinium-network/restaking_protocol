@@ -314,8 +314,32 @@ func (k Keeper) SetOperatorDelegateRecord(ctx sdk.Context, blockHeight uint64, r
 	store.Set(types.DelegationRecordKey(blockHeight, record.OperatorAddress), bz)
 }
 
+func (k Keeper) GetOperatorUndelegationRecord(ctx sdk.Context, blockHeight uint64, operatorAddr string) (*types.OperatorUndelegationRecord, bool) {
+	store := ctx.KVStore(k.storeKey)
+
+	bz := store.Get(types.UndelegationRecordKey(blockHeight, operatorAddr))
+	if bz == nil {
+		return nil, false
+	}
+	var record types.OperatorUndelegationRecord
+	k.cdc.Unmarshal(bz, &record)
+
+	return &record, true
+}
+
+func (k Keeper) SetOperatorUndelegationRecord(ctx sdk.Context, blockHeight uint64, record *types.OperatorUndelegationRecord) {
+	store := ctx.KVStore(k.storeKey)
+	bz := k.cdc.MustMarshal(record)
+	store.Set(types.UndelegationRecordKey(blockHeight, record.OperatorAddress), bz)
+}
+
 func (k Keeper) SetDelegation(ctx sdk.Context, ownerAddr, operatorAddr string, delegation *types.Delegation) {
 	store := ctx.KVStore(k.storeKey)
+	if delegation.Shares.IsZero() {
+		store.Delete(types.OperatorSharesKey(ownerAddr, operatorAddr))
+		return
+	}
+
 	bz := k.cdc.MustMarshal(delegation)
 
 	store.Set(types.OperatorSharesKey(ownerAddr, operatorAddr), bz)

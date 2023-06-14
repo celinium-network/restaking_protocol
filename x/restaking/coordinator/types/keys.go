@@ -1,7 +1,10 @@
 package types
 
 import (
+	"encoding/binary"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/address"
 )
 
 const (
@@ -40,9 +43,17 @@ const (
 
 	DelegationRecordPrefix
 
+	UndelegationRecordPrefix
+
+	UnbondingDelegationKey
+
 	OperatorSharesPrefix
 
 	IBCCallbackPrefix
+
+	UnbondingIDKey
+
+	UnbondingIndexKey
 )
 
 func PortKey() []byte {
@@ -82,6 +93,11 @@ func DelegationRecordKey(blockHeight uint64, operatorAddr string) []byte {
 	return append([]byte{DelegationRecordPrefix}, []byte(operatorAddr+string(bz))...)
 }
 
+func UndelegationRecordKey(blockHeight uint64, operatorAddr string) []byte {
+	bz := sdk.Uint64ToBigEndian(blockHeight)
+	return append([]byte{UndelegationRecordPrefix}, []byte(operatorAddr+string(bz))...)
+}
+
 func OperatorSharesKey(ownerAddr, operatorAddr string) []byte {
 	// TODO address string in key should has length as prefix ?
 	return append([]byte{OperatorSharesPrefix}, []byte(ownerAddr+operatorAddr)...)
@@ -90,4 +106,18 @@ func OperatorSharesKey(ownerAddr, operatorAddr string) []byte {
 func IBCCallbackKey(channelID, portID string, seq uint64) []byte {
 	bz := sdk.Uint64ToBigEndian(seq)
 	return append([]byte{IBCCallbackPrefix}, []byte(channelID+portID+string(bz))...)
+}
+
+func GetUBDKey(delAddr sdk.AccAddress, opAddr sdk.AccAddress) []byte {
+	return append(GetUBDsKey(delAddr.Bytes()), address.MustLengthPrefix(opAddr)...)
+}
+
+func GetUBDsKey(delAddr sdk.AccAddress) []byte {
+	return append([]byte{UnbondingDelegationKey}, address.MustLengthPrefix(delAddr)...)
+}
+
+func GetUnbondingIndexKey(id uint64) []byte {
+	bz := make([]byte, 8)
+	binary.BigEndian.PutUint64(bz, id)
+	return append([]byte{UnbondingIndexKey}, bz...)
 }
