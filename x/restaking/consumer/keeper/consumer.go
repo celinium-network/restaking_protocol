@@ -118,7 +118,7 @@ func (k Keeper) HandleRestakingDelegationPacket(
 	operatorLocalAddress := k.GetOrCreateOperatorLocalAddress(ctx, packet.SourceChannel, packet.SourcePort, delegation.OperatorAddress, validatorPkBz)
 
 	k.SetOperatorLocalAddress(ctx, delegation.OperatorAddress, validatorPkBz, operatorLocalAddress)
-	
+
 	sdkVaPk, err := cryptocodec.FromTmProtoPublicKey(delegation.ValidatorPk)
 	if err != nil {
 		return err

@@ -7,12 +7,14 @@ import (
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 	"github.com/golang/mock/gomock"
 
 	cryptoutil "github.com/celinium-network/restaking_protocol/testutil/crypto"
 	multistakingtypes "github.com/celinium-network/restaking_protocol/x/multistaking/types"
+	"github.com/celinium-network/restaking_protocol/x/restaking/consumer/types"
 	restaking "github.com/celinium-network/restaking_protocol/x/restaking/types"
 )
 
@@ -54,6 +56,14 @@ func (s *KeeperTestSuite) TestHandleRestakingDelegationPacket() {
 	sdkPk, err := cryptocodec.FromTmProtoPublicKey(validatorPk)
 	s.Require().NoError(err)
 	valAddress := sdk.ValAddress(sdkPk.Address().Bytes())
+
+	s.stakingKeeper.EXPECT().GetValidatorByConsAddr(gomock.Any(), gomock.Any()).Return(stakingtypes.Validator{
+		OperatorAddress: valAddress.String(),
+	}, true)
+
+	s.bankKeeper.EXPECT().MintCoins(gomock.Any(), types.ModuleName, sdk.Coins{restakingDelegation.Amount})
+	s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(
+		gomock.Any(), types.ModuleName, localOperator, sdk.Coins{restakingDelegation.Amount})
 
 	s.multiStakingKeeper.EXPECT().MultiStakingDelegate(gomock.Any(), multistakingtypes.MsgMultiStakingDelegate{
 		DelegatorAddress: localOperator.String(),
