@@ -98,7 +98,7 @@ func (s *KeeperTestSuite) TestProcessPendingOperatorUndelegationRecord() {
 		ibcCallbackIDs = append(ibcCallbackIDs, string(types.IBCCallbackKey(channel, restaking.CoordinatorPortID, uint64(i))))
 		s.Require().True(found)
 		s.Require().Equal(callback.CallType, types.InterChainUndelegateCall)
-		s.Require().Equal(callback.Args, string(types.DelegationRecordKey(uint64(ctx.BlockHeight()), operator.OperatorAddress)))
+		s.Require().Equal(callback.Args, string(types.UndelegationRecordKey(uint64(ctx.BlockHeight()), operator.OperatorAddress)))
 	}
 
 	processedOUndelegationRecord, found := keeper.GetOperatorUndelegationRecord(ctx, uint64(ctx.BlockHeight()), operator.OperatorAddress)
