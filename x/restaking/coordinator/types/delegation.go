@@ -32,7 +32,7 @@ func NewUnbondingDelegationEntry(creationHeight uint64, coin sdk.Coin, unbonding
 		Id:           unbondingID,
 		Amount:       coin,
 		CreateHeight: creationHeight,
-		CompleteTime: 0,
+		CompleteTime: -1,
 	}
 }
 

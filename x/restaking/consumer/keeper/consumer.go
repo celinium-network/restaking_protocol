@@ -120,7 +120,7 @@ func (k Keeper) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, restak
 		} else {
 			unbondingTime := k.stakingKeeper.GetParams(ctx).UnbondingTime
 			resp := restaking.ConsumerUndelegateResponse{
-				CompletionTime: ctx.BlockTime().Add(unbondingTime),
+				CompletionTime: ctx.BlockTime().Add(unbondingTime).UnixNano(),
 			}
 			respBz := k.cdc.MustMarshal(&resp)
 			ack = channeltypes.NewResultAcknowledgement(respBz)

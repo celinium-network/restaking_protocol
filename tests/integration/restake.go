@@ -83,17 +83,8 @@ func (s *IntegrationTestSuite) TestUndelegate() {
 	valSets := s.getConsumerValidators(consumerChainID)
 	s.registerOperator(consumerChainID, proposal.RestakingTokens[0], valSets[0].PubKey, user)
 	operator := coordKeeper.GetAllOperators(coordCtx)[0]
-
+	operatorAccAddr := sdk.MustAccAddressFromBech32(operator.OperatorAddress)
 	amount := math.NewIntFromUint64(100000)
-	coordKeeper.SetOperatorUndelegationRecord(coordCtx, uint64(coordCtx.BlockHeight()),
-		&rscoordinatortypes.OperatorUndelegationRecord{
-			OperatorAddress:    operator.OperatorAddress,
-			UndelegationAmount: amount,
-			Status:             rscoordinatortypes.OpUndelegationRecordPending,
-			IbcCallbackIds:     []string{},
-			UnbondingEntryIds:  []uint64{1},
-		},
-	)
 
 	consumerCtx := s.rsConsumerChain.GetContext()
 	consumerApp := getConsumerApp(s.rsConsumerChain)
@@ -106,10 +97,29 @@ func (s *IntegrationTestSuite) TestUndelegate() {
 		Amount:          sdk.NewCoin(proposal.RestakingTokens[0], amount),
 	})
 
+	operator.Shares = operator.Shares.Add(amount)
+	operator.RestakedAmount = operator.RestakedAmount.Add(amount)
+
+	coordKeeper.SetOperator(coordCtx, &operator)
+	coordKeeper.SetDelegation(coordCtx, user.String(), operator.OperatorAddress, &rscoordinatortypes.Delegation{
+		Delegator: user.String(),
+		Operator:  operator.OperatorAddress,
+		Shares:    amount,
+	})
+
+	err := coordKeeper.Undelegate(coordCtx, user, operatorAccAddr, amount)
+	s.Require().NoError(err)
+
 	events := NextBlockWithEvents(s.rsCoordinatorChain)
 	s.path.EndpointA.UpdateClient()
 
 	path := s.path
 	path.EndpointA, path.EndpointB = path.EndpointB, path.EndpointA
 	s.RelayIBCPacket(s.path, events, user.String())
+
+	coordCtx = s.rsCoordinatorChain.GetContext()
+	unbondingDelegation, found := coordKeeper.GetUnbondingDelegation(coordCtx, user, operatorAccAddr)
+	s.Require().True(found)
+	s.Require().Greater(unbondingDelegation.Entries[0].CompleteTime, -1)
+	s.Require().True(unbondingDelegation.Entries[0].Amount.Equal(amount))
 }

@@ -12,4 +12,7 @@ var (
 	ErrUnsupportedRestakingToken  = errorsmod.Register(ModuleName, 5, "The consumer do't support the restaking token")
 	ErrUnknownOperator            = errorsmod.Register(ModuleName, 6, "")
 	ErrInsufficientDelegation     = errorsmod.Register(ModuleName, 7, "")
+	ErrIBCCallbackNotExisted      = errorsmod.Register(ModuleName, 8, "")
+	ErrUnknownIBCCallbackType     = errorsmod.Register(ModuleName, 9, "")
+	ErrMismatchStatus             = errorsmod.Register(ModuleName, 10, "")
 )

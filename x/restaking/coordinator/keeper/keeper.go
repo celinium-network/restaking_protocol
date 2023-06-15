@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"strings"
+	"time"
 
 	errorsmod "cosmossdk.io/errors"
 	abci "github.com/cometbft/cometbft/abci/types"
@@ -308,10 +309,34 @@ func (k Keeper) GetOperatorDelegateRecord(ctx sdk.Context, blockHeight uint64, o
 	return &record, true
 }
 
+func (k Keeper) GetOperatorDelegateRecordByKey(ctx sdk.Context, key string) (*types.OperatorDelegationRecord, bool) {
+	store := ctx.KVStore(k.storeKey)
+
+	bz := store.Get([]byte(key))
+	if bz == nil {
+		return nil, false
+	}
+	var record types.OperatorDelegationRecord
+	k.cdc.Unmarshal(bz, &record)
+
+	return &record, true
+}
+
 func (k Keeper) SetOperatorDelegateRecord(ctx sdk.Context, blockHeight uint64, record *types.OperatorDelegationRecord) {
 	store := ctx.KVStore(k.storeKey)
 	bz := k.cdc.MustMarshal(record)
 	store.Set(types.DelegationRecordKey(blockHeight, record.OperatorAddress), bz)
+}
+
+func (k Keeper) SetOperatorDelegateRecordByKey(ctx sdk.Context, key string, record *types.OperatorDelegationRecord) {
+	store := ctx.KVStore(k.storeKey)
+	bz := k.cdc.MustMarshal(record)
+	store.Set([]byte(key), bz)
+}
+
+func (k Keeper) DeleteOperatorDelegateRecordByKey(ctx sdk.Context, key string) {
+	store := ctx.KVStore(k.storeKey)
+	store.Delete([]byte(key))
 }
 
 func (k Keeper) GetOperatorUndelegationRecord(ctx sdk.Context, blockHeight uint64, operatorAddr string) (*types.OperatorUndelegationRecord, bool) {
@@ -327,10 +352,29 @@ func (k Keeper) GetOperatorUndelegationRecord(ctx sdk.Context, blockHeight uint6
 	return &record, true
 }
 
+func (k Keeper) GetOperatorUndelegationRecordByKey(ctx sdk.Context, key string) (*types.OperatorUndelegationRecord, bool) {
+	store := ctx.KVStore(k.storeKey)
+
+	bz := store.Get([]byte(key))
+	if bz == nil {
+		return nil, false
+	}
+	var record types.OperatorUndelegationRecord
+	k.cdc.Unmarshal(bz, &record)
+
+	return &record, true
+}
+
 func (k Keeper) SetOperatorUndelegationRecord(ctx sdk.Context, blockHeight uint64, record *types.OperatorUndelegationRecord) {
 	store := ctx.KVStore(k.storeKey)
 	bz := k.cdc.MustMarshal(record)
 	store.Set(types.UndelegationRecordKey(blockHeight, record.OperatorAddress), bz)
+}
+
+func (k Keeper) SetOperatorUndelegationRecordByKey(ctx sdk.Context, key string, record *types.OperatorUndelegationRecord) {
+	store := ctx.KVStore(k.storeKey)
+	bz := k.cdc.MustMarshal(record)
+	store.Set([]byte(key), bz)
 }
 
 func (k Keeper) SetDelegation(ctx sdk.Context, ownerAddr, operatorAddr string, delegation *types.Delegation) {
@@ -388,4 +432,37 @@ func (k Keeper) GetCallback(ctx sdk.Context, channelID, portID string, seq uint6
 		return nil, false
 	}
 	return &callback, true
+}
+
+func (k Keeper) InsertUBDQueue(ctx sdk.Context, ubd types.UnbondingDelegation, completionTime time.Time) {
+	dvPair := types.DOPair{Delegator: ubd.DelegatorAddress, Operator: ubd.OperatorAddress}
+
+	timeSlice := k.GetUBDQueueTimeSlice(ctx, completionTime)
+	if len(timeSlice) == 0 {
+		k.SetUBDQueueTimeSlice(ctx, completionTime, []types.DOPair{dvPair})
+	} else {
+		timeSlice = append(timeSlice, dvPair)
+		k.SetUBDQueueTimeSlice(ctx, completionTime, timeSlice)
+	}
+}
+
+func (k Keeper) GetUBDQueueTimeSlice(ctx sdk.Context, timestamp time.Time) (dvPairs []types.DOPair) {
+	store := ctx.KVStore(k.storeKey)
+
+	bz := store.Get(types.GetUnbondingDelegationTimeKey(timestamp))
+	if bz == nil {
+		return []types.DOPair{}
+	}
+
+	pairs := types.DOPairs{}
+	k.cdc.MustUnmarshal(bz, &pairs)
+
+	return pairs.Pairs
+}
+
+// SetUBDQueueTimeSlice sets a specific unbonding queue timeslice.
+func (k Keeper) SetUBDQueueTimeSlice(ctx sdk.Context, timestamp time.Time, keys []types.DOPair) {
+	store := ctx.KVStore(k.storeKey)
+	bz := k.cdc.MustMarshal(&types.DOPairs{Pairs: keys})
+	store.Set(types.GetUnbondingDelegationTimeKey(timestamp), bz)
 }

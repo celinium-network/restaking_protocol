@@ -263,7 +263,7 @@ func (k Keeper) SendUndelegation(ctx sdk.Context, operator *types.Operator, amou
 
 		callback := types.IBCCallback{
 			CallType: types.InterChainUndelegateCall,
-			Args:     string(types.DelegationRecordKey(uint64(ctx.BlockHeight()), operator.OperatorAddress)),
+			Args:     string(types.UndelegationRecordKey(uint64(ctx.BlockHeight()), operator.OperatorAddress)),
 		}
 
 		k.SetCallback(ctx, channel, restaking.CoordinatorPortID, seq, callback)

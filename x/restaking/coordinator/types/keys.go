@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/binary"
+	time "time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
@@ -54,6 +55,8 @@ const (
 	UnbondingIDKey
 
 	UnbondingIndexKey
+
+	UnbondingQueueKey
 )
 
 func PortKey() []byte {
@@ -120,4 +123,9 @@ func GetUnbondingIndexKey(id uint64) []byte {
 	bz := make([]byte, 8)
 	binary.BigEndian.PutUint64(bz, id)
 	return append([]byte{UnbondingIndexKey}, bz...)
+}
+
+func GetUnbondingDelegationTimeKey(timestamp time.Time) []byte {
+	bz := sdk.FormatTimeBytes(timestamp)
+	return append([]byte{UnbondingQueueKey}, bz...)
 }

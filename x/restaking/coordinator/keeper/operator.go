@@ -170,6 +170,7 @@ func (k Keeper) Undelegate(
 			UndelegationAmount: math.ZeroInt(),
 			Status:             types.OpUndelegationRecordPending,
 			IbcCallbackIds:     []string{},
+			LatestCompleteTime: -1,
 		}
 	}
 
@@ -196,6 +197,8 @@ func (k Keeper) SetUnbondingDelegationEntry(ctx sdk.Context, creationHeight uint
 	}
 
 	k.SetUnbondingDelegation(ctx, ubd)
+
+	k.SetUnbondingDelegationByUnbondingID(ctx, ubd, id)
 
 	return id
 }
@@ -250,4 +253,26 @@ func (k Keeper) SetUnbondingDelegationByUnbondingID(ctx sdk.Context, ubd types.U
 
 	ubdKey := types.GetUBDKey(delAddr, valAddr)
 	store.Set(types.GetUnbondingIndexKey(id), ubdKey)
+}
+
+func (k Keeper) GetUnbondingDelegationByUnbondingID(ctx sdk.Context, id uint64) (ubd types.UnbondingDelegation, found bool) {
+	store := ctx.KVStore(k.storeKey)
+
+	ubdKey := store.Get(types.GetUnbondingIndexKey(id))
+	if ubdKey == nil {
+		return types.UnbondingDelegation{}, false
+	}
+
+	value := store.Get(ubdKey)
+	if value == nil {
+		return types.UnbondingDelegation{}, false
+	}
+
+	err := k.cdc.Unmarshal(value, &ubd)
+	// An error here means that what we got wasn't the right type
+	if err != nil {
+		return types.UnbondingDelegation{}, false
+	}
+
+	return ubd, true
 }

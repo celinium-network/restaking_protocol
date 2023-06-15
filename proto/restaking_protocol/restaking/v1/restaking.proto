@@ -57,6 +57,5 @@ message RestakingPacket{
 }
 
 message ConsumerUndelegateResponse{
-    google.protobuf.Timestamp completion_time = 1
-    [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];   
+    int64 completion_time = 1; 
 }

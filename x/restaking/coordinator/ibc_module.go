@@ -124,13 +124,13 @@ func (am AppModule) OnChanOpenConfirm(ctx sdk.Context, portID string, channelID 
 }
 
 // OnAcknowledgementPacket implements types.IBCModule
-func (AppModule) OnAcknowledgementPacket(
+func (am AppModule) OnAcknowledgementPacket(
 	ctx sdk.Context,
 	packet channeltypes.Packet,
 	acknowledgement []byte,
 	relayer sdk.AccAddress,
 ) error {
-	return nil
+	return am.keeper.HandleIBCAcknowledgement(ctx, &packet, acknowledgement)
 }
 
 // OnChanCloseConfirm implements types.IBCModule
