@@ -120,6 +120,6 @@ func (s *IntegrationTestSuite) TestUndelegate() {
 	coordCtx = s.rsCoordinatorChain.GetContext()
 	unbondingDelegation, found := coordKeeper.GetUnbondingDelegation(coordCtx, user, operatorAccAddr)
 	s.Require().True(found)
-	s.Require().Greater(unbondingDelegation.Entries[0].CompleteTime, -1)
-	s.Require().True(unbondingDelegation.Entries[0].Amount.Equal(amount))
+	s.Require().Greater(unbondingDelegation.Entries[0].CompleteTime, int64(-1))
+	s.Require().True(unbondingDelegation.Entries[0].Amount.Amount.Equal(amount))
 }
