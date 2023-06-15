@@ -10,9 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	ibctransferkeeper "github.com/cosmos/ibc-go/v7/modules/apps/transfer/keeper"
 	host "github.com/cosmos/ibc-go/v7/modules/core/24-host"
-	"github.com/cosmos/ibc-go/v7/modules/core/exported"
 
 	"github.com/celinium-network/restaking_protocol/x/restaking/consumer/types"
 	restaking "github.com/celinium-network/restaking_protocol/x/restaking/types"
@@ -21,47 +19,51 @@ import (
 type Keeper struct {
 	storeKey     storetypes.StoreKey
 	cdc          codec.Codec
-	scopedKeeper exported.ScopedKeeper
+	scopedKeeper restaking.ScopedKeeper
 
 	channelKeeper     restaking.ChannelKeeper
 	portKeeper        restaking.PortKeeper
 	connectionKeeper  restaking.ConnectionKeeper
 	clientKeeper      restaking.ClientKeeper
-	ibcTransferKeeper ibctransferkeeper.Keeper
+	ibcTransferKeeper restaking.IBCTransferKeeper
 
-	standaloneStakingKeeper restaking.StakingKeeper
-	slashingKeeper          restaking.SlashingKeeper
-	bankKeeper              restaking.BankKeeper
-	authKeeper              restaking.AccountKeeper
+	stakingKeeper  restaking.StakingKeeper
+	slashingKeeper restaking.SlashingKeeper
+	bankKeeper     restaking.BankKeeper
+	authKeeper     restaking.AccountKeeper
+
+	multiStakingKeeper restaking.MultiStakingKeeper
 }
 
 func NewKeeper(
 	storeKey storetypes.StoreKey,
 	cdc codec.Codec,
-	scopedKeeper exported.ScopedKeeper,
+	scopedKeeper restaking.ScopedKeeper,
 	channelKeeper restaking.ChannelKeeper,
 	portKeeper restaking.PortKeeper,
 	connectionKeeper restaking.ConnectionKeeper,
 	clientKeeper restaking.ClientKeeper,
-	ibcTransferKeeper ibctransferkeeper.Keeper,
+	ibcTransferKeeper restaking.IBCTransferKeeper,
+	bankKeeper restaking.BankKeeper,
 	standaloneStakingKeeper restaking.StakingKeeper,
 	slashingKeeper restaking.SlashingKeeper,
-	bankKeeper restaking.BankKeeper,
 	authKeeper restaking.AccountKeeper,
+	multiStakingKeeper restaking.MultiStakingKeeper,
 ) Keeper {
 	k := Keeper{
-		storeKey:                storeKey,
-		cdc:                     cdc,
-		scopedKeeper:            scopedKeeper,
-		channelKeeper:           channelKeeper,
-		portKeeper:              portKeeper,
-		connectionKeeper:        connectionKeeper,
-		clientKeeper:            clientKeeper,
-		ibcTransferKeeper:       ibcTransferKeeper,
-		standaloneStakingKeeper: standaloneStakingKeeper,
-		slashingKeeper:          slashingKeeper,
-		bankKeeper:              bankKeeper,
-		authKeeper:              authKeeper,
+		storeKey:           storeKey,
+		cdc:                cdc,
+		scopedKeeper:       scopedKeeper,
+		channelKeeper:      channelKeeper,
+		portKeeper:         portKeeper,
+		connectionKeeper:   connectionKeeper,
+		clientKeeper:       clientKeeper,
+		ibcTransferKeeper:  ibcTransferKeeper,
+		stakingKeeper:      standaloneStakingKeeper,
+		slashingKeeper:     slashingKeeper,
+		bankKeeper:         bankKeeper,
+		authKeeper:         authKeeper,
+		multiStakingKeeper: multiStakingKeeper,
 	}
 	return k
 }
@@ -83,13 +85,13 @@ func (k Keeper) BindPort(ctx sdk.Context, portID string) error {
 }
 
 func (k Keeper) GetAllValidators(ctx sdk.Context) []stakingtypes.Validator {
-	return k.standaloneStakingKeeper.GetLastValidators(ctx)
+	return k.stakingKeeper.GetLastValidators(ctx)
 }
 
 func (k Keeper) GetInitialValidator(ctx sdk.Context) abci.ValidatorUpdates {
 	var valUpdates abci.ValidatorUpdates
 
-	for _, v := range k.standaloneStakingKeeper.GetValidatorUpdates(ctx) {
+	for _, v := range k.stakingKeeper.GetValidatorUpdates(ctx) {
 		valUpdates = append(valUpdates, abci.ValidatorUpdate{
 			PubKey: v.PubKey,
 			Power:  v.Power,
@@ -168,4 +170,44 @@ func (k Keeper) GetCoordinatorChannelID(ctx sdk.Context) (string, error) {
 		return "", types.ErrRestakingChannelNotFound
 	}
 	return string(bz), nil
+}
+
+func (k Keeper) GetOperatorLocalAddress(ctx sdk.Context, operatorAddress string, validatorPk []byte) (addr sdk.AccAddress, found bool) {
+	store := ctx.KVStore(k.storeKey)
+
+	bz := store.Get(types.OperatorAddressKey(validatorPk, operatorAddress))
+	if bz == nil {
+		return addr, false
+	}
+	addr, err := sdk.AccAddressFromBech32(string(bz))
+	if err != nil {
+		return addr, false
+	}
+
+	return addr, true
+}
+
+func (k Keeper) GetOrCreateOperatorLocalAddress(
+	ctx sdk.Context,
+	srcChannel, srcPort, operatorAddress string,
+	validatorPk []byte,
+) sdk.AccAddress {
+	operatorLocalAddress, found := k.GetOperatorLocalAddress(ctx, operatorAddress, validatorPk)
+	if !found {
+		operatorLocalAccount := k.GenerateOperatorAccount(
+			ctx,
+			srcChannel,
+			srcPort,
+			operatorAddress,
+			validatorPk,
+		)
+
+		operatorLocalAddress = operatorLocalAccount.GetAddress()
+	}
+	return operatorLocalAddress
+}
+
+func (k Keeper) SetOperatorLocalAddress(ctx sdk.Context, operatorAddress string, validatorPk []byte, localAddress sdk.AccAddress) {
+	store := ctx.KVStore(k.storeKey)
+	store.Set(types.OperatorAddressKey(validatorPk, operatorAddress), []byte(localAddress.String()))
 }

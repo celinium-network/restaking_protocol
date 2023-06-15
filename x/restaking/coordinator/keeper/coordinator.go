@@ -8,7 +8,7 @@ import (
 	restaking "github.com/celinium-network/restaking_protocol/x/restaking/types"
 )
 
-func (k Keeper) OnRecvConsumerValidatorSetChange(
+func (k Keeper) OnRecvConsumerValSetUpdates(
 	ctx sdk.Context,
 	packet channeltypes.Packet,
 	changes restaking.ValidatorSetChange,
@@ -26,6 +26,7 @@ func (k Keeper) OnRecvConsumerValidatorSetChange(
 		curValidatorUpdates = restaking.AccumulateChanges(curValidatorUpdates, changes.ValidatorUpdates)
 	}
 
+	// TODO correct process validator set changes.
 	k.SetConsumerValidator(ctx, consumerClientID, curValidatorUpdates)
 
 	ack := channeltypes.NewResultAcknowledgement([]byte{byte(1)})

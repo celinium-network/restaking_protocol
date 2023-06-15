@@ -3,19 +3,30 @@ package keeper_test
 import (
 	"testing"
 
+	"cosmossdk.io/math"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
 
+	abci "github.com/cometbft/cometbft/abci/types"
+	tmprotocrypto "github.com/cometbft/cometbft/proto/tendermint/crypto"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	tmtime "github.com/cometbft/cometbft/types/time"
 
 	"github.com/cosmos/cosmos-sdk/testutil"
+	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 
+	cryptoutil "github.com/celinium-network/restaking_protocol/testutil/crypto"
 	testutilkeeper "github.com/celinium-network/restaking_protocol/testutil/keeper"
 	coordkeeper "github.com/celinium-network/restaking_protocol/x/restaking/coordinator/keeper"
 	"github.com/celinium-network/restaking_protocol/x/restaking/coordinator/types"
+)
+
+var (
+	consumerChainIDs  = []string{"consumer-0", "consumer-1", "consumer-2"}
+	consumerClientIDs = []string{"client-0", "client-1", "client-2"}
+	consumerChannels  = []string{"channel-0", "channel-1", "channel-2"}
 )
 
 type KeeperTestSuite struct {
@@ -65,4 +76,56 @@ func (s *KeeperTestSuite) SetupTest() {
 
 func TestKeeperTestSuite(t *testing.T) {
 	suite.Run(t, new(KeeperTestSuite))
+}
+
+func (s *KeeperTestSuite) mockOperator() *types.Operator {
+	ctx, keeper := s.ctx, s.coordinatorKeeper
+
+	var tmPubkeys []tmprotocrypto.PublicKey
+	for i := 0; i < len(consumerChainIDs); i++ {
+		keeper.SetConsumerClientID(ctx, consumerChainIDs[i], consumerClientIDs[i])
+		keeper.SetConsumerClientIDToChannel(ctx, consumerClientIDs[i], consumerChannels[i])
+
+		tmProtoPk, err := cryptoutil.CreateTmProtoPublicKey()
+		s.Require().NoError(err)
+		tmPubkeys = append(tmPubkeys, tmProtoPk)
+
+		keeper.SetConsumerValidator(ctx, consumerClientIDs[i], []abci.ValidatorUpdate{{
+			PubKey: tmProtoPk,
+			Power:  1,
+		}})
+
+		keeper.SetConsumerRestakingToken(ctx, consumerClientIDs[i], []string{"stake"})
+		keeper.SetConsumerRewardToken(ctx, consumerClientIDs[i], []string{"stake"})
+	}
+
+	addrs := simtestutil.CreateIncrementalAccounts(2)
+	userAddr := addrs[0]
+	operatorAddr := addrs[1]
+
+	operator := types.Operator{
+		RestakingDenom:  "stake",
+		OperatorAddress: operatorAddr.String(),
+		RestakedAmount:  math.ZeroInt(),
+		Shares:          math.ZeroInt(),
+		OperatedValidators: []types.OperatedValidator{
+			{
+				ChainID:     consumerChainIDs[0],
+				ValidatorPk: tmPubkeys[0],
+			},
+			{
+				ChainID:     consumerChainIDs[1],
+				ValidatorPk: tmPubkeys[1],
+			},
+			{
+				ChainID:     consumerChainIDs[2],
+				ValidatorPk: tmPubkeys[2],
+			},
+		},
+		Owner: userAddr.String(),
+	}
+
+	keeper.SetOperator(ctx, &operator)
+
+	return &operator
 }

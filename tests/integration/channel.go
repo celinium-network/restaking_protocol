@@ -5,6 +5,7 @@ import (
 
 	ibctesting "github.com/cosmos/ibc-go/v7/testing"
 
+	"github.com/celinium-network/restaking_protocol/app/params"
 	rscoordinatortypes "github.com/celinium-network/restaking_protocol/x/restaking/coordinator/types"
 )
 
@@ -14,6 +15,16 @@ func (s *IntegrationTestSuite) TestChannelInit() {
 	ctx := s.rsCoordinatorChain.GetContext()
 	app.RestakingCoordinatorKeeper.SetConsumerAdditionProposal(ctx, proposal)
 
+	s.SetupRestakingPath()
+
+	ctx = s.rsCoordinatorChain.GetContext()
+	_, found := app.RestakingCoordinatorKeeper.GetConsumerAdditionProposal(ctx, s.rsConsumerChain.ChainID)
+	s.Require().False(found)
+	_, found = app.RestakingCoordinatorKeeper.GetConsumerClientID(ctx, s.rsConsumerChain.ChainID)
+	s.Require().True(found)
+}
+
+func (s *IntegrationTestSuite) SetupRestakingPath() {
 	s.coordinator.SetupConnections(s.path)
 
 	err := s.path.EndpointA.ChanOpenInit()
@@ -29,21 +40,8 @@ func (s *IntegrationTestSuite) TestChannelInit() {
 	err = s.path.EndpointB.ChanOpenConfirm()
 	s.Require().NoError(err)
 
-	// err = s.path.EndpointA.UpdateClient()
-	// s.Require().NoError(err)
-
-	// err = s.path.EndpointB.UpdateClient()
-	// s.Require().NoError(err)
-
 	consumerUserAddr := s.path.EndpointA.Chain.SenderAccount.GetAddress()
-
 	s.RelayIBCPacket(s.path, events, consumerUserAddr.String())
-
-	ctx = s.rsCoordinatorChain.GetContext()
-	_, found := app.RestakingCoordinatorKeeper.GetConsumerAdditionProposal(ctx, s.rsConsumerChain.ChainID)
-	s.Require().False(found)
-	_, found = app.RestakingCoordinatorKeeper.GetConsumerClientID(ctx, s.rsConsumerChain.ChainID)
-	s.Require().True(found)
 }
 
 func CreateConsumerAdditionalProposal(path *ibctesting.Path, consumerChain *ibctesting.TestChain) *rscoordinatortypes.ConsumerAdditionProposal {
@@ -59,7 +57,7 @@ func CreateConsumerAdditionalProposal(path *ibctesting.Path, consumerChain *ibct
 		UnbondingPeriod:       tmClientCfg.UnbondingPeriod,
 		TimeoutPeriod:         tmClientCfg.TrustingPeriod,
 		TransferTimeoutPeriod: tmClientCfg.MaxClockDrift,
-		RestakingTokens:       []string{"stake"},
-		RewardTokens:          []string{"stake"},
+		RestakingTokens:       []string{params.DefaultBondDenom},
+		RewardTokens:          []string{params.DefaultBondDenom},
 	}
 }

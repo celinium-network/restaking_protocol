@@ -18,6 +18,7 @@ import (
 
 	rsconsumer "github.com/celinium-network/restaking_protocol/app/consumer"
 	rscoordinator "github.com/celinium-network/restaking_protocol/app/coordinator"
+	"github.com/celinium-network/restaking_protocol/app/params"
 
 	restakingtypes "github.com/celinium-network/restaking_protocol/x/restaking/types"
 	//
@@ -112,6 +113,8 @@ func NewIntegrationTestSuite() *IntegrationTestSuite {
 		}
 		ctx := consumerChian.GetContext()
 		consumerApp.RestakingConsumerKeeper.InitGenesis(ctx, nil)
+		// TODO the params of coordinator and consumer maybe in different package
+		consumerApp.MultiStakingKeeper.SetMultiStakingDenom(ctx, params.DefaultBondDenom)
 
 		return consumerChian, consumerApp
 	}
@@ -143,10 +146,10 @@ func getCoordinatorApp(chain *ibctesting.TestChain) *rscoordinator.App {
 	return app
 }
 
-// func getConsumerApp(chain *ibctesting.TestChain) *rscoordinator.App {
-// 	app := chain.App.(*rscoordinator.App)
-// 	return app
-// }
+func getConsumerApp(chain *ibctesting.TestChain) *rsconsumer.App {
+	app := chain.App.(*rsconsumer.App)
+	return app
+}
 
 // func copyConnectionAndClientToPath(path *ibctesting.Path, pathToCopy *ibctesting.Path) *ibctesting.Path {
 // 	path.EndpointA.ClientID = pathToCopy.EndpointA.ClientID

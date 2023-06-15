@@ -18,6 +18,8 @@ import (
 	evidencetypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+
+	multistakingtypes "github.com/celinium-network/restaking_protocol/x/multistaking/types"
 )
 
 // ChannelKeeper defines the expected IBC channel keeper
@@ -54,6 +56,7 @@ type ScopedKeeper interface {
 }
 
 type StakingKeeper interface {
+	GetParams(ctx sdk.Context) stakingtypes.Params
 	GetValidatorUpdates(ctx sdk.Context) []abci.ValidatorUpdate
 	UnbondingCanComplete(ctx sdk.Context, id uint64) error
 	UnbondingTime(ctx sdk.Context) time.Duration
@@ -100,6 +103,9 @@ type BankKeeper interface {
 	SendCoinsFromModuleToModule(ctx sdk.Context, senderModule, recipientModule string, amt sdk.Coins) error
 	SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
 	SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
+
+	BurnCoins(ctx sdk.Context, name string, amt sdk.Coins) error
+	MintCoins(ctx sdk.Context, moduleName string, amounts sdk.Coins) error
 }
 
 // AccountKeeper defines the expected account keeper used for simulations
@@ -112,4 +118,10 @@ type IBCTransferKeeper interface {
 		context.Context,
 		*transfertype.MsgTransfer,
 	) (*transfertype.MsgTransferResponse, error)
+}
+
+type MultiStakingKeeper interface {
+	MultiStakingDelegate(ctx sdk.Context, msg multistakingtypes.MsgMultiStakingDelegate) error
+
+	Unbond(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, token sdk.Coin) (math.Int, error)
 }

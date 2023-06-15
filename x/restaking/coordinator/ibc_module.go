@@ -124,13 +124,13 @@ func (am AppModule) OnChanOpenConfirm(ctx sdk.Context, portID string, channelID 
 }
 
 // OnAcknowledgementPacket implements types.IBCModule
-func (AppModule) OnAcknowledgementPacket(
+func (am AppModule) OnAcknowledgementPacket(
 	ctx sdk.Context,
 	packet channeltypes.Packet,
 	acknowledgement []byte,
 	relayer sdk.AccAddress,
 ) error {
-	panic("unimplemented")
+	return am.keeper.HandleIBCAcknowledgement(ctx, &packet, acknowledgement)
 }
 
 // OnChanCloseConfirm implements types.IBCModule
@@ -158,7 +158,7 @@ func (am AppModule) OnRecvPacket(
 		errAck := channeltypes.NewErrorAcknowledgement(fmt.Errorf("cannot unmarshal CCV packet data"))
 		ack = &errAck
 	} else {
-		ack = am.keeper.OnRecvConsumerValidatorSetChange(ctx, packet, consumerValidatorSetChange)
+		ack = am.keeper.OnRecvConsumerValSetUpdates(ctx, packet, consumerValidatorSetChange)
 	}
 
 	return ack

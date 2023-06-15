@@ -6,9 +6,10 @@ import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "tendermint/abci/types.proto";
 import "tendermint/crypto/keys.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "restaking_protocol/x/restaking/types";
-
 
 message ValidatorSetChange{
     repeated .tendermint.abci.ValidatorUpdate validator_updates = 1 [
@@ -22,14 +23,39 @@ message ValidatorSetChanges{
     repeated ValidatorSetChange validator_set_changes = 1 [(gogoproto.nullable) = false];
 }
 
-message Delegation{
+message DelegationPacket{
     string operator_address = 1;
 
     .tendermint.crypto.PublicKey validator_pk = 2 [(gogoproto.nullable) = false];
   
-    string amount = 3 [
-        (cosmos_proto.scalar)  = "cosmos.Int",
-        (gogoproto.customtype) = "Int",
-        (gogoproto.nullable)   = false
+    cosmos.base.v1beta1.Coin amount = 3[ 
+        (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coin",
+        (gogoproto.nullable) = false
     ];
+}
+
+message UndelegationPacket{
+    string operator_address = 1;
+
+    .tendermint.crypto.PublicKey validator_pk = 2 [(gogoproto.nullable) = false];
+  
+    cosmos.base.v1beta1.Coin amount = 3[ 
+        (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coin",
+        (gogoproto.nullable) = false
+    ];
+}
+
+message RestakingPacket{
+    enum PacketType{
+        Delegation = 0;
+        Undelegation = 1;
+    }
+    
+    PacketType type = 1;
+
+    string data = 2;
+}
+
+message ConsumerUndelegateResponse{
+    int64 completion_time = 1; 
 }
