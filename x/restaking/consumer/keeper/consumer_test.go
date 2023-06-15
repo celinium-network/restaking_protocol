@@ -18,6 +18,8 @@ import (
 	restaking "github.com/celinium-network/restaking_protocol/x/restaking/types"
 )
 
+// TODO this unit test must be refactor!
+
 func (s *KeeperTestSuite) TestHandleRestakingDelegationPacket() {
 	validatorPk, err := cryptoutil.CreateTmProtoPublicKey()
 	s.Require().NoError(err)
@@ -72,4 +74,53 @@ func (s *KeeperTestSuite) TestHandleRestakingDelegationPacket() {
 	})
 
 	s.keeper.HandleRestakingDelegationPacket(s.ctx, packet, &restakingDelegation)
+}
+
+func (s *KeeperTestSuite) TestHandleRestakingUndelegationPacket() {
+	validatorPk, err := cryptoutil.CreateTmProtoPublicKey()
+	s.Require().NoError(err)
+
+	operatorAccounts := simtestutil.CreateIncrementalAccounts(1)
+
+	restakingUndelegation := restaking.UndelegationPacket{
+		OperatorAddress: operatorAccounts[0].String(),
+		ValidatorPk:     validatorPk,
+		Amount:          sdk.NewCoin("restakingDenom", math.NewIntFromUint64(100000)),
+	}
+
+	restakingDelegationBz := s.codec.MustMarshal(&restakingUndelegation)
+	timeoutTimestamp := uint64(s.ctx.BlockTime().Add(time.Minute * 10).UnixNano())
+	packet := channeltypes.Packet{
+		Sequence:           1,
+		SourcePort:         restaking.CoordinatorPortID,
+		SourceChannel:      "channel-0",
+		DestinationPort:    restaking.ConsumerPortID,
+		DestinationChannel: "channel-0",
+		Data:               restakingDelegationBz,
+		TimeoutHeight:      clienttypes.Height{},
+		TimeoutTimestamp:   timeoutTimestamp,
+	}
+
+	s.keeper.SetCoordinatorChannelID(s.ctx, packet.SourceChannel)
+
+	validatorPkBz := s.codec.MustMarshal(&validatorPk)
+	localOperator := s.keeper.GetOrCreateOperatorLocalAddress(
+		s.ctx,
+		packet.SourceChannel,
+		packet.SourcePort,
+		restakingUndelegation.OperatorAddress,
+		validatorPkBz)
+
+	sdkPk, err := cryptocodec.FromTmProtoPublicKey(validatorPk)
+	s.Require().NoError(err)
+	valAddress := sdk.ValAddress(sdkPk.Address().Bytes())
+
+	s.stakingKeeper.EXPECT().GetValidatorByConsAddr(gomock.Any(), gomock.Any()).Return(stakingtypes.Validator{
+		OperatorAddress: valAddress.String(),
+	}, true)
+
+	s.multiStakingKeeper.EXPECT().Unbond(gomock.Any(), localOperator, valAddress, restakingUndelegation.Amount)
+
+	err = s.keeper.HandleRestakingUndelegationPacket(s.ctx, packet, &restakingUndelegation)
+	s.Require().NoError(err)
 }

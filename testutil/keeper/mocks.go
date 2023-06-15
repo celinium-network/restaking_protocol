@@ -439,6 +439,20 @@ func (mr *MockStakingKeeperMockRecorder) GetLastValidators(ctx interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastValidators", reflect.TypeOf((*MockStakingKeeper)(nil).GetLastValidators), ctx)
 }
 
+// GetParams mocks base method.
+func (m *MockStakingKeeper) GetParams(ctx types1.Context) types6.Params {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetParams", ctx)
+	ret0, _ := ret[0].(types6.Params)
+	return ret0
+}
+
+// GetParams indicates an expected call of GetParams.
+func (mr *MockStakingKeeperMockRecorder) GetParams(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetParams", reflect.TypeOf((*MockStakingKeeper)(nil).GetParams), ctx)
+}
+
 // GetValidator mocks base method.
 func (m *MockStakingKeeper) GetValidator(ctx types1.Context, addr types1.ValAddress) (types6.Validator, bool) {
 	m.ctrl.T.Helper()
@@ -1041,4 +1055,19 @@ func (m *MockMultiStakingKeeper) MultiStakingDelegate(ctx types1.Context, msg ty
 func (mr *MockMultiStakingKeeperMockRecorder) MultiStakingDelegate(ctx, msg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MultiStakingDelegate", reflect.TypeOf((*MockMultiStakingKeeper)(nil).MultiStakingDelegate), ctx, msg)
+}
+
+// Unbond mocks base method.
+func (m *MockMultiStakingKeeper) Unbond(ctx types1.Context, delAddr types1.AccAddress, valAddr types1.ValAddress, token types1.Coin) (math.Int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Unbond", ctx, delAddr, valAddr, token)
+	ret0, _ := ret[0].(math.Int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Unbond indicates an expected call of Unbond.
+func (mr *MockMultiStakingKeeperMockRecorder) Unbond(ctx, delAddr, valAddr, token interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unbond", reflect.TypeOf((*MockMultiStakingKeeper)(nil).Unbond), ctx, delAddr, valAddr, token)
 }

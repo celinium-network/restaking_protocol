@@ -27,10 +27,10 @@ type Keeper struct {
 	clientKeeper      restaking.ClientKeeper
 	ibcTransferKeeper restaking.IBCTransferKeeper
 
-	standaloneStakingKeeper restaking.StakingKeeper
-	slashingKeeper          restaking.SlashingKeeper
-	bankKeeper              restaking.BankKeeper
-	authKeeper              restaking.AccountKeeper
+	stakingKeeper  restaking.StakingKeeper
+	slashingKeeper restaking.SlashingKeeper
+	bankKeeper     restaking.BankKeeper
+	authKeeper     restaking.AccountKeeper
 
 	multiStakingKeeper restaking.MultiStakingKeeper
 }
@@ -51,19 +51,19 @@ func NewKeeper(
 	multiStakingKeeper restaking.MultiStakingKeeper,
 ) Keeper {
 	k := Keeper{
-		storeKey:                storeKey,
-		cdc:                     cdc,
-		scopedKeeper:            scopedKeeper,
-		channelKeeper:           channelKeeper,
-		portKeeper:              portKeeper,
-		connectionKeeper:        connectionKeeper,
-		clientKeeper:            clientKeeper,
-		ibcTransferKeeper:       ibcTransferKeeper,
-		standaloneStakingKeeper: standaloneStakingKeeper,
-		slashingKeeper:          slashingKeeper,
-		bankKeeper:              bankKeeper,
-		authKeeper:              authKeeper,
-		multiStakingKeeper:      multiStakingKeeper,
+		storeKey:           storeKey,
+		cdc:                cdc,
+		scopedKeeper:       scopedKeeper,
+		channelKeeper:      channelKeeper,
+		portKeeper:         portKeeper,
+		connectionKeeper:   connectionKeeper,
+		clientKeeper:       clientKeeper,
+		ibcTransferKeeper:  ibcTransferKeeper,
+		stakingKeeper:      standaloneStakingKeeper,
+		slashingKeeper:     slashingKeeper,
+		bankKeeper:         bankKeeper,
+		authKeeper:         authKeeper,
+		multiStakingKeeper: multiStakingKeeper,
 	}
 	return k
 }
@@ -85,13 +85,13 @@ func (k Keeper) BindPort(ctx sdk.Context, portID string) error {
 }
 
 func (k Keeper) GetAllValidators(ctx sdk.Context) []stakingtypes.Validator {
-	return k.standaloneStakingKeeper.GetLastValidators(ctx)
+	return k.stakingKeeper.GetLastValidators(ctx)
 }
 
 func (k Keeper) GetInitialValidator(ctx sdk.Context) abci.ValidatorUpdates {
 	var valUpdates abci.ValidatorUpdates
 
-	for _, v := range k.standaloneStakingKeeper.GetValidatorUpdates(ctx) {
+	for _, v := range k.stakingKeeper.GetValidatorUpdates(ctx) {
 		valUpdates = append(valUpdates, abci.ValidatorUpdate{
 			PubKey: v.PubKey,
 			Power:  v.Power,

@@ -7,6 +7,7 @@ import "gogoproto/gogo.proto";
 import "tendermint/abci/types.proto";
 import "tendermint/crypto/keys.proto";
 import "cosmos/base/v1beta1/coin.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "restaking_protocol/x/restaking/types";
 
@@ -53,4 +54,9 @@ message RestakingPacket{
     PacketType type = 1;
 
     string data = 2;
+}
+
+message ConsumerUndelegateResponse{
+    google.protobuf.Timestamp completion_time = 1
+    [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];   
 }

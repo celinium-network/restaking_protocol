@@ -130,7 +130,7 @@ func (AppModule) OnAcknowledgementPacket(
 	acknowledgement []byte,
 	relayer sdk.AccAddress,
 ) error {
-	panic("unimplemented")
+	return nil
 }
 
 // OnChanCloseConfirm implements types.IBCModule

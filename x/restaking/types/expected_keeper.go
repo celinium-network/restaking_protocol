@@ -56,6 +56,7 @@ type ScopedKeeper interface {
 }
 
 type StakingKeeper interface {
+	GetParams(ctx sdk.Context) stakingtypes.Params
 	GetValidatorUpdates(ctx sdk.Context) []abci.ValidatorUpdate
 	UnbondingCanComplete(ctx sdk.Context, id uint64) error
 	UnbondingTime(ctx sdk.Context) time.Duration
@@ -121,4 +122,6 @@ type IBCTransferKeeper interface {
 
 type MultiStakingKeeper interface {
 	MultiStakingDelegate(ctx sdk.Context, msg multistakingtypes.MsgMultiStakingDelegate) error
+
+	Unbond(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, token sdk.Coin) (math.Int, error)
 }
