@@ -15,4 +15,5 @@ var (
 	ErrIBCCallbackNotExisted      = errorsmod.Register(ModuleName, 8, "")
 	ErrUnknownIBCCallbackType     = errorsmod.Register(ModuleName, 9, "")
 	ErrMismatchStatus             = errorsmod.Register(ModuleName, 10, "")
+	ErrNoUnbondingDelegation      = errorsmod.Register(ModuleName, 11, "")
 )

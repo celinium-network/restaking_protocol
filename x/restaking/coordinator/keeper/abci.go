@@ -16,6 +16,79 @@ func (k Keeper) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) {
 	k.ProcessPendingOperatorDelegationRecord(ctx)
 
 	k.ProcessPendingOperatorUndelegationRecord(ctx)
+
+	k.ProcessCompletedUnbonding(ctx)
+}
+
+func (k Keeper) ProcessCompletedUnbonding(ctx sdk.Context) {
+	matureUnbonds := k.DequeueAllMatureUBDQueue(ctx, ctx.BlockHeader().Time)
+	for _, dvPair := range matureUnbonds {
+		delAccAddr := sdk.MustAccAddressFromBech32(dvPair.Delegator)
+		opAccAddr := sdk.MustAccAddressFromBech32(dvPair.Operator)
+		_, err := k.CompleteUnbonding(ctx, delAccAddr, opAccAddr)
+		if err != nil {
+			continue
+		}
+	}
+}
+
+func (k Keeper) DequeueAllMatureUBDQueue(ctx sdk.Context, currTime time.Time) (matureUnbonds []types.DOPair) {
+	store := ctx.KVStore(k.storeKey)
+
+	unbondingTimesliceIterator := k.UBDQueueIterator(ctx, currTime)
+	defer unbondingTimesliceIterator.Close()
+
+	for ; unbondingTimesliceIterator.Valid(); unbondingTimesliceIterator.Next() {
+		timeslice := types.DOPairs{}
+		value := unbondingTimesliceIterator.Value()
+		k.cdc.MustUnmarshal(value, &timeslice)
+
+		matureUnbonds = append(matureUnbonds, timeslice.Pairs...)
+
+		store.Delete(unbondingTimesliceIterator.Key())
+	}
+
+	return matureUnbonds
+}
+
+func (k Keeper) CompleteUnbonding(ctx sdk.Context, delAddr sdk.AccAddress, opAddr sdk.AccAddress) (sdk.Coins, error) {
+	ubd, found := k.GetUnbondingDelegation(ctx, delAddr, opAddr)
+	if !found {
+		return nil, types.ErrNoUnbondingDelegation
+	}
+
+	balances := sdk.NewCoins()
+	ctxTime := ctx.BlockHeader().Time
+
+	// loop through all the entries and complete unbonding mature entries
+	for i := 0; i < len(ubd.Entries); i++ {
+		entry := ubd.Entries[i]
+		if entry.IsMature(ctxTime) {
+			ubd.RemoveEntry(int64(i))
+			i--
+			k.DeleteUnbondingIndex(ctx, entry.Id)
+
+			// track undelegation only when remaining or truncated shares are non-zero
+			if !entry.Amount.IsZero() {
+				if err := k.sendCoinsFromAccountToAccount(
+					ctx, opAddr, delAddr, sdk.Coins{entry.Amount},
+				); err != nil {
+					return nil, err
+				}
+
+				balances = balances.Add(entry.Amount)
+			}
+		}
+	}
+
+	// set the unbonding delegation or remove it if there are no more entries
+	if len(ubd.Entries) == 0 {
+		k.RemoveUnbondingDelegation(ctx, ubd)
+	} else {
+		k.SetUnbondingDelegation(ctx, ubd)
+	}
+
+	return balances, nil
 }
 
 func (k Keeper) ProcessPendingOperatorDelegationRecord(ctx sdk.Context) {

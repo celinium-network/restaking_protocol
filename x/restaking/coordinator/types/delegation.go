@@ -1,6 +1,9 @@
 package types
 
 import (
+	time "time"
+
+	"github.com/celinium-network/restaking_protocol/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -44,4 +47,13 @@ func NewUnbondingDelegation(
 		OperatorAddress:  operatorAddr.String(),
 		Entries:          []UnbondingEntry{NewUnbondingDelegationEntry(creationHeight, balance, id)},
 	}
+}
+
+func (e UnbondingEntry) IsMature(currentTime time.Time) bool {
+	et := utils.ConvertNanoSecondToTime(e.CompleteTime)
+	return !et.After(currentTime)
+}
+
+func (ubd *UnbondingDelegation) RemoveEntry(i int64) {
+	ubd.Entries = append(ubd.Entries[:i], ubd.Entries[i+1:]...)
 }

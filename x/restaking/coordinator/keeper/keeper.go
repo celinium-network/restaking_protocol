@@ -466,3 +466,25 @@ func (k Keeper) SetUBDQueueTimeSlice(ctx sdk.Context, timestamp time.Time, keys 
 	bz := k.cdc.MustMarshal(&types.DOPairs{Pairs: keys})
 	store.Set(types.GetUnbondingDelegationTimeKey(timestamp), bz)
 }
+
+func (k Keeper) UBDQueueIterator(ctx sdk.Context, endTime time.Time) sdk.Iterator {
+	store := ctx.KVStore(k.storeKey)
+	return store.Iterator([]byte{types.UnbondingQueueKey},
+		sdk.InclusiveEndBytes(types.GetUnbondingDelegationTimeKey(endTime)))
+}
+
+func (k Keeper) DeleteUnbondingIndex(ctx sdk.Context, id uint64) {
+	store := ctx.KVStore(k.storeKey)
+	store.Delete(types.GetUnbondingIndexKey(id))
+}
+
+// RemoveUnbondingDelegation removes the unbonding delegation object and associated index.
+func (k Keeper) RemoveUnbondingDelegation(ctx sdk.Context, ubd types.UnbondingDelegation) {
+	delegatorAddress := sdk.MustAccAddressFromBech32(ubd.DelegatorAddress)
+
+	store := ctx.KVStore(k.storeKey)
+	addr := sdk.MustAccAddressFromBech32(ubd.OperatorAddress)
+
+	key := types.GetUBDKey(delegatorAddress, addr)
+	store.Delete(key)
+}
