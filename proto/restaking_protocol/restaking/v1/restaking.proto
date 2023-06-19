@@ -2,12 +2,10 @@ syntax = "proto3";
 
 package restaking_protocol.restaking.v1;
 
-import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "tendermint/abci/types.proto";
 import "tendermint/crypto/keys.proto";
 import "cosmos/base/v1beta1/coin.proto";
-import "google/protobuf/timestamp.proto";
 
 option go_package = "restaking_protocol/x/restaking/types";
 
