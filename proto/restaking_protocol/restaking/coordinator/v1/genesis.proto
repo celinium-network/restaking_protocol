@@ -4,6 +4,5 @@ package restaking_protocol.restaking.coordinator.v1;
 
 option go_package = "restaking_protocol/x/restaking/coordinator/types";
 
-message GenesisState{
-    
-}
+// GenesisState defines the restaking consumer module's genesis state.
+message GenesisState{}

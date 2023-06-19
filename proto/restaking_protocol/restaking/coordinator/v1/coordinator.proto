@@ -11,13 +11,23 @@ import "tendermint/crypto/keys.proto";
 
 option go_package = "restaking_protocol/x/restaking/coordinator/types";
 
+// Params maybe unused
+message Params{
+    // template_client maybe unused
+    string template_client = 1 [
+        (gogoproto.customtype) = "TendermintLightClientState"
+    ];
+}
+
+// ConsumerAdditionProposal is a governance proposal on the coordinator chain to resgister a new consumer chain.
 message ConsumerAdditionProposal{
     option (gogoproto.goproto_getters)  = false;
-  
-    // the title of the proposal
+
+    // The title of the proposal
     string title = 1;
-    // the description of the proposal
+    // The description of the proposal
     string description = 2;
+    // The id of consumer chain.
     string chain_id = 3 ;
     
     // Unbonding period for the consumer,
@@ -30,39 +40,39 @@ message ConsumerAdditionProposal{
     google.protobuf.Duration transfer_timeout_period = 6
         [(gogoproto.nullable) = false, (gogoproto.stdduration) = true];
 
+    // Tokens accepted by the Consumer chain as restaking tokens.
     repeated string restaking_tokens = 7;
-
+    // Tokens are rewards for restaking on the consumer platform.
     repeated string reward_tokens = 8;
 }
 
+// Operator represents an operator who restakes tokens on the consumer platform.
+// Operator can restake on multiple consumer chains, but each chain can only select one validator.
 message Operator{
+    // The denomination of the tokens being restaked.
     string restaking_denom = 1;
-
+    // The operator's address.
     string operator_address = 2[(cosmos_proto.scalar) = "cosmos.AddressString"]; 
-
+    // The amount of tokens that have been restaked.
     string restaked_amount = 3 [
         (cosmos_proto.scalar)  = "cosmos.Int",
         (gogoproto.customtype) = "Int",
         (gogoproto.nullable)   = false
     ];
-  
+    // The total shares representing the sum of all user stakes delegated to the operator.
     string shares = 4 [
         (cosmos_proto.scalar)  = "cosmos.Int",
         (gogoproto.customtype) = "Int",
         (gogoproto.nullable)   = false
     ];
-
+    // The list of operated validators associated with the operator.
     repeated OperatedValidator operated_validators = 5 [(gogoproto.nullable)   = false] ;
-
+    // The owner's address of the operator. The owner has the authority to update 
+    // the operated validators for the operator.
     string owner = 6 [(cosmos_proto.scalar) = "cosmos.AddressString"]; 
 }
 
-message Params{
-    string template_client = 1 [
-        (gogoproto.customtype) = "TendermintLightClientState"
-    ];
-}
-
+// ConsumerValidatorUpdates tracks the validator set on the consumer.
 message ConsumerValidatorUpdates{
     repeated .tendermint.abci.ValidatorUpdate validator_updates = 1 [
       (gogoproto.nullable) = false,
@@ -70,76 +80,92 @@ message ConsumerValidatorUpdates{
     ];
 }
 
+// OperatedValidator represent the validator in opeator.
 message OperatedValidator{
     string chainID  = 1;
-
     .tendermint.crypto.PublicKey validator_pk = 2 [(gogoproto.nullable) = false];
 }
 
+// OperatorDelegationRecord represents a record of operator delegation in a epoch.
+// It will be deleted once the coordinator receives acknowledgments for all IBC calls.
 message OperatorDelegationRecord {
+    // The operator's address.
     string operator_address = 1[(cosmos_proto.scalar) = "cosmos.AddressString"];
-    
+    // The amount of tokens delegated to the operator in this record.
     string delegation_amount = 2 [
         (cosmos_proto.scalar)  = "cosmos.Int",
         (gogoproto.customtype) = "Int",
         (gogoproto.nullable)   = false
     ];
-
+    // The status of the operator delegation.
     uint32 status = 3 [
         (gogoproto.customtype) = "OperatorDelegationRecordStatus",
         (gogoproto.nullable)   = false
     ];
-
-    repeated string ibcCallbackIds = 4;
+    // The list of IBC callback IDs associated with the delegation record.
+    repeated string ibc_callback_ids = 4;
 }
 
+// OperatorUndelegationRecord represents a record of operator undelegation in a epoch.
 message OperatorUndelegationRecord {
-    string operator_address = 1[(cosmos_proto.scalar) = "cosmos.AddressString"];
-    
+    // The operator's address.
+    string operator_address = 1[(cosmos_proto.scalar) = "cosmos.AddressString"]; 
+    // The amount of tokens undelegated from the operator.
     string undelegation_amount = 2 [
         (cosmos_proto.scalar)  = "cosmos.Int",
         (gogoproto.customtype) = "Int",
         (gogoproto.nullable)   = false
     ];
-
+    // The status of the operator undelegation.
     uint32 status = 3 [
         (gogoproto.customtype) = "OperatorUndelegationRecordStatus",
         (gogoproto.nullable)   = false
     ];
-
-    repeated string ibcCallbackIds = 4;
-
-    repeated  uint64 unbondingEntryIds = 5;
-
+    // The list of IBC callback IDs associated with the undelegation record.
+    repeated string ibc_callback_ids = 4;
+    // The list of unbonding entry IDs associated with the undelegation record.
+    repeated  uint64 unbonding_entry_ids = 5;
+    // The latest complete time of the undelegation record. Each consumer chain may
+    // have a different undelegation complete time, the latest one is chosen as the completion time.
     int64 latest_complete_time = 6;
 }
 
+// UnbondingEntry defines an unbonding object with relevant metadata.
 message UnbondingEntry{
+    // Incrementing id that uniquely identifies this entry.
     uint64 id = 1;
-
+    // amount defines the tokens to receive at completion.
     cosmos.base.v1beta1.Coin amount = 2[ 
         (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coin",
         (gogoproto.nullable) = false
     ];
-
+    // creation_height is the height which the unbonding took place.
     uint64 create_height = 3;
-
+    // completion_time is the unix nano time for unbonding completion.
     int64 complete_time = 4;
 }
 
+
+// UnbondingDelegation stores all of a single delegator's unbonding bonds
+// for a single opeator in an time-ordered list.
 message UnbondingDelegation{
     string delegator_address = 1[(cosmos_proto.scalar) = "cosmos.AddressString"];
-
     string operator_address = 2[(cosmos_proto.scalar) = "cosmos.AddressString"];
-
     repeated UnbondingEntry entries  = 3 [(gogoproto.nullable) = false];
 }
 
+// Delegation represents the bond with tokens held by an account. It is
+// owned by one delegator, and is associated with the voting power of one
+// opeator.
 message Delegation{
+    option (gogoproto.equal)            = false;
+    option (gogoproto.goproto_getters)  = false;
+
+    // delegator_address is the bech32-encoded address of the delegator.
     string delegator = 1[(cosmos_proto.scalar) = "cosmos.AddressString"];
-    
+    // opeator_address is the bech32-encoded address of the opeator.
     string operator = 2[(cosmos_proto.scalar) = "cosmos.AddressString"];
-    
+    // shares define the delegation shares received.
     string shares = 3 [
         (cosmos_proto.scalar)  = "cosmos.Int",
         (gogoproto.customtype) = "Int",
@@ -147,9 +173,10 @@ message Delegation{
     ];
 }
 
+// IBCCallback represents a callback for an IBC operation.
 message IBCCallback{
     // The type of the callback operation.
-    uint32 callType = 1 [
+    uint32 call_type = 1 [
         (gogoproto.customtype) = "CallType",
         (gogoproto.nullable) = false
     ];
@@ -157,12 +184,15 @@ message IBCCallback{
     string args = 2;
 }
 
+// DVPair is struct that just has a delegator-opeator pair with no other data.
+// It is intended to be used as a marshalable pointer. For example, a DOPair can
+// be used to construct the key to getting an UnbondingDelegation from state.
 message DOPair{
     string delegator = 1[(cosmos_proto.scalar) = "cosmos.AddressString"];
- 
     string operator = 2[(cosmos_proto.scalar) = "cosmos.AddressString"];
 }
 
+// DVPairs defines an array of DOPair objects.
 message DOPairs{
     repeated DOPair pairs = 1 [(gogoproto.nullable) = false];
 }
