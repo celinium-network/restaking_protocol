@@ -41,6 +41,7 @@ func (am AppModule) OnChanOpenAck(
 	counterpartyVersion string,
 ) error {
 	am.keeper.SetCoordinatorChannelID(ctx, channelID)
+	am.keeper.QueueInitialVSC(ctx)
 	return nil
 }
 

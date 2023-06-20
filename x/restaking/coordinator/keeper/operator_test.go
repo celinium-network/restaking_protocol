@@ -2,7 +2,6 @@ package keeper_test
 
 import (
 	"cosmossdk.io/math"
-	abci "github.com/cometbft/cometbft/abci/types"
 	tmprotocrypto "github.com/cometbft/cometbft/proto/tendermint/crypto"
 	"github.com/golang/mock/gomock"
 
@@ -25,15 +24,12 @@ func (s *KeeperTestSuite) setupConsumerChain(
 	s.coordinatorKeeper.SetConsumerRestakingToken(ctx, clientID, restakingTokens)
 	s.coordinatorKeeper.SetConsumerRewardToken(ctx, clientID, rewardToken)
 
-	validatorUpdates := abci.ValidatorUpdates{}
 	for _, pk := range validators {
-		validatorUpdates = append(validatorUpdates, abci.ValidatorUpdate{
-			PubKey: pk,
-			Power:  1,
+		s.coordinatorKeeper.SetConsumerValidator(ctx, clientID, types.ConsumerValidator{
+			ValidatorPk: pk,
+			Power:       1,
 		})
 	}
-
-	s.coordinatorKeeper.SetConsumerValidator(ctx, clientID, validatorUpdates)
 }
 
 func (s *KeeperTestSuite) TestRegisterOperator() {
@@ -51,10 +47,10 @@ func (s *KeeperTestSuite) TestRegisterOperator() {
 		s.Require().NoError(err)
 		tmPubkeys = append(tmPubkeys, tmProtoPk)
 
-		keeper.SetConsumerValidator(ctx, consumerClientIDs[i], []abci.ValidatorUpdate{{
-			PubKey: tmProtoPk,
-			Power:  1,
-		}})
+		keeper.SetConsumerValidator(ctx, consumerClientIDs[i], types.ConsumerValidator{
+			ValidatorPk: tmProtoPk,
+			Power:       1,
+		})
 
 		keeper.SetConsumerRestakingToken(ctx, consumerClientIDs[i], []string{"stake"})
 		keeper.SetConsumerRewardToken(ctx, consumerClientIDs[i], []string{"stake"})

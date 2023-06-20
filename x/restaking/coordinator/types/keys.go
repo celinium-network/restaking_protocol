@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	time "time"
 
+	"github.com/celinium-network/restaking_protocol/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/address"
 )
@@ -28,7 +29,9 @@ const (
 
 	ConsumerClientIDPrefix
 
-	ConsumerValidatorUpdatesPrefix
+	ConsumerValidatorListPrefix
+
+	ConsumerValidatorPrefix
 
 	ConsumerRestakingTokens
 
@@ -71,8 +74,13 @@ func ConsumerClientIDKey(chainID string) []byte {
 	return append([]byte{ConsumerClientIDPrefix}, []byte(chainID)...)
 }
 
-func ConsumerValidatorSetKey(chainID string) []byte {
-	return append([]byte{ConsumerValidatorUpdatesPrefix}, []byte(chainID)...)
+func ConsumerValidatorListKey(chainID string) []byte {
+	return append([]byte{ConsumerValidatorListPrefix}, []byte(chainID)...)
+}
+
+func ConsumerValidatorKey(chainID string, pk []byte) []byte {
+	return append([]byte{ConsumerValidatorPrefix},
+		append(utils.BytesLengthPrefix([]byte(chainID)), address.MustLengthPrefix(pk)...)...)
 }
 
 func ConsumerRestakingTokensKey(chainID string) []byte {

@@ -8,7 +8,6 @@ import (
 
 	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
-	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
@@ -28,22 +27,15 @@ func (k Keeper) RegisterOperator(ctx sdk.Context, msg types.MsgRegisterOperator)
 			return errorsmod.Wrap(types.ErrUnknownConsumer, fmt.Sprintf("consumer chainID %s", chainID))
 		}
 
-		lastValidatorUpdates, found := k.GetConsumerValidator(ctx, string(clientID))
-		if !found || len(lastValidatorUpdates) == 0 {
-			return errorsmod.Wrap(types.ErrUnknownConsumer, fmt.Sprintf("unknown validator set of consumer %s", chainID))
-		}
-
 		restakingTokens := k.GetConsumerRestakingToken(ctx, string(clientID))
 		if !slices.Contains[string](restakingTokens, msg.RestakingDenom) {
 			return errorsmod.Wrap(types.ErrUnsupportedRestakingToken,
 				fmt.Sprintf("chainID %s, unsupported token: %s", chainID, msg.RestakingDenom))
 		}
 
-		if !slices.ContainsFunc[abci.ValidatorUpdate](lastValidatorUpdates, func(vu abci.ValidatorUpdate) bool {
-			return vu.PubKey.Equal(msg.ConsumerValidatorPks[i])
-		}) {
+		if _, found := k.GetConsumerValidator(ctx, string(clientID), msg.ConsumerValidatorPks[i]); !found {
 			return errorsmod.Wrap(types.ErrNotExistedValidator,
-				fmt.Sprintf("chainID %s, validator %s not existed", chainID, msg.ConsumerValidatorPks[i]))
+				fmt.Sprintf("chainID %s, validator %s not existed", clientID, msg.ConsumerValidatorPks[i]))
 		}
 
 		operatedValidators = append(operatedValidators, types.OperatedValidator{

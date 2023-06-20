@@ -7,7 +7,10 @@ import (
 	fmt "fmt"
 	types "github.com/cometbft/cometbft/abci/types"
 	crypto "github.com/cometbft/cometbft/proto/tendermint/crypto"
+	_ "github.com/cosmos/cosmos-proto"
+	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	types1 "github.com/cosmos/cosmos-sdk/types"
+	_ "github.com/cosmos/cosmos-sdk/x/staking/types"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
 	io "io"
@@ -25,6 +28,34 @@ var _ = math.Inf
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
+
+type ValidatorSetChange_Type int32
+
+const (
+	ValidatorSetChange_Add    ValidatorSetChange_Type = 0
+	ValidatorSetChange_Remove ValidatorSetChange_Type = 1
+	ValidatorSetChange_Update ValidatorSetChange_Type = 2
+)
+
+var ValidatorSetChange_Type_name = map[int32]string{
+	0: "Add",
+	1: "Remove",
+	2: "Update",
+}
+
+var ValidatorSetChange_Type_value = map[string]int32{
+	"Add":    0,
+	"Remove": 1,
+	"Update": 2,
+}
+
+func (x ValidatorSetChange_Type) String() string {
+	return proto.EnumName(ValidatorSetChange_Type_name, int32(x))
+}
+
+func (ValidatorSetChange_Type) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_63af7fa0c4c2b658, []int{0, 0}
+}
 
 type RestakingPacket_PacketType int32
 
@@ -48,12 +79,12 @@ func (x RestakingPacket_PacketType) String() string {
 }
 
 func (RestakingPacket_PacketType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_63af7fa0c4c2b658, []int{4, 0}
+	return fileDescriptor_63af7fa0c4c2b658, []int{6, 0}
 }
 
 type ValidatorSetChange struct {
-	ValidatorUpdates []types.ValidatorUpdate `protobuf:"bytes,1,rep,name=validator_updates,json=validatorUpdates,proto3" json:"validator_updates" yaml:"validator_updates"`
-	ValsetUpdateId   uint64                  `protobuf:"varint,2,opt,name=valset_update_id,json=valsetUpdateId,proto3" json:"valset_update_id,omitempty"`
+	Type             ValidatorSetChange_Type `protobuf:"varint,1,opt,name=type,proto3,enum=restaking_protocol.restaking.v1.ValidatorSetChange_Type" json:"type,omitempty"`
+	ValidatorUpdates []types.ValidatorUpdate `protobuf:"bytes,2,rep,name=validator_updates,json=validatorUpdates,proto3" json:"validator_updates" yaml:"validator_updates"`
 }
 
 func (m *ValidatorSetChange) Reset()         { *m = ValidatorSetChange{} }
@@ -89,18 +120,18 @@ func (m *ValidatorSetChange) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ValidatorSetChange proto.InternalMessageInfo
 
+func (m *ValidatorSetChange) GetType() ValidatorSetChange_Type {
+	if m != nil {
+		return m.Type
+	}
+	return ValidatorSetChange_Add
+}
+
 func (m *ValidatorSetChange) GetValidatorUpdates() []types.ValidatorUpdate {
 	if m != nil {
 		return m.ValidatorUpdates
 	}
 	return nil
-}
-
-func (m *ValidatorSetChange) GetValsetUpdateId() uint64 {
-	if m != nil {
-		return m.ValsetUpdateId
-	}
-	return 0
 }
 
 type ValidatorSetChanges struct {
@@ -147,6 +178,95 @@ func (m *ValidatorSetChanges) GetValidatorSetChanges() []ValidatorSetChange {
 	return nil
 }
 
+type ConsumerSlash struct {
+	ValidatorPk crypto.PublicKey                       `protobuf:"bytes,1,opt,name=validator_pk,json=validatorPk,proto3" json:"validator_pk"`
+	SlashFactor github_com_cosmos_cosmos_sdk_types.Dec `protobuf:"bytes,2,opt,name=slash_factor,json=slashFactor,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"slash_factor"`
+}
+
+func (m *ConsumerSlash) Reset()         { *m = ConsumerSlash{} }
+func (m *ConsumerSlash) String() string { return proto.CompactTextString(m) }
+func (*ConsumerSlash) ProtoMessage()    {}
+func (*ConsumerSlash) Descriptor() ([]byte, []int) {
+	return fileDescriptor_63af7fa0c4c2b658, []int{2}
+}
+func (m *ConsumerSlash) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ConsumerSlash) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ConsumerSlash.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ConsumerSlash) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConsumerSlash.Merge(m, src)
+}
+func (m *ConsumerSlash) XXX_Size() int {
+	return m.Size()
+}
+func (m *ConsumerSlash) XXX_DiscardUnknown() {
+	xxx_messageInfo_ConsumerSlash.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ConsumerSlash proto.InternalMessageInfo
+
+func (m *ConsumerSlash) GetValidatorPk() crypto.PublicKey {
+	if m != nil {
+		return m.ValidatorPk
+	}
+	return crypto.PublicKey{}
+}
+
+type ConsumerSlashList struct {
+	Slashes []ConsumerSlash `protobuf:"bytes,1,rep,name=slashes,proto3" json:"slashes"`
+}
+
+func (m *ConsumerSlashList) Reset()         { *m = ConsumerSlashList{} }
+func (m *ConsumerSlashList) String() string { return proto.CompactTextString(m) }
+func (*ConsumerSlashList) ProtoMessage()    {}
+func (*ConsumerSlashList) Descriptor() ([]byte, []int) {
+	return fileDescriptor_63af7fa0c4c2b658, []int{3}
+}
+func (m *ConsumerSlashList) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ConsumerSlashList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ConsumerSlashList.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ConsumerSlashList) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConsumerSlashList.Merge(m, src)
+}
+func (m *ConsumerSlashList) XXX_Size() int {
+	return m.Size()
+}
+func (m *ConsumerSlashList) XXX_DiscardUnknown() {
+	xxx_messageInfo_ConsumerSlashList.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ConsumerSlashList proto.InternalMessageInfo
+
+func (m *ConsumerSlashList) GetSlashes() []ConsumerSlash {
+	if m != nil {
+		return m.Slashes
+	}
+	return nil
+}
+
 type DelegationPacket struct {
 	OperatorAddress string           `protobuf:"bytes,1,opt,name=operator_address,json=operatorAddress,proto3" json:"operator_address,omitempty"`
 	ValidatorPk     crypto.PublicKey `protobuf:"bytes,2,opt,name=validator_pk,json=validatorPk,proto3" json:"validator_pk"`
@@ -157,7 +277,7 @@ func (m *DelegationPacket) Reset()         { *m = DelegationPacket{} }
 func (m *DelegationPacket) String() string { return proto.CompactTextString(m) }
 func (*DelegationPacket) ProtoMessage()    {}
 func (*DelegationPacket) Descriptor() ([]byte, []int) {
-	return fileDescriptor_63af7fa0c4c2b658, []int{2}
+	return fileDescriptor_63af7fa0c4c2b658, []int{4}
 }
 func (m *DelegationPacket) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -217,7 +337,7 @@ func (m *UndelegationPacket) Reset()         { *m = UndelegationPacket{} }
 func (m *UndelegationPacket) String() string { return proto.CompactTextString(m) }
 func (*UndelegationPacket) ProtoMessage()    {}
 func (*UndelegationPacket) Descriptor() ([]byte, []int) {
-	return fileDescriptor_63af7fa0c4c2b658, []int{3}
+	return fileDescriptor_63af7fa0c4c2b658, []int{5}
 }
 func (m *UndelegationPacket) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -276,7 +396,7 @@ func (m *RestakingPacket) Reset()         { *m = RestakingPacket{} }
 func (m *RestakingPacket) String() string { return proto.CompactTextString(m) }
 func (*RestakingPacket) ProtoMessage()    {}
 func (*RestakingPacket) Descriptor() ([]byte, []int) {
-	return fileDescriptor_63af7fa0c4c2b658, []int{4}
+	return fileDescriptor_63af7fa0c4c2b658, []int{6}
 }
 func (m *RestakingPacket) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -327,7 +447,7 @@ func (m *ConsumerUndelegateResponse) Reset()         { *m = ConsumerUndelegateRe
 func (m *ConsumerUndelegateResponse) String() string { return proto.CompactTextString(m) }
 func (*ConsumerUndelegateResponse) ProtoMessage()    {}
 func (*ConsumerUndelegateResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_63af7fa0c4c2b658, []int{5}
+	return fileDescriptor_63af7fa0c4c2b658, []int{7}
 }
 func (m *ConsumerUndelegateResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -363,14 +483,70 @@ func (m *ConsumerUndelegateResponse) GetCompletionTime() int64 {
 	return 0
 }
 
+type ConsumerPacketData struct {
+	ValidatorSetChanges []ValidatorSetChange `protobuf:"bytes,1,rep,name=validatorSetChanges,proto3" json:"validatorSetChanges"`
+	SlashPacketData     []ConsumerSlash      `protobuf:"bytes,2,rep,name=slashPacketData,proto3" json:"slashPacketData"`
+}
+
+func (m *ConsumerPacketData) Reset()         { *m = ConsumerPacketData{} }
+func (m *ConsumerPacketData) String() string { return proto.CompactTextString(m) }
+func (*ConsumerPacketData) ProtoMessage()    {}
+func (*ConsumerPacketData) Descriptor() ([]byte, []int) {
+	return fileDescriptor_63af7fa0c4c2b658, []int{8}
+}
+func (m *ConsumerPacketData) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ConsumerPacketData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ConsumerPacketData.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ConsumerPacketData) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConsumerPacketData.Merge(m, src)
+}
+func (m *ConsumerPacketData) XXX_Size() int {
+	return m.Size()
+}
+func (m *ConsumerPacketData) XXX_DiscardUnknown() {
+	xxx_messageInfo_ConsumerPacketData.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ConsumerPacketData proto.InternalMessageInfo
+
+func (m *ConsumerPacketData) GetValidatorSetChanges() []ValidatorSetChange {
+	if m != nil {
+		return m.ValidatorSetChanges
+	}
+	return nil
+}
+
+func (m *ConsumerPacketData) GetSlashPacketData() []ConsumerSlash {
+	if m != nil {
+		return m.SlashPacketData
+	}
+	return nil
+}
+
 func init() {
+	proto.RegisterEnum("restaking_protocol.restaking.v1.ValidatorSetChange_Type", ValidatorSetChange_Type_name, ValidatorSetChange_Type_value)
 	proto.RegisterEnum("restaking_protocol.restaking.v1.RestakingPacket_PacketType", RestakingPacket_PacketType_name, RestakingPacket_PacketType_value)
 	proto.RegisterType((*ValidatorSetChange)(nil), "restaking_protocol.restaking.v1.ValidatorSetChange")
 	proto.RegisterType((*ValidatorSetChanges)(nil), "restaking_protocol.restaking.v1.ValidatorSetChanges")
+	proto.RegisterType((*ConsumerSlash)(nil), "restaking_protocol.restaking.v1.ConsumerSlash")
+	proto.RegisterType((*ConsumerSlashList)(nil), "restaking_protocol.restaking.v1.ConsumerSlashList")
 	proto.RegisterType((*DelegationPacket)(nil), "restaking_protocol.restaking.v1.DelegationPacket")
 	proto.RegisterType((*UndelegationPacket)(nil), "restaking_protocol.restaking.v1.UndelegationPacket")
 	proto.RegisterType((*RestakingPacket)(nil), "restaking_protocol.restaking.v1.RestakingPacket")
 	proto.RegisterType((*ConsumerUndelegateResponse)(nil), "restaking_protocol.restaking.v1.ConsumerUndelegateResponse")
+	proto.RegisterType((*ConsumerPacketData)(nil), "restaking_protocol.restaking.v1.ConsumerPacketData")
 }
 
 func init() {
@@ -378,44 +554,54 @@ func init() {
 }
 
 var fileDescriptor_63af7fa0c4c2b658 = []byte{
-	// 581 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe4, 0x54, 0xcd, 0x6e, 0xd3, 0x4c,
-	0x14, 0xcd, 0x7c, 0x8d, 0x2a, 0x75, 0x5a, 0xa5, 0xfe, 0xa6, 0x20, 0x85, 0x52, 0x39, 0x91, 0x85,
-	0xd4, 0xb0, 0x60, 0xac, 0xb4, 0x3b, 0x90, 0x90, 0x48, 0xe8, 0x02, 0xb1, 0x20, 0x32, 0x2d, 0x0b,
-	0x36, 0xd1, 0xd8, 0xbe, 0x72, 0x47, 0xfe, 0x19, 0xcb, 0x33, 0xb1, 0xf0, 0x9e, 0x07, 0xe0, 0x29,
-	0x58, 0xb0, 0xe1, 0x35, 0xba, 0xec, 0x92, 0x55, 0x41, 0xc9, 0x06, 0xb1, 0xe4, 0x09, 0x90, 0xc7,
-	0x4e, 0x1c, 0x08, 0x52, 0x1f, 0x80, 0x95, 0xed, 0x7b, 0xce, 0xb9, 0xf7, 0xdc, 0x1f, 0x19, 0xdb,
-	0x19, 0x48, 0xc5, 0x42, 0x9e, 0x04, 0xd3, 0x34, 0x13, 0x4a, 0x78, 0x22, 0x6a, 0x42, 0x76, 0x3e,
-	0x6c, 0x3e, 0xa8, 0xc6, 0x49, 0x6f, 0x53, 0x40, 0x1b, 0x4e, 0x3e, 0x3c, 0xbc, 0x13, 0x88, 0x40,
-	0x68, 0xc8, 0x2e, 0xdf, 0x2a, 0xd9, 0xe1, 0x7d, 0x05, 0x89, 0x0f, 0x59, 0xcc, 0x13, 0x65, 0x33,
-	0xd7, 0xe3, 0xb6, 0x2a, 0x52, 0x90, 0x35, 0x78, 0xb4, 0x06, 0x7a, 0x59, 0x91, 0x2a, 0x61, 0x87,
-	0x50, 0x2c, 0x51, 0xd3, 0x13, 0x32, 0x16, 0xd2, 0x76, 0x99, 0x04, 0x3b, 0x1f, 0xba, 0xa0, 0xd8,
-	0xd0, 0xf6, 0x04, 0x4f, 0x2a, 0xdc, 0xfa, 0x8c, 0x30, 0x79, 0xc3, 0x22, 0xee, 0x33, 0x25, 0xb2,
-	0xd7, 0xa0, 0xc6, 0x97, 0x2c, 0x09, 0x80, 0x08, 0xfc, 0x7f, 0xbe, 0x8c, 0x4e, 0x67, 0xa9, 0xcf,
-	0x14, 0xc8, 0x2e, 0xea, 0x6f, 0x0d, 0x76, 0x4f, 0xfa, 0xb4, 0x29, 0x48, 0x4b, 0x37, 0x74, 0xa5,
-	0xbf, 0xd0, 0xc4, 0x51, 0xff, 0xea, 0xa6, 0xd7, 0xfa, 0x79, 0xd3, 0xeb, 0x16, 0x2c, 0x8e, 0x1e,
-	0x5b, 0x1b, 0x89, 0x2c, 0xc7, 0xc8, 0x7f, 0x97, 0x48, 0x32, 0xc0, 0x65, 0x4c, 0x82, 0xaa, 0x49,
-	0x53, 0xee, 0x77, 0xff, 0xeb, 0xa3, 0x41, 0xdb, 0xe9, 0x54, 0xf1, 0x8a, 0xf8, 0xc2, 0xb7, 0xde,
-	0x23, 0x7c, 0xb0, 0xe9, 0x58, 0x92, 0x18, 0xdf, 0x6d, 0x2a, 0x95, 0x89, 0xbc, 0x0a, 0xa8, 0x6d,
-	0x9f, 0xd2, 0x5b, 0x66, 0x4f, 0x37, 0x93, 0x8e, 0xda, 0x65, 0x27, 0xce, 0x41, 0xbe, 0x59, 0xce,
-	0xfa, 0x8e, 0xb0, 0xf1, 0x1c, 0x22, 0x08, 0x98, 0xe2, 0x22, 0x99, 0x30, 0x2f, 0x04, 0x45, 0x1e,
-	0x62, 0x43, 0xa4, 0x90, 0x69, 0x0b, 0xcc, 0xf7, 0x33, 0x90, 0x65, 0x79, 0x34, 0xd8, 0x71, 0xf6,
-	0x97, 0xf1, 0x67, 0x55, 0x98, 0x9c, 0xe1, 0xbd, 0xc6, 0x6e, 0x1a, 0xea, 0x66, 0x77, 0x4f, 0x8e,
-	0xd6, 0x87, 0x5b, 0x6d, 0x93, 0x4e, 0x66, 0x6e, 0xc4, 0xbd, 0x97, 0x50, 0xd4, 0x76, 0x76, 0x57,
-	0xba, 0x49, 0x48, 0x5c, 0xbc, 0xcd, 0x62, 0x31, 0x4b, 0x54, 0x77, 0x4b, 0x27, 0xb8, 0x47, 0xab,
-	0x85, 0xd3, 0x72, 0xe1, 0xb4, 0x5e, 0x38, 0x1d, 0x0b, 0x9e, 0x8c, 0xec, 0x52, 0xfd, 0xe9, 0x6b,
-	0xef, 0x38, 0xe0, 0xea, 0x72, 0xe6, 0x52, 0x4f, 0xc4, 0x76, 0x7d, 0x1d, 0xd5, 0xe3, 0x91, 0xf4,
-	0xc3, 0xfa, 0xb4, 0x4a, 0x81, 0x53, 0x67, 0xb6, 0x7e, 0x20, 0x4c, 0x2e, 0x12, 0xff, 0xdf, 0x68,
-	0xf6, 0x23, 0xc2, 0xfb, 0xce, 0xf2, 0x2c, 0xea, 0x4e, 0x5f, 0xe1, 0x76, 0xc9, 0xd4, 0xdd, 0x75,
-	0x4e, 0x9e, 0xdc, 0x7a, 0x49, 0x7f, 0xe8, 0x69, 0xf5, 0x38, 0x2f, 0x52, 0x70, 0x74, 0x22, 0x42,
-	0x70, 0xdb, 0x67, 0x8a, 0xe9, 0x39, 0xec, 0x38, 0xfa, 0xdd, 0xa2, 0x18, 0x37, 0x3c, 0xd2, 0xc1,
-	0xb8, 0xb9, 0x2e, 0xa3, 0x45, 0x0c, 0xbc, 0xb7, 0xbe, 0x02, 0x03, 0x59, 0x67, 0xf8, 0x70, 0x2c,
-	0x12, 0x39, 0x8b, 0x21, 0x5b, 0x21, 0xe0, 0x80, 0x4c, 0x45, 0x22, 0x81, 0x1c, 0xe3, 0x7d, 0x4f,
-	0xc4, 0x69, 0x04, 0x25, 0x7b, 0xaa, 0x78, 0x5c, 0xb9, 0xdf, 0x72, 0x3a, 0x4d, 0xf8, 0x9c, 0xc7,
-	0x30, 0x7a, 0x7a, 0x35, 0x37, 0xd1, 0xf5, 0xdc, 0x44, 0xdf, 0xe6, 0x26, 0xfa, 0xb0, 0x30, 0x5b,
-	0xd7, 0x0b, 0xb3, 0xf5, 0x65, 0x61, 0xb6, 0xde, 0x3e, 0xf8, 0xcb, 0xdf, 0xed, 0xdd, 0xda, 0xff,
-	0x4d, 0x0f, 0xcf, 0xdd, 0xd6, 0xd8, 0xe9, 0xaf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x14, 0x23, 0x91,
-	0x7b, 0x0c, 0x05, 0x00, 0x00,
+	// 744 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe4, 0x55, 0x31, 0x6f, 0xd3, 0x4c,
+	0x18, 0xce, 0x25, 0x51, 0xab, 0xbe, 0xe9, 0xd7, 0xb8, 0xd7, 0xef, 0x93, 0xd2, 0x7e, 0x55, 0x12,
+	0x59, 0x15, 0x2d, 0x43, 0xcf, 0x4a, 0xbb, 0x20, 0x40, 0x48, 0x4d, 0x53, 0x16, 0x2a, 0xa8, 0xdc,
+	0x96, 0x81, 0x81, 0xe8, 0x62, 0x1f, 0xa9, 0x95, 0xd8, 0x67, 0xf9, 0x2e, 0x16, 0xd9, 0xf9, 0x01,
+	0xfc, 0x0a, 0x06, 0x66, 0x24, 0xfe, 0x42, 0xc7, 0x8a, 0x09, 0x31, 0x14, 0x68, 0x17, 0xc4, 0xc8,
+	0xcc, 0x80, 0x7c, 0xb6, 0xeb, 0xa4, 0xa9, 0x54, 0x54, 0x89, 0x89, 0xc9, 0xe7, 0x7b, 0xde, 0xf7,
+	0x79, 0xdf, 0xf7, 0xf1, 0x73, 0x67, 0x30, 0x02, 0x26, 0x24, 0xed, 0x39, 0x5e, 0xb7, 0xed, 0x07,
+	0x5c, 0x72, 0x8b, 0xf7, 0xb3, 0x2d, 0x23, 0x6c, 0x64, 0x2f, 0x44, 0xe1, 0xb8, 0x36, 0x99, 0x40,
+	0xb2, 0x98, 0xb0, 0xb1, 0xf4, 0x6f, 0x97, 0x77, 0xb9, 0x82, 0x8c, 0x68, 0x15, 0xa7, 0x2d, 0x2d,
+	0x5a, 0x5c, 0xb8, 0x5c, 0xc4, 0x39, 0x46, 0xfc, 0x92, 0x40, 0xff, 0x4b, 0xe6, 0xd9, 0x2c, 0x70,
+	0x1d, 0x4f, 0x1a, 0xb4, 0x63, 0x39, 0x86, 0x1c, 0xfa, 0x2c, 0x05, 0x97, 0x47, 0x40, 0x2b, 0x18,
+	0xfa, 0x92, 0x1b, 0x3d, 0x36, 0x4c, 0xd1, 0x6a, 0x4c, 0x64, 0x74, 0xa8, 0x60, 0x46, 0xd8, 0xe8,
+	0x30, 0x49, 0x1b, 0x86, 0xc5, 0x1d, 0x2f, 0xc1, 0x57, 0x12, 0x3c, 0x9b, 0x27, 0x0e, 0x19, 0x1b,
+	0x49, 0xff, 0x89, 0x00, 0x3f, 0xa5, 0x7d, 0xc7, 0xa6, 0x92, 0x07, 0xfb, 0x4c, 0x6e, 0x1f, 0x51,
+	0xaf, 0xcb, 0xf0, 0x2e, 0x14, 0xa3, 0x4e, 0x2a, 0xa8, 0x8e, 0xd6, 0xe6, 0x36, 0xee, 0x90, 0x6b,
+	0x06, 0x27, 0x93, 0x14, 0xe4, 0x60, 0xe8, 0x33, 0x53, 0xb1, 0x60, 0x0e, 0xf3, 0x61, 0x1a, 0xd0,
+	0x1e, 0xf8, 0x36, 0x95, 0x4c, 0x54, 0xf2, 0xf5, 0xc2, 0x5a, 0x69, 0xa3, 0x4e, 0xb2, 0x21, 0x49,
+	0xa4, 0x40, 0x46, 0x75, 0xa8, 0x02, 0x9b, 0xf5, 0xe3, 0xd3, 0x5a, 0xee, 0xc7, 0x69, 0xad, 0x32,
+	0xa4, 0x6e, 0xff, 0xae, 0x3e, 0x41, 0xa4, 0x9b, 0x5a, 0x38, 0x9e, 0x22, 0xf4, 0x55, 0x28, 0x46,
+	0xe5, 0xf1, 0x34, 0x14, 0xb6, 0x6c, 0x5b, 0xcb, 0x61, 0x80, 0x29, 0x93, 0xb9, 0x3c, 0x64, 0x1a,
+	0x8a, 0xd6, 0x71, 0x9c, 0x96, 0xd7, 0x5f, 0x21, 0x58, 0x98, 0xec, 0x5d, 0x60, 0x17, 0xfe, 0xcb,
+	0x0a, 0x09, 0x26, 0xdb, 0x56, 0x0c, 0x54, 0x90, 0xea, 0x7a, 0xf3, 0x06, 0x82, 0x34, 0x8b, 0xd1,
+	0x20, 0xe6, 0x42, 0x38, 0x59, 0x4e, 0x7f, 0x8f, 0xe0, 0x9f, 0x6d, 0xee, 0x89, 0x81, 0xcb, 0x82,
+	0xfd, 0x3e, 0x15, 0x47, 0x78, 0x07, 0x66, 0xb3, 0x06, 0xfc, 0x9e, 0xfa, 0x10, 0xa5, 0x8d, 0xe5,
+	0x51, 0xb5, 0x62, 0x4b, 0x90, 0xbd, 0x41, 0xa7, 0xef, 0x58, 0x8f, 0xd8, 0x30, 0x29, 0x50, 0xba,
+	0xc8, 0xdb, 0xeb, 0xe1, 0x36, 0xcc, 0x8a, 0x88, 0xaf, 0xfd, 0x82, 0x5a, 0x92, 0x07, 0x95, 0x7c,
+	0x1d, 0xad, 0xcd, 0x34, 0xef, 0x47, 0x81, 0x9f, 0x4e, 0x6b, 0xb7, 0xba, 0x8e, 0x3c, 0x1a, 0x74,
+	0x88, 0xc5, 0xdd, 0xc4, 0x96, 0xc9, 0x63, 0x5d, 0xd8, 0xbd, 0xc4, 0x8a, 0x2d, 0x66, 0x7d, 0x78,
+	0xb7, 0x0e, 0x89, 0x6b, 0x5b, 0xcc, 0x32, 0x4b, 0x8a, 0xf1, 0xa1, 0x22, 0xd4, 0x2d, 0x98, 0x1f,
+	0x6b, 0x7c, 0xd7, 0x11, 0x12, 0x3f, 0x86, 0x69, 0x15, 0x73, 0xa1, 0x17, 0xb9, 0x56, 0xaf, 0x31,
+	0x92, 0x64, 0x92, 0x94, 0x44, 0xff, 0x86, 0x40, 0x6b, 0xb1, 0x3e, 0xeb, 0x52, 0xe9, 0x70, 0x6f,
+	0x8f, 0x5a, 0x3d, 0x26, 0xf1, 0x6d, 0xd0, 0xb8, 0xcf, 0x02, 0x25, 0x10, 0xb5, 0xed, 0x80, 0x09,
+	0xa1, 0x54, 0x9a, 0x31, 0xcb, 0xe9, 0xfe, 0x56, 0xbc, 0x3d, 0x21, 0x66, 0xfe, 0x66, 0x62, 0x76,
+	0x60, 0x8a, 0xba, 0x7c, 0xe0, 0xc9, 0x4a, 0x41, 0x11, 0x2c, 0x92, 0x44, 0x95, 0xe8, 0x08, 0x92,
+	0xe4, 0x7c, 0x91, 0x6d, 0xee, 0x78, 0x4d, 0x23, 0xca, 0x7e, 0xfb, 0xb9, 0xb6, 0xfa, 0x1b, 0x0a,
+	0x47, 0x09, 0x66, 0xc2, 0xac, 0x7f, 0x47, 0x80, 0x0f, 0x3d, 0xfb, 0xef, 0x18, 0xf6, 0x0d, 0x82,
+	0xb2, 0x99, 0xba, 0x20, 0x99, 0xf4, 0xc9, 0xd8, 0xcd, 0x73, 0xef, 0x5a, 0xe3, 0x5c, 0xca, 0x27,
+	0xf1, 0x63, 0xe4, 0xf2, 0xc1, 0x50, 0xb4, 0xa9, 0xa4, 0xb1, 0xf5, 0x4d, 0xb5, 0xd6, 0x09, 0x40,
+	0x16, 0x87, 0xe7, 0x00, 0x32, 0x77, 0x69, 0x39, 0xac, 0xc1, 0xec, 0xe8, 0x27, 0xd0, 0x90, 0xbe,
+	0x03, 0x4b, 0xa9, 0x41, 0x2f, 0x10, 0x66, 0x32, 0xe1, 0x73, 0x4f, 0x30, 0xbc, 0x0a, 0x65, 0x8b,
+	0xbb, 0x7e, 0x9f, 0x45, 0xd1, 0x6d, 0xe9, 0xb8, 0x71, 0xf7, 0x05, 0x73, 0x2e, 0xdb, 0x3e, 0x70,
+	0x5c, 0xa6, 0x7f, 0x45, 0x80, 0x53, 0x9e, 0xb8, 0x7e, 0x8b, 0x4a, 0x8a, 0x7b, 0x70, 0xd5, 0xa5,
+	0xf0, 0x67, 0xae, 0x1a, 0xfc, 0x1c, 0xca, 0xea, 0x58, 0x65, 0xf5, 0x93, 0x9b, 0xf8, 0x66, 0x67,
+	0xf4, 0x32, 0x59, 0xf3, 0xc1, 0xf1, 0x59, 0x15, 0x9d, 0x9c, 0x55, 0xd1, 0x97, 0xb3, 0x2a, 0x7a,
+	0x7d, 0x5e, 0xcd, 0x9d, 0x9c, 0x57, 0x73, 0x1f, 0xcf, 0xab, 0xb9, 0x67, 0x2b, 0x57, 0xfc, 0x6e,
+	0x5f, 0x8e, 0xfc, 0x70, 0x95, 0x41, 0x3a, 0x53, 0x0a, 0xdb, 0xfc, 0x15, 0x00, 0x00, 0xff, 0xff,
+	0x59, 0xaa, 0xac, 0x11, 0x9d, 0x07, 0x00, 0x00,
 }
 
 func (m *ValidatorSetChange) Marshal() (dAtA []byte, err error) {
@@ -438,11 +624,6 @@ func (m *ValidatorSetChange) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.ValsetUpdateId != 0 {
-		i = encodeVarintRestaking(dAtA, i, uint64(m.ValsetUpdateId))
-		i--
-		dAtA[i] = 0x10
-	}
 	if len(m.ValidatorUpdates) > 0 {
 		for iNdEx := len(m.ValidatorUpdates) - 1; iNdEx >= 0; iNdEx-- {
 			{
@@ -454,8 +635,13 @@ func (m *ValidatorSetChange) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 				i = encodeVarintRestaking(dAtA, i, uint64(size))
 			}
 			i--
-			dAtA[i] = 0xa
+			dAtA[i] = 0x12
 		}
+	}
+	if m.Type != 0 {
+		i = encodeVarintRestaking(dAtA, i, uint64(m.Type))
+		i--
+		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
@@ -484,6 +670,86 @@ func (m *ValidatorSetChanges) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		for iNdEx := len(m.ValidatorSetChanges) - 1; iNdEx >= 0; iNdEx-- {
 			{
 				size, err := m.ValidatorSetChanges[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintRestaking(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ConsumerSlash) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ConsumerSlash) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ConsumerSlash) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size := m.SlashFactor.Size()
+		i -= size
+		if _, err := m.SlashFactor.MarshalTo(dAtA[i:]); err != nil {
+			return 0, err
+		}
+		i = encodeVarintRestaking(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	{
+		size, err := m.ValidatorPk.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintRestaking(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *ConsumerSlashList) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ConsumerSlashList) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ConsumerSlashList) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Slashes) > 0 {
+		for iNdEx := len(m.Slashes) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Slashes[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -660,6 +926,57 @@ func (m *ConsumerUndelegateResponse) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
+func (m *ConsumerPacketData) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ConsumerPacketData) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ConsumerPacketData) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.SlashPacketData) > 0 {
+		for iNdEx := len(m.SlashPacketData) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.SlashPacketData[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintRestaking(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if len(m.ValidatorSetChanges) > 0 {
+		for iNdEx := len(m.ValidatorSetChanges) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.ValidatorSetChanges[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintRestaking(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintRestaking(dAtA []byte, offset int, v uint64) int {
 	offset -= sovRestaking(v)
 	base := offset
@@ -677,14 +994,14 @@ func (m *ValidatorSetChange) Size() (n int) {
 	}
 	var l int
 	_ = l
+	if m.Type != 0 {
+		n += 1 + sovRestaking(uint64(m.Type))
+	}
 	if len(m.ValidatorUpdates) > 0 {
 		for _, e := range m.ValidatorUpdates {
 			l = e.Size()
 			n += 1 + l + sovRestaking(uint64(l))
 		}
-	}
-	if m.ValsetUpdateId != 0 {
-		n += 1 + sovRestaking(uint64(m.ValsetUpdateId))
 	}
 	return n
 }
@@ -697,6 +1014,34 @@ func (m *ValidatorSetChanges) Size() (n int) {
 	_ = l
 	if len(m.ValidatorSetChanges) > 0 {
 		for _, e := range m.ValidatorSetChanges {
+			l = e.Size()
+			n += 1 + l + sovRestaking(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *ConsumerSlash) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.ValidatorPk.Size()
+	n += 1 + l + sovRestaking(uint64(l))
+	l = m.SlashFactor.Size()
+	n += 1 + l + sovRestaking(uint64(l))
+	return n
+}
+
+func (m *ConsumerSlashList) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Slashes) > 0 {
+		for _, e := range m.Slashes {
 			l = e.Size()
 			n += 1 + l + sovRestaking(uint64(l))
 		}
@@ -766,6 +1111,27 @@ func (m *ConsumerUndelegateResponse) Size() (n int) {
 	return n
 }
 
+func (m *ConsumerPacketData) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.ValidatorSetChanges) > 0 {
+		for _, e := range m.ValidatorSetChanges {
+			l = e.Size()
+			n += 1 + l + sovRestaking(uint64(l))
+		}
+	}
+	if len(m.SlashPacketData) > 0 {
+		for _, e := range m.SlashPacketData {
+			l = e.Size()
+			n += 1 + l + sovRestaking(uint64(l))
+		}
+	}
+	return n
+}
+
 func sovRestaking(x uint64) (n int) {
 	return (math_bits.Len64(x|1) + 6) / 7
 }
@@ -802,6 +1168,25 @@ func (m *ValidatorSetChange) Unmarshal(dAtA []byte) error {
 		}
 		switch fieldNum {
 		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			m.Type = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRestaking
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Type |= ValidatorSetChange_Type(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ValidatorUpdates", wireType)
 			}
@@ -835,25 +1220,6 @@ func (m *ValidatorSetChange) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ValsetUpdateId", wireType)
-			}
-			m.ValsetUpdateId = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowRestaking
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ValsetUpdateId |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipRestaking(dAtA[iNdEx:])
@@ -935,6 +1301,207 @@ func (m *ValidatorSetChanges) Unmarshal(dAtA []byte) error {
 			}
 			m.ValidatorSetChanges = append(m.ValidatorSetChanges, ValidatorSetChange{})
 			if err := m.ValidatorSetChanges[len(m.ValidatorSetChanges)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRestaking(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthRestaking
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ConsumerSlash) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRestaking
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ConsumerSlash: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ConsumerSlash: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ValidatorPk", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRestaking
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRestaking
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRestaking
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ValidatorPk.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SlashFactor", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRestaking
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRestaking
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRestaking
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.SlashFactor.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRestaking(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthRestaking
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ConsumerSlashList) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRestaking
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ConsumerSlashList: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ConsumerSlashList: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Slashes", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRestaking
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRestaking
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRestaking
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Slashes = append(m.Slashes, ConsumerSlash{})
+			if err := m.Slashes[len(m.Slashes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1404,6 +1971,124 @@ func (m *ConsumerUndelegateResponse) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRestaking(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthRestaking
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ConsumerPacketData) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRestaking
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ConsumerPacketData: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ConsumerPacketData: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ValidatorSetChanges", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRestaking
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRestaking
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRestaking
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ValidatorSetChanges = append(m.ValidatorSetChanges, ValidatorSetChange{})
+			if err := m.ValidatorSetChanges[len(m.ValidatorSetChanges)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SlashPacketData", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRestaking
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRestaking
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRestaking
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.SlashPacketData = append(m.SlashPacketData, ConsumerSlash{})
+			if err := m.SlashPacketData[len(m.SlashPacketData)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipRestaking(dAtA[iNdEx:])

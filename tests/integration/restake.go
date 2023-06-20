@@ -23,7 +23,7 @@ func (s *IntegrationTestSuite) TestDelegation() {
 	user := s.path.EndpointA.Chain.SenderAccount.GetAddress()
 
 	valSets := s.getConsumerValidators(consumerChainID)
-	s.registerOperator(consumerChainID, proposal.RestakingTokens[0], valSets[0].PubKey, user)
+	s.registerOperator(consumerChainID, proposal.RestakingTokens[0], valSets[0].ValidatorPk, user)
 
 	coordCtx = s.rsCoordinatorChain.GetContext()
 	operator := coordKeeper.GetAllOperators(coordCtx)[0]
@@ -81,7 +81,7 @@ func (s *IntegrationTestSuite) TestUndelegate() {
 	user := s.path.EndpointA.Chain.SenderAccount.GetAddress()
 
 	valSets := s.getConsumerValidators(consumerChainID)
-	s.registerOperator(consumerChainID, proposal.RestakingTokens[0], valSets[0].PubKey, user)
+	s.registerOperator(consumerChainID, proposal.RestakingTokens[0], valSets[0].ValidatorPk, user)
 	operator := coordKeeper.GetAllOperators(coordCtx)[0]
 	operatorAccAddr := sdk.MustAccAddressFromBech32(operator.OperatorAddress)
 	amount := math.NewIntFromUint64(100000)

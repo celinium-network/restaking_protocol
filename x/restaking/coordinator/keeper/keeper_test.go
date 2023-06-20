@@ -7,7 +7,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
 
-	abci "github.com/cometbft/cometbft/abci/types"
 	tmprotocrypto "github.com/cometbft/cometbft/proto/tendermint/crypto"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	tmtime "github.com/cometbft/cometbft/types/time"
@@ -90,10 +89,10 @@ func (s *KeeperTestSuite) mockOperator() *types.Operator {
 		s.Require().NoError(err)
 		tmPubkeys = append(tmPubkeys, tmProtoPk)
 
-		keeper.SetConsumerValidator(ctx, consumerClientIDs[i], []abci.ValidatorUpdate{{
-			PubKey: tmProtoPk,
-			Power:  1,
-		}})
+		keeper.SetConsumerValidator(ctx, consumerClientIDs[i], types.ConsumerValidator{
+			ValidatorPk: tmProtoPk,
+			Power:       1,
+		})
 
 		keeper.SetConsumerRestakingToken(ctx, consumerClientIDs[i], []string{"stake"})
 		keeper.SetConsumerRewardToken(ctx, consumerClientIDs[i], []string{"stake"})

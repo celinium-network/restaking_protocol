@@ -72,12 +72,10 @@ message Operator{
     string owner = 6 [(cosmos_proto.scalar) = "cosmos.AddressString"]; 
 }
 
-// ConsumerValidatorUpdates tracks the validator set on the consumer.
-message ConsumerValidatorUpdates{
-    repeated .tendermint.abci.ValidatorUpdate validator_updates = 1 [
-      (gogoproto.nullable) = false,
-      (gogoproto.moretags) = "yaml:\"validator_updates\""
-    ];
+//ConsumerValidator tracks the validators on the consumer.
+message ConsumerValidator{
+    .tendermint.crypto.PublicKey validator_pk = 1 [(gogoproto.nullable) = false];
+    int64 power = 2;
 }
 
 // OperatedValidator represent the validator in opeator.

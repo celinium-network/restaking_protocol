@@ -3,23 +3,47 @@ syntax = "proto3";
 package restaking_protocol.restaking.v1;
 
 import "gogoproto/gogo.proto";
+import "cosmos_proto/cosmos.proto";
 import "tendermint/abci/types.proto";
 import "tendermint/crypto/keys.proto";
 import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/staking/v1beta1/staking.proto";
 
 option go_package = "restaking_protocol/x/restaking/types";
 
 message ValidatorSetChange{
-    repeated .tendermint.abci.ValidatorUpdate validator_updates = 1 [
+    enum Type{
+        Add = 0;
+        Remove = 1;
+        Update = 2;
+    }
+
+    Type type  =1;
+
+    repeated .tendermint.abci.ValidatorUpdate validator_updates = 2 [
       (gogoproto.nullable) = false,
       (gogoproto.moretags) = "yaml:\"validator_updates\""
     ];
-    uint64 valset_update_id = 2;
 }
 
 message ValidatorSetChanges{
     repeated ValidatorSetChange validator_set_changes = 1 [(gogoproto.nullable) = false];
 }
+
+
+message ConsumerSlash {
+   .tendermint.crypto.PublicKey validator_pk = 1 [(gogoproto.nullable) = false];
+
+    string slash_factor = 2 [
+        (cosmos_proto.scalar)  = "cosmos.Dec",
+        (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
+        (gogoproto.nullable)   = false
+    ];
+}
+
+message ConsumerSlashList {
+    repeated ConsumerSlash slashes = 1 [(gogoproto.nullable) = false];
+ }
 
 message DelegationPacket{
     string operator_address = 1;
@@ -56,4 +80,9 @@ message RestakingPacket{
 
 message ConsumerUndelegateResponse{
     int64 completion_time = 1; 
+}
+
+message ConsumerPacketData{
+    repeated ValidatorSetChange validatorSetChanges =  1 [(gogoproto.nullable) = false];
+    repeated ConsumerSlash       slashPacketData = 2 [(gogoproto.nullable) = false];
 }

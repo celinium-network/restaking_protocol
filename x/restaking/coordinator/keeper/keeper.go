@@ -5,7 +5,7 @@ import (
 	"time"
 
 	errorsmod "cosmossdk.io/errors"
-	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/proto/tendermint/crypto"
 	"github.com/cosmos/cosmos-sdk/codec"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -19,6 +19,7 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v7/modules/core/exported"
 	ibctm "github.com/cosmos/ibc-go/v7/modules/light-clients/07-tendermint"
 
+	"github.com/celinium-network/restaking_protocol/utils"
 	"github.com/celinium-network/restaking_protocol/x/restaking/coordinator/types"
 	restaking "github.com/celinium-network/restaking_protocol/x/restaking/types"
 )
@@ -212,29 +213,67 @@ func (k Keeper) GetConsumerClientIDByChannel(ctx sdk.Context, srcPortID, srcChan
 	return clientID, nil
 }
 
-func (k Keeper) GetConsumerValidator(ctx sdk.Context, clientID string) ([]abci.ValidatorUpdate, bool) {
-	var vus types.ConsumerValidatorUpdates
-
+func (k Keeper) SetConsumerValidator(ctx sdk.Context, clientID string, validator types.ConsumerValidator) {
 	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.ConsumerValidatorSetKey(clientID))
+
+	bz := k.cdc.MustMarshal(&validator)
+	pkBz, err := validator.ValidatorPk.Marshal()
+	if err != nil {
+		panic(err)
+	}
+
+	store.Set(types.ConsumerValidatorKey(clientID, pkBz), bz)
+}
+
+func (k Keeper) GetConsumerValidator(ctx sdk.Context, clientID string, validatorPK crypto.PublicKey) (*types.ConsumerValidator, bool) {
+	store := ctx.KVStore(k.storeKey)
+
+	pkBz, err := validatorPK.Marshal()
+	if err != nil {
+		panic(err)
+	}
+
+	bz := store.Get(types.ConsumerValidatorKey(clientID, pkBz))
+
 	if bz == nil {
 		return nil, false
 	}
-
-	k.cdc.MustUnmarshal(bz, &vus)
-
-	return vus.ValidatorUpdates, true
-}
-
-func (k Keeper) SetConsumerValidator(ctx sdk.Context, clientID string, vus abci.ValidatorUpdates) {
-	vsc := types.ConsumerValidatorUpdates{
-		ValidatorUpdates: vus,
+	var cv types.ConsumerValidator
+	err = k.cdc.Unmarshal(bz, &cv)
+	if err != nil {
+		panic(err)
 	}
 
-	bz := k.cdc.MustMarshal(&vsc)
-	store := ctx.KVStore(k.storeKey)
+	return &cv, true
+}
 
-	store.Set(types.ConsumerValidatorSetKey(clientID), bz)
+func (k Keeper) DeleteConsumerValidator(ctx sdk.Context, clientID string, validatorPK crypto.PublicKey) {
+	store := ctx.KVStore(k.storeKey)
+	pkBz, err := validatorPK.Marshal()
+	if err != nil {
+		panic(err)
+	}
+
+	store.Delete(types.ConsumerValidatorKey(clientID, pkBz))
+}
+
+func (k Keeper) GetConsumerValidators(ctx sdk.Context, clientID string, maxRetrieve uint32) (validators []types.ConsumerValidator) {
+	store := ctx.KVStore(k.storeKey)
+	key := append([]byte{types.ConsumerValidatorPrefix}, utils.BytesLengthPrefix([]byte(clientID))...)
+	validators = make([]types.ConsumerValidator, maxRetrieve)
+
+	iterator := sdk.KVStorePrefixIterator(store, key)
+	defer iterator.Close()
+
+	i := 0
+	for ; iterator.Valid() && i < int(maxRetrieve); iterator.Next() {
+		var consumerValidator types.ConsumerValidator
+		k.cdc.MustUnmarshal(iterator.Value(), &consumerValidator)
+		validators[i] = consumerValidator
+		i++
+	}
+
+	return validators[:i] // trim if the array length < maxRetrieve
 }
 
 func (k Keeper) SetConsumerRestakingToken(ctx sdk.Context, clientID string, tokens []string) {

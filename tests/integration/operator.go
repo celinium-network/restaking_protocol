@@ -3,7 +3,6 @@ package integration
 import (
 	"strings"
 
-	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/proto/tendermint/crypto"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -22,7 +21,7 @@ func (s *IntegrationTestSuite) TestRegisterOperator() {
 	registerAccAddr := s.path.EndpointA.Chain.SenderAccount.GetAddress()
 
 	valSets := s.getConsumerValidators(consumerChainID)
-	s.registerOperator(consumerChainID, proposal.RestakingTokens[0], valSets[0].PubKey, registerAccAddr)
+	s.registerOperator(consumerChainID, proposal.RestakingTokens[0], valSets[0].ValidatorPk, registerAccAddr)
 
 	coordCtx = s.rsCoordinatorChain.GetContext()
 	allOperator := coordApp.RestakingCoordinatorKeeper.GetAllOperators(coordCtx)
@@ -31,16 +30,16 @@ func (s *IntegrationTestSuite) TestRegisterOperator() {
 	strings.EqualFold(allOperator[0].Owner, registerAccAddr.String())
 }
 
-func (s *IntegrationTestSuite) getConsumerValidators(chainID string) []abci.ValidatorUpdate {
+func (s *IntegrationTestSuite) getConsumerValidators(chainID string) []rscoordinatortypes.ConsumerValidator {
 	coordCtx := s.rsCoordinatorChain.GetContext()
 	coordApp := getCoordinatorApp(s.rsCoordinatorChain)
 
 	clientID, found := coordApp.RestakingCoordinatorKeeper.GetConsumerClientID(coordCtx, chainID)
 	s.Require().True(found)
-	valUpdates, found := coordApp.RestakingCoordinatorKeeper.GetConsumerValidator(coordCtx, string(clientID))
+	consumerValidators := coordApp.RestakingCoordinatorKeeper.GetConsumerValidators(coordCtx, string(clientID), 100)
 	s.Require().True(found)
 
-	return valUpdates
+	return consumerValidators
 }
 
 func (s *IntegrationTestSuite) registerOperator(

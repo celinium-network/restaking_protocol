@@ -8,6 +8,7 @@ import (
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/proto/tendermint/crypto"
 
+	errorsmod "cosmossdk.io/errors"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -21,70 +22,93 @@ import (
 	restaking "github.com/celinium-network/restaking_protocol/x/restaking/types"
 )
 
-func (k Keeper) EndBlockValidatorSetUpdate(ctx sdk.Context) {
-	k.QueueValidatorSetChangePackets(ctx)
-
-	k.SendValidatorSetChangePackets(ctx)
+func (k Keeper) EndBlock(ctx sdk.Context) {
+	k.SendConsumerPendingPacket(ctx)
 }
 
-func (k Keeper) QueueValidatorSetChangePackets(ctx sdk.Context) {
-	_, err := k.GetCoordinatorChannelID(ctx)
-	if err != nil {
-		ctx.Logger().Info("restaking protocol ibc channel not found")
-		return
-	}
+func (k Keeper) QueueInitialVSC(ctx sdk.Context) error {
+	var vsc restaking.ValidatorSetChange
 
-	valsetUpdateID := k.GetValidatorSetUpdateID(ctx)
+	var lastPowers []stakingtypes.LastValidatorPower
+	k.stakingKeeper.IterateLastValidatorPowers(ctx, func(addr sdk.ValAddress, power int64) (stop bool) {
+		lastPowers = append(lastPowers, stakingtypes.LastValidatorPower{Address: addr.String(), Power: power})
+		return false
+	})
 
-	var valUpdates []abci.ValidatorUpdate
-
-	if valsetUpdateID == 0 {
-		vals := k.stakingKeeper.GetLastValidators(ctx)
-		for _, v := range vals {
-			validatorUpdate := v.ABCIValidatorUpdateZero()
-			validatorUpdate.Power = k.stakingKeeper.GetLastValidatorPower(ctx, v.GetOperator())
-			valUpdates = append(valUpdates, validatorUpdate)
+	initialUpdates := []abci.ValidatorUpdate{}
+	for _, p := range lastPowers {
+		addr, err := sdk.ValAddressFromBech32(p.Address)
+		if err != nil {
+			return err
 		}
-	} else {
-		valUpdates = k.stakingKeeper.GetValidatorUpdates(ctx)
+
+		val, found := k.stakingKeeper.GetValidator(ctx, addr)
+		if !found {
+			return errorsmod.Wrapf(stakingtypes.ErrNoValidatorFound, "error getting validator from LastValidatorPowers: %s", err)
+		}
+
+		tmProtoPk, err := val.TmConsPublicKey()
+		if err != nil {
+			return err
+		}
+
+		initialUpdates = append(initialUpdates, abci.ValidatorUpdate{
+			PubKey: tmProtoPk,
+			Power:  p.Power,
+		})
 	}
 
-	// TODO apply delegation/undelegate operation for valUpdates ?
-	vsc := restaking.ValidatorSetChange{
-		ValidatorUpdates: valUpdates,
-		ValsetUpdateId:   valsetUpdateID,
-	}
+	vsc.ValidatorUpdates = initialUpdates
+	vsc.Type = restaking.ValidatorSetChange_Add
 
-	k.AppendPendingVSCPackets(ctx, vsc)
+	k.AppendPendingVSC(ctx, vsc)
 
-	valsetUpdateID++
-	k.SetValidatorSetUpdateID(ctx, valsetUpdateID)
+	return nil
 }
 
-func (k Keeper) SendValidatorSetChangePackets(ctx sdk.Context) {
+func (k Keeper) QueueVSC(ctx sdk.Context, vsc restaking.ValidatorSetChange) {
+	k.AppendPendingVSC(ctx, vsc)
+}
+
+func (k Keeper) SendConsumerPendingPacket(ctx sdk.Context) {
 	channelID, err := k.GetCoordinatorChannelID(ctx)
 	if err != nil {
 		ctx.Logger().Info("restaking protocol ibc channel not found")
 		return
 	}
 
-	pendingPackets := k.GetPendingVSCPackets(ctx)
-
-	for _, packet := range pendingPackets {
-		p := packet
-		bz := k.cdc.MustMarshal(&p)
-		// TODO Timeout should get from params of module.
-		_, err := restaking.SendIBCPacket(ctx, k.scopedKeeper, k.channelKeeper, channelID, restaking.ConsumerPortID, bz, time.Minute*10)
-		if err != nil {
-			if clienttypes.ErrClientNotActive.Is(err) {
-				ctx.Logger().Debug("IBC client is expired, cannot send VSC, leaving packet data stored:")
-				return
-			}
-			panic(fmt.Errorf("packet could not be sent over IBC: %w", err))
-		}
+	pendingVSCList := k.GetPendingVSCList(ctx)
+	pendingSlashList := k.GetPendingConsumerSlashList(ctx)
+	if len(pendingVSCList) == 0 && len(pendingSlashList) == 0 {
+		return
 	}
 
-	k.DeletePendingVSCPackets(ctx)
+	pendingConsumerPacketData := restaking.ConsumerPacketData{
+		ValidatorSetChanges: pendingVSCList,
+		SlashPacketData:     pendingSlashList,
+	}
+
+	bz := k.cdc.MustMarshal(&pendingConsumerPacketData)
+
+	if _, err := restaking.SendIBCPacket(
+		ctx,
+		k.scopedKeeper,
+		k.channelKeeper,
+		channelID,
+		restaking.ConsumerPortID,
+		bz,
+		time.Minute*10,
+	); err != nil {
+		if clienttypes.ErrClientNotActive.Is(err) {
+			ctx.Logger().Debug("IBC client is expired, cannot send VSC, leaving packet data stored:")
+			return
+		}
+		// TODO panic or return ?
+		panic(fmt.Errorf("packet could not be sent over IBC: %w", err))
+	}
+
+	k.DeletePendingConsumerSlashList(ctx)
+	k.DeletePendingVSCList(ctx)
 }
 
 func (k Keeper) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, restakingPacket *restaking.RestakingPacket) exported.Acknowledgement {
