@@ -78,9 +78,8 @@ func ConsumerValidatorListKey(chainID string) []byte {
 	return append([]byte{ConsumerValidatorListPrefix}, []byte(chainID)...)
 }
 
-func ConsumerValidatorKey(chainID string, pk []byte) []byte {
-	return append([]byte{ConsumerValidatorPrefix},
-		append(utils.BytesLengthPrefix([]byte(chainID)), address.MustLengthPrefix(pk)...)...)
+func ConsumerValidatorKey(chainID string, valAddr string) []byte {
+	return append([]byte{ConsumerValidatorPrefix}, append(utils.BytesLengthPrefix([]byte(chainID)), address.MustLengthPrefix([]byte(valAddr))...)...)
 }
 
 func ConsumerRestakingTokensKey(chainID string) []byte {

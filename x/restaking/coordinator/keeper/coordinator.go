@@ -15,13 +15,15 @@ func (k Keeper) OnRecvConsumerVSC(
 	changeList []restaking.ValidatorSetChange,
 ) ibcexported.Acknowledgement {
 	for _, change := range changeList {
-		if change.Type == restaking.ValidatorSetChange_ADD || change.Type == restaking.ValidatorSetChange_UPDATE {
-			for _, v := range change.ValidatorUpdates {
-				k.SetConsumerValidator(ctx, consumerClientID, types.ValidatorUpdateToConsumerValidator(v))
+		if change.Type == restaking.ValidatorSetChange_ADD {
+			for _, addr := range change.ValidatorAddresses {
+				k.SetConsumerValidator(ctx, consumerClientID, types.ConsumerValidator{
+					Address: addr,
+				})
 			}
 		} else if change.Type == restaking.ValidatorSetChange_REMOVE {
-			for _, v := range change.ValidatorUpdates {
-				k.DeleteConsumerValidator(ctx, consumerClientID, v.PubKey)
+			for _, addr := range change.ValidatorAddresses {
+				k.DeleteConsumerValidator(ctx, consumerClientID, addr)
 			}
 		}
 	}

@@ -16,7 +16,7 @@ import (
 
 func (k Keeper) RegisterOperator(ctx sdk.Context, msg types.MsgRegisterOperator) error {
 	// TODO The number of consumers in a operator should be limited.
-	if len(msg.ConsumerChainIDs) != len(msg.ConsumerValidatorPks) {
+	if len(msg.ConsumerChainIDs) != len(msg.ConsumerValidatorAddresses) {
 		return types.ErrMismatchParams
 	}
 
@@ -33,14 +33,14 @@ func (k Keeper) RegisterOperator(ctx sdk.Context, msg types.MsgRegisterOperator)
 				fmt.Sprintf("chainID %s, unsupported token: %s", chainID, msg.RestakingDenom))
 		}
 
-		if _, found := k.GetConsumerValidator(ctx, string(clientID), msg.ConsumerValidatorPks[i]); !found {
+		if _, found := k.GetConsumerValidator(ctx, string(clientID), msg.ConsumerValidatorAddresses[i]); !found {
 			return errorsmod.Wrap(types.ErrNotExistedValidator,
-				fmt.Sprintf("chainID %s, validator %s not existed", clientID, msg.ConsumerValidatorPks[i]))
+				fmt.Sprintf("chainID %s, validator %s not existed", clientID, msg.ConsumerValidatorAddresses[i]))
 		}
 
 		operatedValidators = append(operatedValidators, types.OperatedValidator{
-			ChainID:     chainID,
-			ValidatorPk: msg.ConsumerValidatorPks[i],
+			ChainID:          chainID,
+			ValidatorAddress: msg.ConsumerValidatorAddresses[i],
 		})
 	}
 

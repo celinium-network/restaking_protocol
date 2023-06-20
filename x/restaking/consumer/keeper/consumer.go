@@ -5,11 +5,6 @@ import (
 	"strings"
 	"time"
 
-	abci "github.com/cometbft/cometbft/abci/types"
-	"github.com/cometbft/cometbft/proto/tendermint/crypto"
-
-	errorsmod "cosmossdk.io/errors"
-	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -35,30 +30,12 @@ func (k Keeper) QueueInitialVSC(ctx sdk.Context) error {
 		return false
 	})
 
-	initialUpdates := []abci.ValidatorUpdate{}
+	var initialValidators []string
 	for _, p := range lastPowers {
-		addr, err := sdk.ValAddressFromBech32(p.Address)
-		if err != nil {
-			return err
-		}
-
-		val, found := k.stakingKeeper.GetValidator(ctx, addr)
-		if !found {
-			return errorsmod.Wrapf(stakingtypes.ErrNoValidatorFound, "error getting validator from LastValidatorPowers: %s", err)
-		}
-
-		tmProtoPk, err := val.TmConsPublicKey()
-		if err != nil {
-			return err
-		}
-
-		initialUpdates = append(initialUpdates, abci.ValidatorUpdate{
-			PubKey: tmProtoPk,
-			Power:  p.Power,
-		})
+		initialValidators = append(initialValidators, p.Address)
 	}
 
-	vsc.ValidatorUpdates = initialUpdates
+	vsc.ValidatorAddresses = initialValidators
 	vsc.Type = restaking.ValidatorSetChange_ADD
 
 	k.AppendPendingVSC(ctx, vsc)
@@ -161,12 +138,11 @@ func (k Keeper) HandleRestakingDelegationPacket(
 	packet channeltypes.Packet,
 	delegation *restaking.DelegationPacket,
 ) error {
-	validatorPkBz := k.cdc.MustMarshal(&delegation.ValidatorPk)
-	operatorLocalAddress := k.GetOrCreateOperatorLocalAddress(ctx, packet.SourceChannel, packet.SourcePort, delegation.OperatorAddress, validatorPkBz)
+	operatorLocalAddress := k.GetOrCreateOperatorLocalAddress(ctx, packet.SourceChannel, packet.SourcePort, delegation.OperatorAddress, delegation.ValidatorAddress)
 
-	k.SetOperatorLocalAddress(ctx, delegation.OperatorAddress, validatorPkBz, operatorLocalAddress)
+	k.SetOperatorLocalAddress(ctx, delegation.OperatorAddress, delegation.ValidatorAddress, operatorLocalAddress)
 
-	validator, found := k.getValidatorFromTmPublicKey(ctx, delegation.ValidatorPk)
+	validator, found := k.getValidatorFromTmPublicKey(ctx, delegation.ValidatorAddress)
 	if !found {
 		return types.ErrUnknownValidator
 	}
@@ -194,10 +170,9 @@ func (k Keeper) HandleRestakingUndelegationPacket(
 	packet channeltypes.Packet,
 	delegation *restaking.UndelegationPacket,
 ) error {
-	validatorPkBz := k.cdc.MustMarshal(&delegation.ValidatorPk)
-	operatorLocalAddress := k.GetOrCreateOperatorLocalAddress(ctx, packet.SourceChannel, packet.SourcePort, delegation.OperatorAddress, validatorPkBz)
+	operatorLocalAddress := k.GetOrCreateOperatorLocalAddress(ctx, packet.SourceChannel, packet.SourcePort, delegation.OperatorAddress, delegation.ValidatorAddress)
 
-	validator, found := k.getValidatorFromTmPublicKey(ctx, delegation.ValidatorPk)
+	validator, found := k.getValidatorFromTmPublicKey(ctx, delegation.ValidatorAddress)
 	if !found {
 		return types.ErrUnknownValidator
 	}
@@ -215,20 +190,18 @@ func (k Keeper) HandleRestakingUndelegationPacket(
 	return nil
 }
 
-func (k Keeper) getValidatorFromTmPublicKey(ctx sdk.Context, tmpk crypto.PublicKey) (stakingtypes.Validator, bool) {
-	sdkVaPk, err := cryptocodec.FromTmProtoPublicKey(tmpk)
+func (k Keeper) getValidatorFromTmPublicKey(ctx sdk.Context, valAddr string) (stakingtypes.Validator, bool) {
+	accAddr, err := sdk.ValAddressFromBech32(valAddr)
 	if err != nil {
 		return stakingtypes.Validator{}, false
 	}
-
-	consAddress := sdk.ConsAddress(sdkVaPk.Address())
-	return k.stakingKeeper.GetValidatorByConsAddr(ctx, consAddress)
+	return k.stakingKeeper.GetValidator(ctx, accAddr)
 }
 
 func (k Keeper) GenerateOperatorAccount(
 	ctx sdk.Context,
 	channel, portID, operatorAddress string,
-	validatorPk []byte,
+	valAddr string,
 ) authtypes.AccountI {
 	header := ctx.BlockHeader()
 
@@ -238,7 +211,7 @@ func (k Keeper) GenerateOperatorAccount(
 	buf = append(buf, []byte(channel)...)
 	buf = append(buf, []byte(portID)...)
 	buf = append(buf, []byte(operatorAddress)...)
-	buf = append(buf, validatorPk...)
+	buf = append(buf, valAddr...)
 
 	return authtypes.NewEmptyModuleAccount(string(buf), authtypes.Staking)
 }

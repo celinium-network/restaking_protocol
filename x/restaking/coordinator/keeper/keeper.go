@@ -5,7 +5,6 @@ import (
 	"time"
 
 	errorsmod "cosmossdk.io/errors"
-	"github.com/cometbft/cometbft/proto/tendermint/crypto"
 	"github.com/cosmos/cosmos-sdk/codec"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -215,46 +214,25 @@ func (k Keeper) GetConsumerClientIDByChannel(ctx sdk.Context, srcPortID, srcChan
 
 func (k Keeper) SetConsumerValidator(ctx sdk.Context, clientID string, validator types.ConsumerValidator) {
 	store := ctx.KVStore(k.storeKey)
-
-	bz := k.cdc.MustMarshal(&validator)
-	pkBz, err := validator.ValidatorPk.Marshal()
-	if err != nil {
-		panic(err)
-	}
-
-	store.Set(types.ConsumerValidatorKey(clientID, pkBz), bz)
+	valBz := k.cdc.MustMarshal(&validator)
+	store.Set(types.ConsumerValidatorKey(clientID, validator.Address), valBz)
 }
 
-func (k Keeper) GetConsumerValidator(ctx sdk.Context, clientID string, validatorPK crypto.PublicKey) (*types.ConsumerValidator, bool) {
+func (k Keeper) GetConsumerValidator(ctx sdk.Context, clientID string, valAddr string) (*types.ConsumerValidator, bool) {
 	store := ctx.KVStore(k.storeKey)
 
-	pkBz, err := validatorPK.Marshal()
-	if err != nil {
-		panic(err)
-	}
-
-	bz := store.Get(types.ConsumerValidatorKey(clientID, pkBz))
+	bz := store.Get(types.ConsumerValidatorKey(clientID, valAddr))
 
 	if bz == nil {
 		return nil, false
 	}
-	var cv types.ConsumerValidator
-	err = k.cdc.Unmarshal(bz, &cv)
-	if err != nil {
-		panic(err)
-	}
 
-	return &cv, true
+	return nil, true
 }
 
-func (k Keeper) DeleteConsumerValidator(ctx sdk.Context, clientID string, validatorPK crypto.PublicKey) {
+func (k Keeper) DeleteConsumerValidator(ctx sdk.Context, clientID string, valAddr string) {
 	store := ctx.KVStore(k.storeKey)
-	pkBz, err := validatorPK.Marshal()
-	if err != nil {
-		panic(err)
-	}
-
-	store.Delete(types.ConsumerValidatorKey(clientID, pkBz))
+	store.Delete(types.ConsumerValidatorKey(clientID, valAddr))
 }
 
 func (k Keeper) GetConsumerValidators(ctx sdk.Context, clientID string, maxRetrieve uint32) (validators []types.ConsumerValidator) {

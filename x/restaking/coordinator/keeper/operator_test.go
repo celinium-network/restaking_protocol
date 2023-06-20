@@ -2,21 +2,21 @@ package keeper_test
 
 import (
 	"cosmossdk.io/math"
-	tmprotocrypto "github.com/cometbft/cometbft/proto/tendermint/crypto"
 	"github.com/golang/mock/gomock"
 
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	cryptoutil "github.com/celinium-network/restaking_protocol/testutil/crypto"
 	"github.com/celinium-network/restaking_protocol/x/restaking/coordinator/types"
 )
+
+var PKs = simtestutil.CreateTestPubKeys(500)
 
 func (s *KeeperTestSuite) setupConsumerChain(
 	ctx sdk.Context,
 	chainID string,
 	clientID string,
-	validators []tmprotocrypto.PublicKey,
+	validatorAddresses []string,
 	restakingTokens []string,
 	rewardToken []string,
 ) {
@@ -24,10 +24,9 @@ func (s *KeeperTestSuite) setupConsumerChain(
 	s.coordinatorKeeper.SetConsumerRestakingToken(ctx, clientID, restakingTokens)
 	s.coordinatorKeeper.SetConsumerRewardToken(ctx, clientID, rewardToken)
 
-	for _, pk := range validators {
+	for _, valAddr := range validatorAddresses {
 		s.coordinatorKeeper.SetConsumerValidator(ctx, clientID, types.ConsumerValidator{
-			ValidatorPk: pk,
-			Power:       1,
+			Address: valAddr,
 		})
 	}
 }
@@ -39,17 +38,15 @@ func (s *KeeperTestSuite) TestRegisterOperator() {
 
 	addr := simtestutil.CreateIncrementalAccounts(1)
 
-	var tmPubkeys []tmprotocrypto.PublicKey
+	var validatorAddress []string
 	for i := 0; i < len(consumerChainIDs); i++ {
 		keeper.SetConsumerClientID(ctx, consumerChainIDs[i], consumerClientIDs[i])
 
-		tmProtoPk, err := cryptoutil.CreateTmProtoPublicKey()
-		s.Require().NoError(err)
-		tmPubkeys = append(tmPubkeys, tmProtoPk)
+		valAddr := sdk.ValAddress(PKs[i].Address().Bytes()).String()
+		validatorAddress = append(validatorAddress, valAddr)
 
 		keeper.SetConsumerValidator(ctx, consumerClientIDs[i], types.ConsumerValidator{
-			ValidatorPk: tmProtoPk,
-			Power:       1,
+			Address: valAddr,
 		})
 
 		keeper.SetConsumerRestakingToken(ctx, consumerClientIDs[i], []string{"stake"})
@@ -57,10 +54,10 @@ func (s *KeeperTestSuite) TestRegisterOperator() {
 	}
 
 	err := keeper.RegisterOperator(ctx, types.MsgRegisterOperator{
-		ConsumerChainIDs:     consumerChainIDs,
-		ConsumerValidatorPks: tmPubkeys,
-		RestakingDenom:       "stake",
-		Sender:               addr[0].String(),
+		ConsumerChainIDs:           consumerChainIDs,
+		ConsumerValidatorAddresses: validatorAddress,
+		RestakingDenom:             "stake",
+		Sender:                     addr[0].String(),
 	})
 
 	s.Require().NoError(err)
@@ -70,11 +67,9 @@ func (s *KeeperTestSuite) TestDelegate() {
 	consumerChainIDs := []string{"consumer-0", "consumer-1", "consumer-2"}
 	consumerClientIDs := []string{"client-0", "client-1", "client-2"}
 
-	var validatorPks []tmprotocrypto.PublicKey
+	var consumerValidatorAddresses []string
 	for i := 0; i < 3; i++ {
-		pk, err := cryptoutil.CreateTmProtoPublicKey()
-		s.Require().NoError(err)
-		validatorPks = append(validatorPks, pk)
+		consumerValidatorAddresses = append(consumerValidatorAddresses, sdk.ValAddress(PKs[i].Address().Bytes()).String())
 	}
 
 	for i, chainID := range consumerChainIDs {
@@ -82,7 +77,7 @@ func (s *KeeperTestSuite) TestDelegate() {
 			s.ctx,
 			chainID,
 			consumerClientIDs[i],
-			validatorPks,
+			consumerValidatorAddresses,
 			[]string{"stake"},
 			[]string{"stake"},
 		)
@@ -91,10 +86,10 @@ func (s *KeeperTestSuite) TestDelegate() {
 	accounts := simtestutil.CreateIncrementalAccounts(1)
 	user := accounts[0]
 	err := s.coordinatorKeeper.RegisterOperator(s.ctx, types.MsgRegisterOperator{
-		ConsumerChainIDs:     consumerChainIDs,
-		ConsumerValidatorPks: validatorPks,
-		RestakingDenom:       "stake",
-		Sender:               user.String(),
+		ConsumerChainIDs:           consumerChainIDs,
+		ConsumerValidatorAddresses: consumerValidatorAddresses,
+		RestakingDenom:             "stake",
+		Sender:                     user.String(),
 	})
 	s.Require().NoError(err)
 

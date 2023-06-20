@@ -169,9 +169,9 @@ func (k Keeper) SendDelegation(ctx sdk.Context, operator *types.Operator, amount
 		timeout := time.Minute * 10
 
 		delegationPacket := restaking.DelegationPacket{
-			OperatorAddress: operator.OperatorAddress,
-			ValidatorPk:     va.ValidatorPk,
-			Balance:         sdk.NewCoin(operator.RestakingDenom, amount),
+			OperatorAddress:  operator.OperatorAddress,
+			ValidatorAddress: va.ValidatorAddress,
+			Balance:          sdk.NewCoin(operator.RestakingDenom, amount),
 		}
 
 		bz := k.cdc.MustMarshal(&delegationPacket)
@@ -301,9 +301,9 @@ func (k Keeper) SendUndelegation(ctx sdk.Context, operator *types.Operator, amou
 		timeout := time.Minute * 10
 
 		delegationPacket := restaking.UndelegationPacket{
-			OperatorAddress: operator.OperatorAddress,
-			ValidatorPk:     va.ValidatorPk,
-			Balance:         sdk.NewCoin(operator.RestakingDenom, amount),
+			OperatorAddress:  operator.OperatorAddress,
+			ValidatorAddress: va.ValidatorAddress,
+			Balance:          sdk.NewCoin(operator.RestakingDenom, amount),
 		}
 
 		bz := k.cdc.MustMarshal(&delegationPacket)

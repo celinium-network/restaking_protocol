@@ -23,7 +23,7 @@ func (s *IntegrationTestSuite) TestDelegation() {
 	user := s.path.EndpointA.Chain.SenderAccount.GetAddress()
 
 	valSets := s.getConsumerValidators(consumerChainID)
-	s.registerOperator(consumerChainID, proposal.RestakingTokens[0], valSets[0].ValidatorPk, user)
+	s.registerOperator(consumerChainID, proposal.RestakingTokens[0], valSets[0].Address, user)
 
 	coordCtx = s.rsCoordinatorChain.GetContext()
 	operator := coordKeeper.GetAllOperators(coordCtx)[0]
@@ -53,8 +53,7 @@ func (s *IntegrationTestSuite) TestDelegation() {
 	consumerCtx := s.rsConsumerChain.GetContext()
 	consumerKeeper := consumerApp.RestakingConsumerKeeper
 
-	validatorPkBz := consumerApp.AppCodec().MustMarshal(&operator.OperatedValidators[0].ValidatorPk)
-	localOperatorAccAddr, found := consumerKeeper.GetOperatorLocalAddress(consumerCtx, operator.OperatorAddress, validatorPkBz)
+	localOperatorAccAddr, found := consumerKeeper.GetOperatorLocalAddress(consumerCtx, operator.OperatorAddress, valSets[0].Address)
 	s.Require().True(found)
 
 	agents := consumerApp.MultiStakingKeeper.GetAllAgent(consumerCtx)
@@ -81,7 +80,7 @@ func (s *IntegrationTestSuite) TestUndelegate() {
 	user := s.path.EndpointA.Chain.SenderAccount.GetAddress()
 
 	valSets := s.getConsumerValidators(consumerChainID)
-	s.registerOperator(consumerChainID, proposal.RestakingTokens[0], valSets[0].ValidatorPk, user)
+	s.registerOperator(consumerChainID, proposal.RestakingTokens[0], valSets[0].Address, user)
 	operator := coordKeeper.GetAllOperators(coordCtx)[0]
 	operatorAccAddr := sdk.MustAccAddressFromBech32(operator.OperatorAddress)
 	amount := math.NewIntFromUint64(100000)
@@ -92,9 +91,9 @@ func (s *IntegrationTestSuite) TestUndelegate() {
 		SourceChannel:   "channel-0",
 		DestinationPort: restaking.CoordinatorPortID,
 	}, &restaking.DelegationPacket{
-		OperatorAddress: operator.OperatorAddress,
-		ValidatorPk:     operator.OperatedValidators[0].ValidatorPk,
-		Balance:         sdk.NewCoin(proposal.RestakingTokens[0], amount),
+		OperatorAddress:  operator.OperatorAddress,
+		ValidatorAddress: operator.OperatedValidators[0].ValidatorAddress,
+		Balance:          sdk.NewCoin(proposal.RestakingTokens[0], amount),
 	})
 
 	operator.Shares = operator.Shares.Add(amount)

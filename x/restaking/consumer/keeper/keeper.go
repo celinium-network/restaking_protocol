@@ -209,10 +209,10 @@ func (k Keeper) GetCoordinatorChannelID(ctx sdk.Context) (string, error) {
 	return string(bz), nil
 }
 
-func (k Keeper) GetOperatorLocalAddress(ctx sdk.Context, operatorAddress string, validatorPk []byte) (addr sdk.AccAddress, found bool) {
+func (k Keeper) GetOperatorLocalAddress(ctx sdk.Context, operatorAddress string, valAddr string) (addr sdk.AccAddress, found bool) {
 	store := ctx.KVStore(k.storeKey)
 
-	bz := store.Get(types.OperatorAddressKey(validatorPk, operatorAddress))
+	bz := store.Get(types.OperatorAddressKey(valAddr, operatorAddress))
 	if bz == nil {
 		return addr, false
 	}
@@ -227,16 +227,16 @@ func (k Keeper) GetOperatorLocalAddress(ctx sdk.Context, operatorAddress string,
 func (k Keeper) GetOrCreateOperatorLocalAddress(
 	ctx sdk.Context,
 	srcChannel, srcPort, operatorAddress string,
-	validatorPk []byte,
+	valAddr string,
 ) sdk.AccAddress {
-	operatorLocalAddress, found := k.GetOperatorLocalAddress(ctx, operatorAddress, validatorPk)
+	operatorLocalAddress, found := k.GetOperatorLocalAddress(ctx, operatorAddress, valAddr)
 	if !found {
 		operatorLocalAccount := k.GenerateOperatorAccount(
 			ctx,
 			srcChannel,
 			srcPort,
 			operatorAddress,
-			validatorPk,
+			valAddr,
 		)
 
 		operatorLocalAddress = operatorLocalAccount.GetAddress()
@@ -244,7 +244,7 @@ func (k Keeper) GetOrCreateOperatorLocalAddress(
 	return operatorLocalAddress
 }
 
-func (k Keeper) SetOperatorLocalAddress(ctx sdk.Context, operatorAddress string, validatorPk []byte, localAddress sdk.AccAddress) {
+func (k Keeper) SetOperatorLocalAddress(ctx sdk.Context, operatorAddress, valAddr string, localAddress sdk.AccAddress) {
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.OperatorAddressKey(validatorPk, operatorAddress), []byte(localAddress.String()))
+	store.Set(types.OperatorAddressKey(valAddr, operatorAddress), []byte(localAddress.String()))
 }

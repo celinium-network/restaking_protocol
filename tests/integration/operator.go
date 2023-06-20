@@ -3,7 +3,6 @@ package integration
 import (
 	"strings"
 
-	"github.com/cometbft/cometbft/proto/tendermint/crypto"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	rscoordinatortypes "github.com/celinium-network/restaking_protocol/x/restaking/coordinator/types"
@@ -21,7 +20,7 @@ func (s *IntegrationTestSuite) TestRegisterOperator() {
 	registerAccAddr := s.path.EndpointA.Chain.SenderAccount.GetAddress()
 
 	valSets := s.getConsumerValidators(consumerChainID)
-	s.registerOperator(consumerChainID, proposal.RestakingTokens[0], valSets[0].ValidatorPk, registerAccAddr)
+	s.registerOperator(consumerChainID, proposal.RestakingTokens[0], valSets[0].Address, registerAccAddr)
 
 	coordCtx = s.rsCoordinatorChain.GetContext()
 	allOperator := coordApp.RestakingCoordinatorKeeper.GetAllOperators(coordCtx)
@@ -45,17 +44,17 @@ func (s *IntegrationTestSuite) getConsumerValidators(chainID string) []rscoordin
 func (s *IntegrationTestSuite) registerOperator(
 	consumerChainID,
 	restakingDenom string,
-	consumerValidatorPk crypto.PublicKey,
+	consumerValidatorAddress string,
 	register sdk.AccAddress,
 ) {
 	coordCtx := s.rsCoordinatorChain.GetContext()
 	coordApp := getCoordinatorApp(s.rsCoordinatorChain)
 
 	err := coordApp.RestakingCoordinatorKeeper.RegisterOperator(coordCtx, rscoordinatortypes.MsgRegisterOperator{
-		ConsumerChainIDs:     []string{consumerChainID},
-		ConsumerValidatorPks: []crypto.PublicKey{consumerValidatorPk},
-		RestakingDenom:       restakingDenom,
-		Sender:               register.String(),
+		ConsumerChainIDs:           []string{consumerChainID},
+		ConsumerValidatorAddresses: []string{consumerValidatorAddress},
+		RestakingDenom:             restakingDenom,
+		Sender:                     register.String(),
 	})
 
 	s.Require().NoError(err)
