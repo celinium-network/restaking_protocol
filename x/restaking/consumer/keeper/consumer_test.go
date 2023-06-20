@@ -29,7 +29,7 @@ func (s *KeeperTestSuite) TestHandleRestakingDelegationPacket() {
 	restakingDelegation := restaking.DelegationPacket{
 		OperatorAddress: operatorAccounts[0].String(),
 		ValidatorPk:     validatorPk,
-		Amount:          sdk.NewCoin("restakingDenom", math.NewIntFromUint64(100000)),
+		Balance:         sdk.NewCoin("restakingDenom", math.NewIntFromUint64(100000)),
 	}
 
 	restakingDelegationBz := s.codec.MustMarshal(&restakingDelegation)
@@ -63,14 +63,14 @@ func (s *KeeperTestSuite) TestHandleRestakingDelegationPacket() {
 		OperatorAddress: valAddress.String(),
 	}, true)
 
-	s.bankKeeper.EXPECT().MintCoins(gomock.Any(), types.ModuleName, sdk.Coins{restakingDelegation.Amount})
+	s.bankKeeper.EXPECT().MintCoins(gomock.Any(), types.ModuleName, sdk.Coins{restakingDelegation.Balance})
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(
-		gomock.Any(), types.ModuleName, localOperator, sdk.Coins{restakingDelegation.Amount})
+		gomock.Any(), types.ModuleName, localOperator, sdk.Coins{restakingDelegation.Balance})
 
 	s.multiStakingKeeper.EXPECT().MultiStakingDelegate(gomock.Any(), multistakingtypes.MsgMultiStakingDelegate{
 		DelegatorAddress: localOperator.String(),
 		ValidatorAddress: valAddress.String(),
-		Amount:           restakingDelegation.Amount,
+		Amount:           restakingDelegation.Balance,
 	})
 
 	s.keeper.HandleRestakingDelegationPacket(s.ctx, packet, &restakingDelegation)
@@ -85,7 +85,7 @@ func (s *KeeperTestSuite) TestHandleRestakingUndelegationPacket() {
 	restakingUndelegation := restaking.UndelegationPacket{
 		OperatorAddress: operatorAccounts[0].String(),
 		ValidatorPk:     validatorPk,
-		Amount:          sdk.NewCoin("restakingDenom", math.NewIntFromUint64(100000)),
+		Balance:         sdk.NewCoin("restakingDenom", math.NewIntFromUint64(100000)),
 	}
 
 	restakingDelegationBz := s.codec.MustMarshal(&restakingUndelegation)
@@ -119,7 +119,7 @@ func (s *KeeperTestSuite) TestHandleRestakingUndelegationPacket() {
 		OperatorAddress: valAddress.String(),
 	}, true)
 
-	s.multiStakingKeeper.EXPECT().Unbond(gomock.Any(), localOperator, valAddress, restakingUndelegation.Amount)
+	s.multiStakingKeeper.EXPECT().Unbond(gomock.Any(), localOperator, valAddress, restakingUndelegation.Balance)
 
 	err = s.keeper.HandleRestakingUndelegationPacket(s.ctx, packet, &restakingUndelegation)
 	s.Require().NoError(err)

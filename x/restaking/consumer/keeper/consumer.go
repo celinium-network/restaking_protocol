@@ -59,7 +59,7 @@ func (k Keeper) QueueInitialVSC(ctx sdk.Context) error {
 	}
 
 	vsc.ValidatorUpdates = initialUpdates
-	vsc.Type = restaking.ValidatorSetChange_Add
+	vsc.Type = restaking.ValidatorSetChange_ADD
 
 	k.AppendPendingVSC(ctx, vsc)
 
@@ -85,7 +85,7 @@ func (k Keeper) SendConsumerPendingPacket(ctx sdk.Context) {
 
 	pendingConsumerPacketData := restaking.ConsumerPacketData{
 		ValidatorSetChanges: pendingVSCList,
-		SlashPacketData:     pendingSlashList,
+		ConsumerSlashList:   pendingSlashList,
 	}
 
 	bz := k.cdc.MustMarshal(&pendingConsumerPacketData)
@@ -174,18 +174,18 @@ func (k Keeper) HandleRestakingDelegationPacket(
 	// TODO how to delegate to validator
 	// (1) adjust delegation of staking module ?
 	// (2) mint coins and delegate by multistaking module
-	if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.Coins{delegation.Amount}); err != nil {
+	if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.Coins{delegation.Balance}); err != nil {
 		return err
 	}
 
-	if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, operatorLocalAddress, sdk.Coins{delegation.Amount}); err != nil {
+	if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, operatorLocalAddress, sdk.Coins{delegation.Balance}); err != nil {
 		return err
 	}
 
 	return k.multiStakingKeeper.MultiStakingDelegate(ctx, multistakingtypes.MsgMultiStakingDelegate{
 		DelegatorAddress: operatorLocalAddress.String(),
 		ValidatorAddress: validator.OperatorAddress,
-		Amount:           delegation.Amount,
+		Amount:           delegation.Balance,
 	})
 }
 
@@ -207,7 +207,7 @@ func (k Keeper) HandleRestakingUndelegationPacket(
 		return err
 	}
 
-	_, err = k.multiStakingKeeper.Unbond(ctx, operatorLocalAddress, valAddress, delegation.Amount)
+	_, err = k.multiStakingKeeper.Unbond(ctx, operatorLocalAddress, valAddress, delegation.Balance)
 	if err != nil {
 		return err
 	}

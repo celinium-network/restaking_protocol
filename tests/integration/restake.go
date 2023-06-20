@@ -94,7 +94,7 @@ func (s *IntegrationTestSuite) TestUndelegate() {
 	}, &restaking.DelegationPacket{
 		OperatorAddress: operator.OperatorAddress,
 		ValidatorPk:     operator.OperatedValidators[0].ValidatorPk,
-		Amount:          sdk.NewCoin(proposal.RestakingTokens[0], amount),
+		Balance:         sdk.NewCoin(proposal.RestakingTokens[0], amount),
 	})
 
 	operator.Shares = operator.Shares.Add(amount)

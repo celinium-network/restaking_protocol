@@ -171,7 +171,7 @@ func (k Keeper) SendDelegation(ctx sdk.Context, operator *types.Operator, amount
 		delegationPacket := restaking.DelegationPacket{
 			OperatorAddress: operator.OperatorAddress,
 			ValidatorPk:     va.ValidatorPk,
-			Amount:          sdk.NewCoin(operator.RestakingDenom, amount),
+			Balance:         sdk.NewCoin(operator.RestakingDenom, amount),
 		}
 
 		bz := k.cdc.MustMarshal(&delegationPacket)
@@ -303,7 +303,7 @@ func (k Keeper) SendUndelegation(ctx sdk.Context, operator *types.Operator, amou
 		delegationPacket := restaking.UndelegationPacket{
 			OperatorAddress: operator.OperatorAddress,
 			ValidatorPk:     va.ValidatorPk,
-			Amount:          sdk.NewCoin(operator.RestakingDenom, amount),
+			Balance:         sdk.NewCoin(operator.RestakingDenom, amount),
 		}
 
 		bz := k.cdc.MustMarshal(&delegationPacket)

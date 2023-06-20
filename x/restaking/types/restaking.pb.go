@@ -10,7 +10,6 @@ import (
 	_ "github.com/cosmos/cosmos-proto"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	types1 "github.com/cosmos/cosmos-sdk/types"
-	_ "github.com/cosmos/cosmos-sdk/x/staking/types"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
 	io "io"
@@ -29,24 +28,28 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+// Type defines the type of change: Add, Remove, or Update.
 type ValidatorSetChange_Type int32
 
 const (
-	ValidatorSetChange_Add    ValidatorSetChange_Type = 0
-	ValidatorSetChange_Remove ValidatorSetChange_Type = 1
-	ValidatorSetChange_Update ValidatorSetChange_Type = 2
+	// The validators has been created at consumer.
+	ValidatorSetChange_ADD ValidatorSetChange_Type = 0
+	// The validators has been removed at consumer.
+	ValidatorSetChange_REMOVE ValidatorSetChange_Type = 1
+	// The validators has been update at consumer.
+	ValidatorSetChange_UPDATE ValidatorSetChange_Type = 2
 )
 
 var ValidatorSetChange_Type_name = map[int32]string{
-	0: "Add",
-	1: "Remove",
-	2: "Update",
+	0: "ADD",
+	1: "REMOVE",
+	2: "UPDATE",
 }
 
 var ValidatorSetChange_Type_value = map[string]int32{
-	"Add":    0,
-	"Remove": 1,
-	"Update": 2,
+	"ADD":    0,
+	"REMOVE": 1,
+	"UPDATE": 2,
 }
 
 func (x ValidatorSetChange_Type) String() string {
@@ -57,10 +60,13 @@ func (ValidatorSetChange_Type) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_63af7fa0c4c2b658, []int{0, 0}
 }
 
+// The type of this packet
 type RestakingPacket_PacketType int32
 
 const (
-	RestakingPacket_Delegation   RestakingPacket_PacketType = 0
+	// The packet contains delegation data.
+	RestakingPacket_Delegation RestakingPacket_PacketType = 0
+	// The packet contains undelegation data.
 	RestakingPacket_Undelegation RestakingPacket_PacketType = 1
 )
 
@@ -79,11 +85,14 @@ func (x RestakingPacket_PacketType) String() string {
 }
 
 func (RestakingPacket_PacketType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_63af7fa0c4c2b658, []int{6, 0}
+	return fileDescriptor_63af7fa0c4c2b658, []int{7, 0}
 }
 
+// ValidatorSetChange represents changes of consumer validators.
 type ValidatorSetChange struct {
-	Type             ValidatorSetChange_Type `protobuf:"varint,1,opt,name=type,proto3,enum=restaking_protocol.restaking.v1.ValidatorSetChange_Type" json:"type,omitempty"`
+	// type specifies the type of change.
+	Type ValidatorSetChange_Type `protobuf:"varint,1,opt,name=type,proto3,enum=restaking_protocol.restaking.v1.ValidatorSetChange_Type" json:"type,omitempty"`
+	// validator_updates contains the list of validator updates associated with the change.
 	ValidatorUpdates []types.ValidatorUpdate `protobuf:"bytes,2,rep,name=validator_updates,json=validatorUpdates,proto3" json:"validator_updates" yaml:"validator_updates"`
 }
 
@@ -124,7 +133,7 @@ func (m *ValidatorSetChange) GetType() ValidatorSetChange_Type {
 	if m != nil {
 		return m.Type
 	}
-	return ValidatorSetChange_Add
+	return ValidatorSetChange_ADD
 }
 
 func (m *ValidatorSetChange) GetValidatorUpdates() []types.ValidatorUpdate {
@@ -134,7 +143,9 @@ func (m *ValidatorSetChange) GetValidatorUpdates() []types.ValidatorUpdate {
 	return nil
 }
 
+// ValidatorSetChanges represents a collection of validator set changes.
 type ValidatorSetChanges struct {
+	// validator_set_changes contains the list of validator set changes.
 	ValidatorSetChanges []ValidatorSetChange `protobuf:"bytes,1,rep,name=validator_set_changes,json=validatorSetChanges,proto3" json:"validator_set_changes"`
 }
 
@@ -178,8 +189,11 @@ func (m *ValidatorSetChanges) GetValidatorSetChanges() []ValidatorSetChange {
 	return nil
 }
 
+// ConsumerSlash represents the slashing information for a consumer chain.
 type ConsumerSlash struct {
-	ValidatorPk crypto.PublicKey                       `protobuf:"bytes,1,opt,name=validator_pk,json=validatorPk,proto3" json:"validator_pk"`
+	// validator_pk is the public key of the validator being slashed.
+	ValidatorPk crypto.PublicKey `protobuf:"bytes,1,opt,name=validator_pk,json=validatorPk,proto3" json:"validator_pk"`
+	// slash_factor is the amount by which the validator is being slashed, represented as a decimal.
 	SlashFactor github_com_cosmos_cosmos_sdk_types.Dec `protobuf:"bytes,2,opt,name=slash_factor,json=slashFactor,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"slash_factor"`
 }
 
@@ -223,6 +237,7 @@ func (m *ConsumerSlash) GetValidatorPk() crypto.PublicKey {
 	return crypto.PublicKey{}
 }
 
+// ConsumerSlashList represents a list of slashing information for consumer chains.
 type ConsumerSlashList struct {
 	Slashes []ConsumerSlash `protobuf:"bytes,1,rep,name=slashes,proto3" json:"slashes"`
 }
@@ -267,17 +282,74 @@ func (m *ConsumerSlashList) GetSlashes() []ConsumerSlash {
 	return nil
 }
 
+// ConsumerPacketData contains the data for a consumer packet.
+type ConsumerPacketData struct {
+	ValidatorSetChanges []ValidatorSetChange `protobuf:"bytes,1,rep,name=validator_set_changes,json=validatorSetChanges,proto3" json:"validator_set_changes"`
+	ConsumerSlashList   []ConsumerSlash      `protobuf:"bytes,2,rep,name=consumer_slash_list,json=consumerSlashList,proto3" json:"consumer_slash_list"`
+}
+
+func (m *ConsumerPacketData) Reset()         { *m = ConsumerPacketData{} }
+func (m *ConsumerPacketData) String() string { return proto.CompactTextString(m) }
+func (*ConsumerPacketData) ProtoMessage()    {}
+func (*ConsumerPacketData) Descriptor() ([]byte, []int) {
+	return fileDescriptor_63af7fa0c4c2b658, []int{4}
+}
+func (m *ConsumerPacketData) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ConsumerPacketData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ConsumerPacketData.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ConsumerPacketData) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConsumerPacketData.Merge(m, src)
+}
+func (m *ConsumerPacketData) XXX_Size() int {
+	return m.Size()
+}
+func (m *ConsumerPacketData) XXX_DiscardUnknown() {
+	xxx_messageInfo_ConsumerPacketData.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ConsumerPacketData proto.InternalMessageInfo
+
+func (m *ConsumerPacketData) GetValidatorSetChanges() []ValidatorSetChange {
+	if m != nil {
+		return m.ValidatorSetChanges
+	}
+	return nil
+}
+
+func (m *ConsumerPacketData) GetConsumerSlashList() []ConsumerSlash {
+	if m != nil {
+		return m.ConsumerSlashList
+	}
+	return nil
+}
+
+// DelegationPacket represents a packet containing delegation information.
 type DelegationPacket struct {
-	OperatorAddress string           `protobuf:"bytes,1,opt,name=operator_address,json=operatorAddress,proto3" json:"operator_address,omitempty"`
-	ValidatorPk     crypto.PublicKey `protobuf:"bytes,2,opt,name=validator_pk,json=validatorPk,proto3" json:"validator_pk"`
-	Amount          types1.Coin      `protobuf:"bytes,3,opt,name=amount,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coin" json:"amount"`
+	// Operator address
+	OperatorAddress string `protobuf:"bytes,1,opt,name=operator_address,json=operatorAddress,proto3" json:"operator_address,omitempty"`
+	// Public key of the validator.
+	ValidatorPk crypto.PublicKey `protobuf:"bytes,2,opt,name=validator_pk,json=validatorPk,proto3" json:"validator_pk"`
+	// Amount of tokens to be delegated
+	Balance types1.Coin `protobuf:"bytes,3,opt,name=balance,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coin" json:"balance"`
 }
 
 func (m *DelegationPacket) Reset()         { *m = DelegationPacket{} }
 func (m *DelegationPacket) String() string { return proto.CompactTextString(m) }
 func (*DelegationPacket) ProtoMessage()    {}
 func (*DelegationPacket) Descriptor() ([]byte, []int) {
-	return fileDescriptor_63af7fa0c4c2b658, []int{4}
+	return fileDescriptor_63af7fa0c4c2b658, []int{5}
 }
 func (m *DelegationPacket) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -320,24 +392,28 @@ func (m *DelegationPacket) GetValidatorPk() crypto.PublicKey {
 	return crypto.PublicKey{}
 }
 
-func (m *DelegationPacket) GetAmount() types1.Coin {
+func (m *DelegationPacket) GetBalance() types1.Coin {
 	if m != nil {
-		return m.Amount
+		return m.Balance
 	}
 	return types1.Coin{}
 }
 
+// UndelegationPacket represents a packet containing undelegation information.
 type UndelegationPacket struct {
-	OperatorAddress string           `protobuf:"bytes,1,opt,name=operator_address,json=operatorAddress,proto3" json:"operator_address,omitempty"`
-	ValidatorPk     crypto.PublicKey `protobuf:"bytes,2,opt,name=validator_pk,json=validatorPk,proto3" json:"validator_pk"`
-	Amount          types1.Coin      `protobuf:"bytes,3,opt,name=amount,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coin" json:"amount"`
+	// Operator address
+	OperatorAddress string `protobuf:"bytes,1,opt,name=operator_address,json=operatorAddress,proto3" json:"operator_address,omitempty"`
+	// Public key of the validator.
+	ValidatorPk crypto.PublicKey `protobuf:"bytes,2,opt,name=validator_pk,json=validatorPk,proto3" json:"validator_pk"`
+	// Amount of tokens to be undelegated.
+	Balance types1.Coin `protobuf:"bytes,3,opt,name=balance,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coin" json:"balance"`
 }
 
 func (m *UndelegationPacket) Reset()         { *m = UndelegationPacket{} }
 func (m *UndelegationPacket) String() string { return proto.CompactTextString(m) }
 func (*UndelegationPacket) ProtoMessage()    {}
 func (*UndelegationPacket) Descriptor() ([]byte, []int) {
-	return fileDescriptor_63af7fa0c4c2b658, []int{5}
+	return fileDescriptor_63af7fa0c4c2b658, []int{6}
 }
 func (m *UndelegationPacket) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -380,23 +456,26 @@ func (m *UndelegationPacket) GetValidatorPk() crypto.PublicKey {
 	return crypto.PublicKey{}
 }
 
-func (m *UndelegationPacket) GetAmount() types1.Coin {
+func (m *UndelegationPacket) GetBalance() types1.Coin {
 	if m != nil {
-		return m.Amount
+		return m.Balance
 	}
 	return types1.Coin{}
 }
 
+// RestakingPacket represents a packet that send from coordinator to consumer.
 type RestakingPacket struct {
+	// Type of the packet indicating delegation or undelegation.
 	Type RestakingPacket_PacketType `protobuf:"varint,1,opt,name=type,proto3,enum=restaking_protocol.restaking.v1.RestakingPacket_PacketType" json:"type,omitempty"`
-	Data string                     `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+	// Data payload of the packet.
+	Data string `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
 }
 
 func (m *RestakingPacket) Reset()         { *m = RestakingPacket{} }
 func (m *RestakingPacket) String() string { return proto.CompactTextString(m) }
 func (*RestakingPacket) ProtoMessage()    {}
 func (*RestakingPacket) Descriptor() ([]byte, []int) {
-	return fileDescriptor_63af7fa0c4c2b658, []int{6}
+	return fileDescriptor_63af7fa0c4c2b658, []int{7}
 }
 func (m *RestakingPacket) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -439,6 +518,7 @@ func (m *RestakingPacket) GetData() string {
 	return ""
 }
 
+// ConsumerUndelegateResponse contains the completion time for undelegation.
 type ConsumerUndelegateResponse struct {
 	CompletionTime int64 `protobuf:"varint,1,opt,name=completion_time,json=completionTime,proto3" json:"completion_time,omitempty"`
 }
@@ -447,7 +527,7 @@ func (m *ConsumerUndelegateResponse) Reset()         { *m = ConsumerUndelegateRe
 func (m *ConsumerUndelegateResponse) String() string { return proto.CompactTextString(m) }
 func (*ConsumerUndelegateResponse) ProtoMessage()    {}
 func (*ConsumerUndelegateResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_63af7fa0c4c2b658, []int{7}
+	return fileDescriptor_63af7fa0c4c2b658, []int{8}
 }
 func (m *ConsumerUndelegateResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -483,58 +563,6 @@ func (m *ConsumerUndelegateResponse) GetCompletionTime() int64 {
 	return 0
 }
 
-type ConsumerPacketData struct {
-	ValidatorSetChanges []ValidatorSetChange `protobuf:"bytes,1,rep,name=validatorSetChanges,proto3" json:"validatorSetChanges"`
-	SlashPacketData     []ConsumerSlash      `protobuf:"bytes,2,rep,name=slashPacketData,proto3" json:"slashPacketData"`
-}
-
-func (m *ConsumerPacketData) Reset()         { *m = ConsumerPacketData{} }
-func (m *ConsumerPacketData) String() string { return proto.CompactTextString(m) }
-func (*ConsumerPacketData) ProtoMessage()    {}
-func (*ConsumerPacketData) Descriptor() ([]byte, []int) {
-	return fileDescriptor_63af7fa0c4c2b658, []int{8}
-}
-func (m *ConsumerPacketData) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *ConsumerPacketData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_ConsumerPacketData.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *ConsumerPacketData) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ConsumerPacketData.Merge(m, src)
-}
-func (m *ConsumerPacketData) XXX_Size() int {
-	return m.Size()
-}
-func (m *ConsumerPacketData) XXX_DiscardUnknown() {
-	xxx_messageInfo_ConsumerPacketData.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ConsumerPacketData proto.InternalMessageInfo
-
-func (m *ConsumerPacketData) GetValidatorSetChanges() []ValidatorSetChange {
-	if m != nil {
-		return m.ValidatorSetChanges
-	}
-	return nil
-}
-
-func (m *ConsumerPacketData) GetSlashPacketData() []ConsumerSlash {
-	if m != nil {
-		return m.SlashPacketData
-	}
-	return nil
-}
-
 func init() {
 	proto.RegisterEnum("restaking_protocol.restaking.v1.ValidatorSetChange_Type", ValidatorSetChange_Type_name, ValidatorSetChange_Type_value)
 	proto.RegisterEnum("restaking_protocol.restaking.v1.RestakingPacket_PacketType", RestakingPacket_PacketType_name, RestakingPacket_PacketType_value)
@@ -542,11 +570,11 @@ func init() {
 	proto.RegisterType((*ValidatorSetChanges)(nil), "restaking_protocol.restaking.v1.ValidatorSetChanges")
 	proto.RegisterType((*ConsumerSlash)(nil), "restaking_protocol.restaking.v1.ConsumerSlash")
 	proto.RegisterType((*ConsumerSlashList)(nil), "restaking_protocol.restaking.v1.ConsumerSlashList")
+	proto.RegisterType((*ConsumerPacketData)(nil), "restaking_protocol.restaking.v1.ConsumerPacketData")
 	proto.RegisterType((*DelegationPacket)(nil), "restaking_protocol.restaking.v1.DelegationPacket")
 	proto.RegisterType((*UndelegationPacket)(nil), "restaking_protocol.restaking.v1.UndelegationPacket")
 	proto.RegisterType((*RestakingPacket)(nil), "restaking_protocol.restaking.v1.RestakingPacket")
 	proto.RegisterType((*ConsumerUndelegateResponse)(nil), "restaking_protocol.restaking.v1.ConsumerUndelegateResponse")
-	proto.RegisterType((*ConsumerPacketData)(nil), "restaking_protocol.restaking.v1.ConsumerPacketData")
 }
 
 func init() {
@@ -554,54 +582,54 @@ func init() {
 }
 
 var fileDescriptor_63af7fa0c4c2b658 = []byte{
-	// 744 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe4, 0x55, 0x31, 0x6f, 0xd3, 0x4c,
-	0x18, 0xce, 0x25, 0x51, 0xab, 0xbe, 0xe9, 0xd7, 0xb8, 0xd7, 0xef, 0x93, 0xd2, 0x7e, 0x55, 0x12,
-	0x59, 0x15, 0x2d, 0x43, 0xcf, 0x4a, 0xbb, 0x20, 0x40, 0x48, 0x4d, 0x53, 0x16, 0x2a, 0xa8, 0xdc,
-	0x96, 0x81, 0x81, 0xe8, 0x62, 0x1f, 0xa9, 0x95, 0xd8, 0x67, 0xf9, 0x2e, 0x16, 0xd9, 0xf9, 0x01,
-	0xfc, 0x0a, 0x06, 0x66, 0x24, 0xfe, 0x42, 0xc7, 0x8a, 0x09, 0x31, 0x14, 0x68, 0x17, 0xc4, 0xc8,
-	0xcc, 0x80, 0x7c, 0xb6, 0xeb, 0xa4, 0xa9, 0x54, 0x54, 0x89, 0x89, 0xc9, 0xe7, 0x7b, 0xde, 0xf7,
-	0x79, 0xdf, 0xf7, 0xf1, 0x73, 0x67, 0x30, 0x02, 0x26, 0x24, 0xed, 0x39, 0x5e, 0xb7, 0xed, 0x07,
-	0x5c, 0x72, 0x8b, 0xf7, 0xb3, 0x2d, 0x23, 0x6c, 0x64, 0x2f, 0x44, 0xe1, 0xb8, 0x36, 0x99, 0x40,
-	0xb2, 0x98, 0xb0, 0xb1, 0xf4, 0x6f, 0x97, 0x77, 0xb9, 0x82, 0x8c, 0x68, 0x15, 0xa7, 0x2d, 0x2d,
-	0x5a, 0x5c, 0xb8, 0x5c, 0xc4, 0x39, 0x46, 0xfc, 0x92, 0x40, 0xff, 0x4b, 0xe6, 0xd9, 0x2c, 0x70,
-	0x1d, 0x4f, 0x1a, 0xb4, 0x63, 0x39, 0x86, 0x1c, 0xfa, 0x2c, 0x05, 0x97, 0x47, 0x40, 0x2b, 0x18,
-	0xfa, 0x92, 0x1b, 0x3d, 0x36, 0x4c, 0xd1, 0x6a, 0x4c, 0x64, 0x74, 0xa8, 0x60, 0x46, 0xd8, 0xe8,
-	0x30, 0x49, 0x1b, 0x86, 0xc5, 0x1d, 0x2f, 0xc1, 0x57, 0x12, 0x3c, 0x9b, 0x27, 0x0e, 0x19, 0x1b,
-	0x49, 0xff, 0x89, 0x00, 0x3f, 0xa5, 0x7d, 0xc7, 0xa6, 0x92, 0x07, 0xfb, 0x4c, 0x6e, 0x1f, 0x51,
-	0xaf, 0xcb, 0xf0, 0x2e, 0x14, 0xa3, 0x4e, 0x2a, 0xa8, 0x8e, 0xd6, 0xe6, 0x36, 0xee, 0x90, 0x6b,
-	0x06, 0x27, 0x93, 0x14, 0xe4, 0x60, 0xe8, 0x33, 0x53, 0xb1, 0x60, 0x0e, 0xf3, 0x61, 0x1a, 0xd0,
-	0x1e, 0xf8, 0x36, 0x95, 0x4c, 0x54, 0xf2, 0xf5, 0xc2, 0x5a, 0x69, 0xa3, 0x4e, 0xb2, 0x21, 0x49,
-	0xa4, 0x40, 0x46, 0x75, 0xa8, 0x02, 0x9b, 0xf5, 0xe3, 0xd3, 0x5a, 0xee, 0xc7, 0x69, 0xad, 0x32,
-	0xa4, 0x6e, 0xff, 0xae, 0x3e, 0x41, 0xa4, 0x9b, 0x5a, 0x38, 0x9e, 0x22, 0xf4, 0x55, 0x28, 0x46,
-	0xe5, 0xf1, 0x34, 0x14, 0xb6, 0x6c, 0x5b, 0xcb, 0x61, 0x80, 0x29, 0x93, 0xb9, 0x3c, 0x64, 0x1a,
-	0x8a, 0xd6, 0x71, 0x9c, 0x96, 0xd7, 0x5f, 0x21, 0x58, 0x98, 0xec, 0x5d, 0x60, 0x17, 0xfe, 0xcb,
-	0x0a, 0x09, 0x26, 0xdb, 0x56, 0x0c, 0x54, 0x90, 0xea, 0x7a, 0xf3, 0x06, 0x82, 0x34, 0x8b, 0xd1,
-	0x20, 0xe6, 0x42, 0x38, 0x59, 0x4e, 0x7f, 0x8f, 0xe0, 0x9f, 0x6d, 0xee, 0x89, 0x81, 0xcb, 0x82,
-	0xfd, 0x3e, 0x15, 0x47, 0x78, 0x07, 0x66, 0xb3, 0x06, 0xfc, 0x9e, 0xfa, 0x10, 0xa5, 0x8d, 0xe5,
-	0x51, 0xb5, 0x62, 0x4b, 0x90, 0xbd, 0x41, 0xa7, 0xef, 0x58, 0x8f, 0xd8, 0x30, 0x29, 0x50, 0xba,
-	0xc8, 0xdb, 0xeb, 0xe1, 0x36, 0xcc, 0x8a, 0x88, 0xaf, 0xfd, 0x82, 0x5a, 0x92, 0x07, 0x95, 0x7c,
-	0x1d, 0xad, 0xcd, 0x34, 0xef, 0x47, 0x81, 0x9f, 0x4e, 0x6b, 0xb7, 0xba, 0x8e, 0x3c, 0x1a, 0x74,
-	0x88, 0xc5, 0xdd, 0xc4, 0x96, 0xc9, 0x63, 0x5d, 0xd8, 0xbd, 0xc4, 0x8a, 0x2d, 0x66, 0x7d, 0x78,
-	0xb7, 0x0e, 0x89, 0x6b, 0x5b, 0xcc, 0x32, 0x4b, 0x8a, 0xf1, 0xa1, 0x22, 0xd4, 0x2d, 0x98, 0x1f,
-	0x6b, 0x7c, 0xd7, 0x11, 0x12, 0x3f, 0x86, 0x69, 0x15, 0x73, 0xa1, 0x17, 0xb9, 0x56, 0xaf, 0x31,
-	0x92, 0x64, 0x92, 0x94, 0x44, 0xff, 0x86, 0x40, 0x6b, 0xb1, 0x3e, 0xeb, 0x52, 0xe9, 0x70, 0x6f,
-	0x8f, 0x5a, 0x3d, 0x26, 0xf1, 0x6d, 0xd0, 0xb8, 0xcf, 0x02, 0x25, 0x10, 0xb5, 0xed, 0x80, 0x09,
-	0xa1, 0x54, 0x9a, 0x31, 0xcb, 0xe9, 0xfe, 0x56, 0xbc, 0x3d, 0x21, 0x66, 0xfe, 0x66, 0x62, 0x76,
-	0x60, 0x8a, 0xba, 0x7c, 0xe0, 0xc9, 0x4a, 0x41, 0x11, 0x2c, 0x92, 0x44, 0x95, 0xe8, 0x08, 0x92,
-	0xe4, 0x7c, 0x91, 0x6d, 0xee, 0x78, 0x4d, 0x23, 0xca, 0x7e, 0xfb, 0xb9, 0xb6, 0xfa, 0x1b, 0x0a,
-	0x47, 0x09, 0x66, 0xc2, 0xac, 0x7f, 0x47, 0x80, 0x0f, 0x3d, 0xfb, 0xef, 0x18, 0xf6, 0x0d, 0x82,
-	0xb2, 0x99, 0xba, 0x20, 0x99, 0xf4, 0xc9, 0xd8, 0xcd, 0x73, 0xef, 0x5a, 0xe3, 0x5c, 0xca, 0x27,
-	0xf1, 0x63, 0xe4, 0xf2, 0xc1, 0x50, 0xb4, 0xa9, 0xa4, 0xb1, 0xf5, 0x4d, 0xb5, 0xd6, 0x09, 0x40,
-	0x16, 0x87, 0xe7, 0x00, 0x32, 0x77, 0x69, 0x39, 0xac, 0xc1, 0xec, 0xe8, 0x27, 0xd0, 0x90, 0xbe,
-	0x03, 0x4b, 0xa9, 0x41, 0x2f, 0x10, 0x66, 0x32, 0xe1, 0x73, 0x4f, 0x30, 0xbc, 0x0a, 0x65, 0x8b,
-	0xbb, 0x7e, 0x9f, 0x45, 0xd1, 0x6d, 0xe9, 0xb8, 0x71, 0xf7, 0x05, 0x73, 0x2e, 0xdb, 0x3e, 0x70,
-	0x5c, 0xa6, 0x7f, 0x45, 0x80, 0x53, 0x9e, 0xb8, 0x7e, 0x8b, 0x4a, 0x8a, 0x7b, 0x70, 0xd5, 0xa5,
-	0xf0, 0x67, 0xae, 0x1a, 0xfc, 0x1c, 0xca, 0xea, 0x58, 0x65, 0xf5, 0x93, 0x9b, 0xf8, 0x66, 0x67,
-	0xf4, 0x32, 0x59, 0xf3, 0xc1, 0xf1, 0x59, 0x15, 0x9d, 0x9c, 0x55, 0xd1, 0x97, 0xb3, 0x2a, 0x7a,
-	0x7d, 0x5e, 0xcd, 0x9d, 0x9c, 0x57, 0x73, 0x1f, 0xcf, 0xab, 0xb9, 0x67, 0x2b, 0x57, 0xfc, 0x6e,
-	0x5f, 0x8e, 0xfc, 0x70, 0x95, 0x41, 0x3a, 0x53, 0x0a, 0xdb, 0xfc, 0x15, 0x00, 0x00, 0xff, 0xff,
-	0x59, 0xaa, 0xac, 0x11, 0x9d, 0x07, 0x00, 0x00,
+	// 745 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe4, 0x55, 0xcf, 0x6f, 0xd3, 0x48,
+	0x14, 0xce, 0x24, 0x51, 0xab, 0xbe, 0x74, 0x5b, 0x77, 0xba, 0x2b, 0xa5, 0xdd, 0x2a, 0x89, 0xac,
+	0xd5, 0xb6, 0x7b, 0xa8, 0xad, 0xb4, 0x97, 0x15, 0x20, 0xa4, 0xa6, 0x09, 0x17, 0x0a, 0x8d, 0xdc,
+	0x1f, 0x07, 0x2e, 0xd1, 0x64, 0x3c, 0xa4, 0x56, 0x6c, 0x8f, 0xe5, 0x99, 0x44, 0xe4, 0xce, 0x1f,
+	0xc0, 0x5f, 0xc1, 0x81, 0x33, 0x12, 0xff, 0x42, 0x8f, 0x15, 0x27, 0xc4, 0xa1, 0xa0, 0xf6, 0x04,
+	0xe2, 0xc4, 0x99, 0x03, 0xf2, 0xd8, 0xae, 0x93, 0x06, 0xa9, 0xa8, 0x07, 0x2e, 0x9c, 0x3c, 0x9e,
+	0xef, 0xbd, 0xef, 0xbd, 0xef, 0xcd, 0xe7, 0x31, 0x98, 0x21, 0x13, 0x92, 0xf4, 0x1d, 0xbf, 0xd7,
+	0x09, 0x42, 0x2e, 0x39, 0xe5, 0x6e, 0xb6, 0x65, 0x0e, 0xeb, 0xd9, 0x8b, 0xa1, 0x70, 0x5c, 0x9d,
+	0x4e, 0x30, 0xb2, 0x98, 0x61, 0x7d, 0xf5, 0xcf, 0x1e, 0xef, 0x71, 0x05, 0x99, 0xd1, 0x2a, 0x4e,
+	0x5b, 0x5d, 0xa1, 0x5c, 0x78, 0x5c, 0xc4, 0x39, 0x66, 0xfc, 0x92, 0x40, 0x7f, 0x4b, 0xe6, 0xdb,
+	0x2c, 0xf4, 0x1c, 0x5f, 0x9a, 0xa4, 0x4b, 0x1d, 0x53, 0x8e, 0x02, 0x96, 0x82, 0x6b, 0x63, 0x20,
+	0x0d, 0x47, 0x81, 0xe4, 0x66, 0x9f, 0x8d, 0x52, 0xb4, 0x12, 0x13, 0x99, 0x5d, 0x22, 0x98, 0x39,
+	0xac, 0x77, 0x99, 0x24, 0x75, 0x93, 0x72, 0xc7, 0x8f, 0x71, 0xfd, 0x1b, 0x02, 0x7c, 0x4c, 0x5c,
+	0xc7, 0x26, 0x92, 0x87, 0x07, 0x4c, 0xee, 0x9e, 0x10, 0xbf, 0xc7, 0xf0, 0x1e, 0x14, 0xa3, 0x1a,
+	0x65, 0x54, 0x43, 0x1b, 0x0b, 0x5b, 0xff, 0x1b, 0x37, 0x48, 0x32, 0xa6, 0x29, 0x8c, 0xc3, 0x51,
+	0xc0, 0x2c, 0xc5, 0x82, 0x39, 0x2c, 0x0d, 0xd3, 0x80, 0xce, 0x20, 0xb0, 0x89, 0x64, 0xa2, 0x9c,
+	0xaf, 0x15, 0x36, 0x4a, 0x5b, 0x35, 0x23, 0x6b, 0xdf, 0x88, 0xb4, 0x65, 0x54, 0x47, 0x2a, 0xb0,
+	0x51, 0x3b, 0x3d, 0xaf, 0xe6, 0xbe, 0x9e, 0x57, 0xcb, 0x23, 0xe2, 0xb9, 0x77, 0xf4, 0x29, 0x22,
+	0xdd, 0xd2, 0x86, 0x93, 0x29, 0x42, 0x5f, 0x87, 0x62, 0x54, 0x1e, 0xcf, 0x42, 0x61, 0xa7, 0xd9,
+	0xd4, 0x72, 0x18, 0x60, 0xc6, 0x6a, 0x3d, 0xda, 0x3f, 0x6e, 0x69, 0x28, 0x5a, 0x1f, 0xb5, 0x9b,
+	0x3b, 0x87, 0x2d, 0x2d, 0xaf, 0x3f, 0x47, 0xb0, 0x3c, 0xdd, 0xbb, 0xc0, 0x1e, 0xfc, 0x95, 0x15,
+	0x12, 0x4c, 0x76, 0x68, 0x0c, 0x94, 0x91, 0xea, 0x7a, 0xfb, 0x16, 0x03, 0x69, 0x14, 0x23, 0x21,
+	0xd6, 0xf2, 0x70, 0xba, 0x9c, 0xfe, 0x06, 0xc1, 0x1f, 0xbb, 0xdc, 0x17, 0x03, 0x8f, 0x85, 0x07,
+	0x2e, 0x11, 0x27, 0xb8, 0x05, 0xf3, 0x59, 0x03, 0x41, 0x5f, 0x1d, 0x44, 0x69, 0x6b, 0x6d, 0x7c,
+	0x5a, 0xf1, 0x61, 0x1b, 0xed, 0x41, 0xd7, 0x75, 0xe8, 0x43, 0x36, 0x4a, 0x0a, 0x94, 0xae, 0xf2,
+	0xda, 0x7d, 0xdc, 0x81, 0x79, 0x11, 0xf1, 0x75, 0x9e, 0x12, 0x2a, 0x79, 0x58, 0xce, 0xd7, 0xd0,
+	0xc6, 0x5c, 0xe3, 0x5e, 0x14, 0xf8, 0xfe, 0xbc, 0xfa, 0x6f, 0xcf, 0x91, 0x27, 0x83, 0xae, 0x41,
+	0xb9, 0x97, 0x18, 0x2e, 0x79, 0x6c, 0x0a, 0xbb, 0x9f, 0x98, 0xac, 0xc9, 0xe8, 0xdb, 0xd7, 0x9b,
+	0x90, 0xf8, 0xb1, 0xc9, 0xa8, 0x55, 0x52, 0x8c, 0x0f, 0x14, 0xa1, 0x4e, 0x61, 0x69, 0xa2, 0xf1,
+	0x3d, 0x47, 0x48, 0xfc, 0x18, 0x66, 0x55, 0xcc, 0xd5, 0xbc, 0x8c, 0x1b, 0xe7, 0x35, 0x41, 0x92,
+	0x28, 0x49, 0x49, 0xf4, 0x4f, 0x08, 0x70, 0x1a, 0xd0, 0x26, 0xb4, 0xcf, 0x64, 0x93, 0x48, 0xf2,
+	0x8b, 0x0f, 0x09, 0xdb, 0xb0, 0x4c, 0x93, 0x26, 0x3a, 0xf1, 0x50, 0x5d, 0x47, 0xc8, 0xc4, 0xc7,
+	0xb7, 0x53, 0xb8, 0x44, 0xaf, 0xcf, 0x4e, 0xff, 0x8c, 0x40, 0x6b, 0x32, 0x97, 0xf5, 0x88, 0x74,
+	0xb8, 0x1f, 0xab, 0xc5, 0xff, 0x81, 0xc6, 0x03, 0x16, 0x2a, 0xa1, 0xc4, 0xb6, 0x43, 0x26, 0x84,
+	0x72, 0xc4, 0x9c, 0xb5, 0x98, 0xee, 0xef, 0xc4, 0xdb, 0x53, 0xc6, 0xc9, 0xdf, 0xce, 0x38, 0x36,
+	0xcc, 0x76, 0x89, 0x4b, 0x7c, 0xca, 0xca, 0x05, 0xc5, 0xb0, 0x62, 0x24, 0x16, 0x88, 0x6e, 0x12,
+	0x23, 0xb9, 0x49, 0x8c, 0x5d, 0xee, 0xf8, 0x0d, 0x33, 0x4a, 0x7f, 0xf5, 0xa1, 0xba, 0xfe, 0x13,
+	0x76, 0x8a, 0x12, 0xac, 0x94, 0x5a, 0xff, 0x82, 0x00, 0x1f, 0xf9, 0xf6, 0xef, 0x22, 0xf7, 0x25,
+	0x82, 0x45, 0x2b, 0xf5, 0x44, 0xa2, 0x75, 0x7f, 0xe2, 0xa6, 0xbd, 0x7b, 0xa3, 0x8d, 0xae, 0xe5,
+	0x1b, 0xf1, 0x63, 0xec, 0xb2, 0xc5, 0x50, 0xb4, 0x89, 0x24, 0xf1, 0xa7, 0x6e, 0xa9, 0xb5, 0x6e,
+	0x00, 0x64, 0x71, 0x78, 0x01, 0x20, 0x73, 0x98, 0x96, 0xc3, 0x1a, 0xcc, 0x8f, 0x1f, 0x82, 0x86,
+	0xf4, 0x16, 0xac, 0xa6, 0x76, 0xbd, 0x42, 0x98, 0xc5, 0x44, 0xc0, 0x7d, 0xc1, 0xf0, 0x3a, 0x2c,
+	0x52, 0xee, 0x05, 0x2e, 0x8b, 0xa2, 0x3b, 0xd2, 0xf1, 0xe2, 0xee, 0x0b, 0xd6, 0x42, 0xb6, 0x7d,
+	0xe8, 0x78, 0xac, 0x71, 0xff, 0xf4, 0xa2, 0x82, 0xce, 0x2e, 0x2a, 0xe8, 0xe3, 0x45, 0x05, 0xbd,
+	0xb8, 0xac, 0xe4, 0xce, 0x2e, 0x2b, 0xb9, 0x77, 0x97, 0x95, 0xdc, 0x93, 0x7f, 0x7e, 0xf0, 0x53,
+	0x7d, 0x36, 0xf6, 0x5b, 0x55, 0xd3, 0xeb, 0xce, 0x28, 0x6c, 0xfb, 0x7b, 0x00, 0x00, 0x00, 0xff,
+	0xff, 0x52, 0x30, 0x79, 0xb2, 0x83, 0x07, 0x00, 0x00,
 }
 
 func (m *ValidatorSetChange) Marshal() (dAtA []byte, err error) {
@@ -763,6 +791,57 @@ func (m *ConsumerSlashList) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *ConsumerPacketData) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ConsumerPacketData) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ConsumerPacketData) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.ConsumerSlashList) > 0 {
+		for iNdEx := len(m.ConsumerSlashList) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.ConsumerSlashList[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintRestaking(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if len(m.ValidatorSetChanges) > 0 {
+		for iNdEx := len(m.ValidatorSetChanges) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.ValidatorSetChanges[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintRestaking(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *DelegationPacket) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -784,7 +863,7 @@ func (m *DelegationPacket) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	var l int
 	_ = l
 	{
-		size, err := m.Amount.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.Balance.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -834,7 +913,7 @@ func (m *UndelegationPacket) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	var l int
 	_ = l
 	{
-		size, err := m.Amount.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.Balance.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -926,57 +1005,6 @@ func (m *ConsumerUndelegateResponse) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *ConsumerPacketData) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ConsumerPacketData) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ConsumerPacketData) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.SlashPacketData) > 0 {
-		for iNdEx := len(m.SlashPacketData) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.SlashPacketData[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintRestaking(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x12
-		}
-	}
-	if len(m.ValidatorSetChanges) > 0 {
-		for iNdEx := len(m.ValidatorSetChanges) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.ValidatorSetChanges[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintRestaking(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0xa
-		}
-	}
-	return len(dAtA) - i, nil
-}
-
 func encodeVarintRestaking(dAtA []byte, offset int, v uint64) int {
 	offset -= sovRestaking(v)
 	base := offset
@@ -1049,6 +1077,27 @@ func (m *ConsumerSlashList) Size() (n int) {
 	return n
 }
 
+func (m *ConsumerPacketData) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.ValidatorSetChanges) > 0 {
+		for _, e := range m.ValidatorSetChanges {
+			l = e.Size()
+			n += 1 + l + sovRestaking(uint64(l))
+		}
+	}
+	if len(m.ConsumerSlashList) > 0 {
+		for _, e := range m.ConsumerSlashList {
+			l = e.Size()
+			n += 1 + l + sovRestaking(uint64(l))
+		}
+	}
+	return n
+}
+
 func (m *DelegationPacket) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1061,7 +1110,7 @@ func (m *DelegationPacket) Size() (n int) {
 	}
 	l = m.ValidatorPk.Size()
 	n += 1 + l + sovRestaking(uint64(l))
-	l = m.Amount.Size()
+	l = m.Balance.Size()
 	n += 1 + l + sovRestaking(uint64(l))
 	return n
 }
@@ -1078,7 +1127,7 @@ func (m *UndelegationPacket) Size() (n int) {
 	}
 	l = m.ValidatorPk.Size()
 	n += 1 + l + sovRestaking(uint64(l))
-	l = m.Amount.Size()
+	l = m.Balance.Size()
 	n += 1 + l + sovRestaking(uint64(l))
 	return n
 }
@@ -1107,27 +1156,6 @@ func (m *ConsumerUndelegateResponse) Size() (n int) {
 	_ = l
 	if m.CompletionTime != 0 {
 		n += 1 + sovRestaking(uint64(m.CompletionTime))
-	}
-	return n
-}
-
-func (m *ConsumerPacketData) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if len(m.ValidatorSetChanges) > 0 {
-		for _, e := range m.ValidatorSetChanges {
-			l = e.Size()
-			n += 1 + l + sovRestaking(uint64(l))
-		}
-	}
-	if len(m.SlashPacketData) > 0 {
-		for _, e := range m.SlashPacketData {
-			l = e.Size()
-			n += 1 + l + sovRestaking(uint64(l))
-		}
 	}
 	return n
 }
@@ -1526,6 +1554,124 @@ func (m *ConsumerSlashList) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *ConsumerPacketData) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRestaking
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ConsumerPacketData: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ConsumerPacketData: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ValidatorSetChanges", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRestaking
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRestaking
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRestaking
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ValidatorSetChanges = append(m.ValidatorSetChanges, ValidatorSetChange{})
+			if err := m.ValidatorSetChanges[len(m.ValidatorSetChanges)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ConsumerSlashList", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRestaking
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRestaking
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRestaking
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ConsumerSlashList = append(m.ConsumerSlashList, ConsumerSlash{})
+			if err := m.ConsumerSlashList[len(m.ConsumerSlashList)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRestaking(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthRestaking
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *DelegationPacket) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -1622,7 +1768,7 @@ func (m *DelegationPacket) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Amount", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Balance", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1649,7 +1795,7 @@ func (m *DelegationPacket) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.Amount.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Balance.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1770,7 +1916,7 @@ func (m *UndelegationPacket) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Amount", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Balance", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1797,7 +1943,7 @@ func (m *UndelegationPacket) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.Amount.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Balance.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1971,124 +2117,6 @@ func (m *ConsumerUndelegateResponse) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipRestaking(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthRestaking
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ConsumerPacketData) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowRestaking
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ConsumerPacketData: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ConsumerPacketData: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ValidatorSetChanges", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowRestaking
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthRestaking
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthRestaking
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ValidatorSetChanges = append(m.ValidatorSetChanges, ValidatorSetChange{})
-			if err := m.ValidatorSetChanges[len(m.ValidatorSetChanges)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SlashPacketData", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowRestaking
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthRestaking
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthRestaking
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.SlashPacketData = append(m.SlashPacketData, ConsumerSlash{})
-			if err := m.SlashPacketData[len(m.SlashPacketData)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipRestaking(dAtA[iNdEx:])
