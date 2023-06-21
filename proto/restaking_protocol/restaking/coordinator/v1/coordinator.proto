@@ -6,8 +6,6 @@ import "gogoproto/gogo.proto";
 import "google/protobuf/duration.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos_proto/cosmos.proto";
-import "tendermint/abci/types.proto";
-import "tendermint/crypto/keys.proto";
 
 option go_package = "restaking_protocol/x/restaking/coordinator/types";
 
@@ -72,18 +70,18 @@ message Operator{
     string owner = 6 [(cosmos_proto.scalar) = "cosmos.AddressString"]; 
 }
 
-// ConsumerValidatorUpdates tracks the validator set on the consumer.
-message ConsumerValidatorUpdates{
-    repeated .tendermint.abci.ValidatorUpdate validator_updates = 1 [
-      (gogoproto.nullable) = false,
-      (gogoproto.moretags) = "yaml:\"validator_updates\""
-    ];
+//ConsumerValidator tracks the validators on the consumer.
+message ConsumerValidator{
+    // validator_address is the address of the validator being slashed.
+    string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 }
 
 // OperatedValidator represent the validator in opeator.
 message OperatedValidator{
+    // the chain id of consumer.
     string chainID  = 1;
-    .tendermint.crypto.PublicKey validator_pk = 2 [(gogoproto.nullable) = false];
+    // validator_address is the address of the validator being slashed.
+    string validator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 }
 
 // OperatorDelegationRecord represents a record of operator delegation in a epoch.

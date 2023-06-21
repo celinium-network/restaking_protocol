@@ -18,18 +18,19 @@ import (
 	restaking "github.com/celinium-network/restaking_protocol/x/restaking/types"
 )
 
-// TODO this unit test must be refactor!
+var PKs = simtestutil.CreateTestPubKeys(500)
 
 func (s *KeeperTestSuite) TestHandleRestakingDelegationPacket() {
 	validatorPk, err := cryptoutil.CreateTmProtoPublicKey()
 	s.Require().NoError(err)
 
 	operatorAccounts := simtestutil.CreateIncrementalAccounts(1)
+	valAddr := sdk.ValAddress(PKs[0].Address().Bytes()).String()
 
 	restakingDelegation := restaking.DelegationPacket{
-		OperatorAddress: operatorAccounts[0].String(),
-		ValidatorPk:     validatorPk,
-		Amount:          sdk.NewCoin("restakingDenom", math.NewIntFromUint64(100000)),
+		OperatorAddress:  operatorAccounts[0].String(),
+		ValidatorAddress: valAddr,
+		Balance:          sdk.NewCoin("restakingDenom", math.NewIntFromUint64(100000)),
 	}
 
 	restakingDelegationBz := s.codec.MustMarshal(&restakingDelegation)
@@ -47,45 +48,42 @@ func (s *KeeperTestSuite) TestHandleRestakingDelegationPacket() {
 
 	s.keeper.SetCoordinatorChannelID(s.ctx, packet.SourceChannel)
 
-	validatorPkBz := s.codec.MustMarshal(&validatorPk)
 	localOperator := s.keeper.GetOrCreateOperatorLocalAddress(
 		s.ctx,
 		packet.SourceChannel,
 		packet.SourcePort,
 		restakingDelegation.OperatorAddress,
-		validatorPkBz)
+		valAddr)
 
 	sdkPk, err := cryptocodec.FromTmProtoPublicKey(validatorPk)
 	s.Require().NoError(err)
 	valAddress := sdk.ValAddress(sdkPk.Address().Bytes())
 
-	s.stakingKeeper.EXPECT().GetValidatorByConsAddr(gomock.Any(), gomock.Any()).Return(stakingtypes.Validator{
+	s.stakingKeeper.EXPECT().GetValidator(gomock.Any(), gomock.Any()).Return(stakingtypes.Validator{
 		OperatorAddress: valAddress.String(),
 	}, true)
 
-	s.bankKeeper.EXPECT().MintCoins(gomock.Any(), types.ModuleName, sdk.Coins{restakingDelegation.Amount})
+	s.bankKeeper.EXPECT().MintCoins(gomock.Any(), types.ModuleName, sdk.Coins{restakingDelegation.Balance})
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(
-		gomock.Any(), types.ModuleName, localOperator, sdk.Coins{restakingDelegation.Amount})
+		gomock.Any(), types.ModuleName, localOperator, sdk.Coins{restakingDelegation.Balance})
 
 	s.multiStakingKeeper.EXPECT().MultiStakingDelegate(gomock.Any(), multistakingtypes.MsgMultiStakingDelegate{
 		DelegatorAddress: localOperator.String(),
 		ValidatorAddress: valAddress.String(),
-		Amount:           restakingDelegation.Amount,
+		Amount:           restakingDelegation.Balance,
 	})
 
 	s.keeper.HandleRestakingDelegationPacket(s.ctx, packet, &restakingDelegation)
 }
 
 func (s *KeeperTestSuite) TestHandleRestakingUndelegationPacket() {
-	validatorPk, err := cryptoutil.CreateTmProtoPublicKey()
-	s.Require().NoError(err)
-
 	operatorAccounts := simtestutil.CreateIncrementalAccounts(1)
+	valAddr := sdk.ValAddress(PKs[0].Address().Bytes()).String()
 
 	restakingUndelegation := restaking.UndelegationPacket{
-		OperatorAddress: operatorAccounts[0].String(),
-		ValidatorPk:     validatorPk,
-		Amount:          sdk.NewCoin("restakingDenom", math.NewIntFromUint64(100000)),
+		OperatorAddress:  operatorAccounts[0].String(),
+		ValidatorAddress: valAddr,
+		Balance:          sdk.NewCoin("restakingDenom", math.NewIntFromUint64(100000)),
 	}
 
 	restakingDelegationBz := s.codec.MustMarshal(&restakingUndelegation)
@@ -103,24 +101,22 @@ func (s *KeeperTestSuite) TestHandleRestakingUndelegationPacket() {
 
 	s.keeper.SetCoordinatorChannelID(s.ctx, packet.SourceChannel)
 
-	validatorPkBz := s.codec.MustMarshal(&validatorPk)
 	localOperator := s.keeper.GetOrCreateOperatorLocalAddress(
 		s.ctx,
 		packet.SourceChannel,
 		packet.SourcePort,
 		restakingUndelegation.OperatorAddress,
-		validatorPkBz)
+		valAddr,
+	)
 
-	sdkPk, err := cryptocodec.FromTmProtoPublicKey(validatorPk)
-	s.Require().NoError(err)
-	valAddress := sdk.ValAddress(sdkPk.Address().Bytes())
+	valAddress := sdk.ValAddress(PKs[0].Address().Bytes())
 
-	s.stakingKeeper.EXPECT().GetValidatorByConsAddr(gomock.Any(), gomock.Any()).Return(stakingtypes.Validator{
+	s.stakingKeeper.EXPECT().GetValidator(gomock.Any(), gomock.Any()).Return(stakingtypes.Validator{
 		OperatorAddress: valAddress.String(),
 	}, true)
 
-	s.multiStakingKeeper.EXPECT().Unbond(gomock.Any(), localOperator, valAddress, restakingUndelegation.Amount)
+	s.multiStakingKeeper.EXPECT().Unbond(gomock.Any(), localOperator, valAddress, restakingUndelegation.Balance)
 
-	err = s.keeper.HandleRestakingUndelegationPacket(s.ctx, packet, &restakingUndelegation)
+	err := s.keeper.HandleRestakingUndelegationPacket(s.ctx, packet, &restakingUndelegation)
 	s.Require().NoError(err)
 }

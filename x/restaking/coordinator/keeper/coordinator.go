@@ -5,13 +5,37 @@ import (
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 	ibcexported "github.com/cosmos/ibc-go/v7/modules/core/exported"
 
+	"github.com/celinium-network/restaking_protocol/x/restaking/coordinator/types"
 	restaking "github.com/celinium-network/restaking_protocol/x/restaking/types"
 )
 
-func (k Keeper) OnRecvConsumerValSetUpdates(
+func (k Keeper) OnRecvConsumerVSC(
+	ctx sdk.Context,
+	consumerClientID string,
+	changeList []restaking.ValidatorSetChange,
+) ibcexported.Acknowledgement {
+	for _, change := range changeList {
+		if change.Type == restaking.ValidatorSetChange_ADD {
+			for _, addr := range change.ValidatorAddresses {
+				k.SetConsumerValidator(ctx, consumerClientID, types.ConsumerValidator{
+					Address: addr,
+				})
+			}
+		} else if change.Type == restaking.ValidatorSetChange_REMOVE {
+			for _, addr := range change.ValidatorAddresses {
+				k.DeleteConsumerValidator(ctx, consumerClientID, addr)
+			}
+		}
+	}
+
+	ack := channeltypes.NewResultAcknowledgement([]byte{byte(1)})
+	return ack
+}
+
+func (k Keeper) OnRecvConsumerPacketData(
 	ctx sdk.Context,
 	packet channeltypes.Packet,
-	changes restaking.ValidatorSetChange,
+	consumerPacket restaking.ConsumerPacketData,
 ) ibcexported.Acknowledgement {
 	consumerClientID, err := k.GetConsumerClientIDByChannel(ctx, packet.DestinationPort, packet.DestinationChannel)
 	if err != nil {
@@ -19,16 +43,5 @@ func (k Keeper) OnRecvConsumerValSetUpdates(
 		return channeltypes.NewErrorAcknowledgement(err)
 	}
 
-	curValidatorUpdates, found := k.GetConsumerValidator(ctx, consumerClientID)
-	if !found {
-		curValidatorUpdates = changes.ValidatorUpdates
-	} else {
-		curValidatorUpdates = restaking.AccumulateChanges(curValidatorUpdates, changes.ValidatorUpdates)
-	}
-
-	// TODO correct process validator set changes.
-	k.SetConsumerValidator(ctx, consumerClientID, curValidatorUpdates)
-
-	ack := channeltypes.NewResultAcknowledgement([]byte{byte(1)})
-	return ack
+	return k.OnRecvConsumerVSC(ctx, consumerClientID, consumerPacket.ValidatorSetChanges)
 }

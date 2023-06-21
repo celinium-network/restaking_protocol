@@ -5,10 +5,6 @@ import (
 	"strings"
 	"time"
 
-	abci "github.com/cometbft/cometbft/abci/types"
-	"github.com/cometbft/cometbft/proto/tendermint/crypto"
-
-	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -21,70 +17,75 @@ import (
 	restaking "github.com/celinium-network/restaking_protocol/x/restaking/types"
 )
 
-func (k Keeper) EndBlockValidatorSetUpdate(ctx sdk.Context) {
-	k.QueueValidatorSetChangePackets(ctx)
-
-	k.SendValidatorSetChangePackets(ctx)
+func (k Keeper) EndBlock(ctx sdk.Context) {
+	k.SendConsumerPendingPacket(ctx)
 }
 
-func (k Keeper) QueueValidatorSetChangePackets(ctx sdk.Context) {
-	_, err := k.GetCoordinatorChannelID(ctx)
-	if err != nil {
-		ctx.Logger().Info("restaking protocol ibc channel not found")
-		return
+func (k Keeper) QueueInitialVSC(ctx sdk.Context) error {
+	var vsc restaking.ValidatorSetChange
+
+	var lastPowers []stakingtypes.LastValidatorPower
+	k.stakingKeeper.IterateLastValidatorPowers(ctx, func(addr sdk.ValAddress, power int64) (stop bool) {
+		lastPowers = append(lastPowers, stakingtypes.LastValidatorPower{Address: addr.String(), Power: power})
+		return false
+	})
+
+	var initialValidators []string
+	for _, p := range lastPowers {
+		initialValidators = append(initialValidators, p.Address)
 	}
 
-	valsetUpdateID := k.GetValidatorSetUpdateID(ctx)
+	vsc.ValidatorAddresses = initialValidators
+	vsc.Type = restaking.ValidatorSetChange_ADD
 
-	var valUpdates []abci.ValidatorUpdate
+	k.AppendPendingVSC(ctx, vsc)
 
-	if valsetUpdateID == 0 {
-		vals := k.stakingKeeper.GetLastValidators(ctx)
-		for _, v := range vals {
-			validatorUpdate := v.ABCIValidatorUpdateZero()
-			validatorUpdate.Power = k.stakingKeeper.GetLastValidatorPower(ctx, v.GetOperator())
-			valUpdates = append(valUpdates, validatorUpdate)
-		}
-	} else {
-		valUpdates = k.stakingKeeper.GetValidatorUpdates(ctx)
-	}
-
-	// TODO apply delegation/undelegate operation for valUpdates ?
-	vsc := restaking.ValidatorSetChange{
-		ValidatorUpdates: valUpdates,
-		ValsetUpdateId:   valsetUpdateID,
-	}
-
-	k.AppendPendingVSCPackets(ctx, vsc)
-
-	valsetUpdateID++
-	k.SetValidatorSetUpdateID(ctx, valsetUpdateID)
+	return nil
 }
 
-func (k Keeper) SendValidatorSetChangePackets(ctx sdk.Context) {
+func (k Keeper) QueueVSC(ctx sdk.Context, vsc restaking.ValidatorSetChange) {
+	k.AppendPendingVSC(ctx, vsc)
+}
+
+func (k Keeper) SendConsumerPendingPacket(ctx sdk.Context) {
 	channelID, err := k.GetCoordinatorChannelID(ctx)
 	if err != nil {
 		ctx.Logger().Info("restaking protocol ibc channel not found")
 		return
 	}
 
-	pendingPackets := k.GetPendingVSCPackets(ctx)
-
-	for _, packet := range pendingPackets {
-		p := packet
-		bz := k.cdc.MustMarshal(&p)
-		// TODO Timeout should get from params of module.
-		_, err := restaking.SendIBCPacket(ctx, k.scopedKeeper, k.channelKeeper, channelID, restaking.ConsumerPortID, bz, time.Minute*10)
-		if err != nil {
-			if clienttypes.ErrClientNotActive.Is(err) {
-				ctx.Logger().Debug("IBC client is expired, cannot send VSC, leaving packet data stored:")
-				return
-			}
-			panic(fmt.Errorf("packet could not be sent over IBC: %w", err))
-		}
+	pendingVSCList := k.GetPendingVSCList(ctx)
+	pendingSlashList := k.GetPendingConsumerSlashList(ctx)
+	if len(pendingVSCList) == 0 && len(pendingSlashList) == 0 {
+		return
 	}
 
-	k.DeletePendingVSCPackets(ctx)
+	pendingConsumerPacketData := restaking.ConsumerPacketData{
+		ValidatorSetChanges: pendingVSCList,
+		ConsumerSlashList:   pendingSlashList,
+	}
+
+	bz := k.cdc.MustMarshal(&pendingConsumerPacketData)
+
+	if _, err := restaking.SendIBCPacket(
+		ctx,
+		k.scopedKeeper,
+		k.channelKeeper,
+		channelID,
+		restaking.ConsumerPortID,
+		bz,
+		time.Minute*10,
+	); err != nil {
+		if clienttypes.ErrClientNotActive.Is(err) {
+			ctx.Logger().Debug("IBC client is expired, cannot send VSC, leaving packet data stored:")
+			return
+		}
+		// TODO panic or return ?
+		panic(fmt.Errorf("packet could not be sent over IBC: %w", err))
+	}
+
+	k.DeletePendingConsumerSlashList(ctx)
+	k.DeletePendingVSCList(ctx)
 }
 
 func (k Keeper) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, restakingPacket *restaking.RestakingPacket) exported.Acknowledgement {
@@ -137,12 +138,11 @@ func (k Keeper) HandleRestakingDelegationPacket(
 	packet channeltypes.Packet,
 	delegation *restaking.DelegationPacket,
 ) error {
-	validatorPkBz := k.cdc.MustMarshal(&delegation.ValidatorPk)
-	operatorLocalAddress := k.GetOrCreateOperatorLocalAddress(ctx, packet.SourceChannel, packet.SourcePort, delegation.OperatorAddress, validatorPkBz)
+	operatorLocalAddress := k.GetOrCreateOperatorLocalAddress(ctx, packet.SourceChannel, packet.SourcePort, delegation.OperatorAddress, delegation.ValidatorAddress)
 
-	k.SetOperatorLocalAddress(ctx, delegation.OperatorAddress, validatorPkBz, operatorLocalAddress)
+	k.SetOperatorLocalAddress(ctx, delegation.OperatorAddress, delegation.ValidatorAddress, operatorLocalAddress)
 
-	validator, found := k.getValidatorFromTmPublicKey(ctx, delegation.ValidatorPk)
+	validator, found := k.getValidatorFromTmPublicKey(ctx, delegation.ValidatorAddress)
 	if !found {
 		return types.ErrUnknownValidator
 	}
@@ -150,18 +150,18 @@ func (k Keeper) HandleRestakingDelegationPacket(
 	// TODO how to delegate to validator
 	// (1) adjust delegation of staking module ?
 	// (2) mint coins and delegate by multistaking module
-	if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.Coins{delegation.Amount}); err != nil {
+	if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.Coins{delegation.Balance}); err != nil {
 		return err
 	}
 
-	if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, operatorLocalAddress, sdk.Coins{delegation.Amount}); err != nil {
+	if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, operatorLocalAddress, sdk.Coins{delegation.Balance}); err != nil {
 		return err
 	}
 
 	return k.multiStakingKeeper.MultiStakingDelegate(ctx, multistakingtypes.MsgMultiStakingDelegate{
 		DelegatorAddress: operatorLocalAddress.String(),
 		ValidatorAddress: validator.OperatorAddress,
-		Amount:           delegation.Amount,
+		Amount:           delegation.Balance,
 	})
 }
 
@@ -170,10 +170,9 @@ func (k Keeper) HandleRestakingUndelegationPacket(
 	packet channeltypes.Packet,
 	delegation *restaking.UndelegationPacket,
 ) error {
-	validatorPkBz := k.cdc.MustMarshal(&delegation.ValidatorPk)
-	operatorLocalAddress := k.GetOrCreateOperatorLocalAddress(ctx, packet.SourceChannel, packet.SourcePort, delegation.OperatorAddress, validatorPkBz)
+	operatorLocalAddress := k.GetOrCreateOperatorLocalAddress(ctx, packet.SourceChannel, packet.SourcePort, delegation.OperatorAddress, delegation.ValidatorAddress)
 
-	validator, found := k.getValidatorFromTmPublicKey(ctx, delegation.ValidatorPk)
+	validator, found := k.getValidatorFromTmPublicKey(ctx, delegation.ValidatorAddress)
 	if !found {
 		return types.ErrUnknownValidator
 	}
@@ -183,7 +182,7 @@ func (k Keeper) HandleRestakingUndelegationPacket(
 		return err
 	}
 
-	_, err = k.multiStakingKeeper.Unbond(ctx, operatorLocalAddress, valAddress, delegation.Amount)
+	_, err = k.multiStakingKeeper.Unbond(ctx, operatorLocalAddress, valAddress, delegation.Balance)
 	if err != nil {
 		return err
 	}
@@ -191,20 +190,18 @@ func (k Keeper) HandleRestakingUndelegationPacket(
 	return nil
 }
 
-func (k Keeper) getValidatorFromTmPublicKey(ctx sdk.Context, tmpk crypto.PublicKey) (stakingtypes.Validator, bool) {
-	sdkVaPk, err := cryptocodec.FromTmProtoPublicKey(tmpk)
+func (k Keeper) getValidatorFromTmPublicKey(ctx sdk.Context, valAddr string) (stakingtypes.Validator, bool) {
+	accAddr, err := sdk.ValAddressFromBech32(valAddr)
 	if err != nil {
 		return stakingtypes.Validator{}, false
 	}
-
-	consAddress := sdk.ConsAddress(sdkVaPk.Address())
-	return k.stakingKeeper.GetValidatorByConsAddr(ctx, consAddress)
+	return k.stakingKeeper.GetValidator(ctx, accAddr)
 }
 
 func (k Keeper) GenerateOperatorAccount(
 	ctx sdk.Context,
 	channel, portID, operatorAddress string,
-	validatorPk []byte,
+	valAddr string,
 ) authtypes.AccountI {
 	header := ctx.BlockHeader()
 
@@ -214,7 +211,7 @@ func (k Keeper) GenerateOperatorAccount(
 	buf = append(buf, []byte(channel)...)
 	buf = append(buf, []byte(portID)...)
 	buf = append(buf, []byte(operatorAddress)...)
-	buf = append(buf, validatorPk...)
+	buf = append(buf, valAddr...)
 
 	return authtypes.NewEmptyModuleAccount(string(buf), authtypes.Staking)
 }

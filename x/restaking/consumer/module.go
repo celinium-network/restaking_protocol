@@ -77,7 +77,7 @@ func NewAppModule(cdc codec.Codec, keeper keeper.Keeper) AppModule {
 
 // EndBlock implements module.EndBlockAppModule
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-	am.keeper.EndBlockValidatorSetUpdate(ctx)
+	am.keeper.EndBlock(ctx)
 	return nil
 }
 

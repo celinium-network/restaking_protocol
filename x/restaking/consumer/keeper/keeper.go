@@ -123,32 +123,32 @@ func (k Keeper) SetValidatorSetUpdateID(ctx sdk.Context, valUpdateID uint64) {
 	store.Set(types.GetValidatorSetUpdateIDKey(), bz)
 }
 
-func (k Keeper) GetPendingVSCPackets(ctx sdk.Context) []restaking.ValidatorSetChange {
-	var packets restaking.ValidatorSetChanges
+func (k Keeper) GetPendingVSCList(ctx sdk.Context) []restaking.ValidatorSetChange {
+	var vscList restaking.ValidatorSetChanges
 
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetPendingValidatorChangeSetKey())
 	if bz == nil {
 		return []restaking.ValidatorSetChange{}
 	}
-	if err := packets.Unmarshal(bz); err != nil {
+	if err := vscList.Unmarshal(bz); err != nil {
 		// An error here would indicate something is very wrong,
 		// the PendingVSCPackets are assumed to be correctly serialized in AppendPendingVSCPackets.
 		panic(fmt.Errorf("cannot unmarshal pending validator set changes: %w", err))
 	}
-	return packets.ValidatorSetChanges
+	return vscList.ValidatorSetChanges
 }
 
-func (k Keeper) DeletePendingVSCPackets(ctx sdk.Context) {
+func (k Keeper) DeletePendingVSCList(ctx sdk.Context) {
 	store := ctx.KVStore(k.storeKey)
 	store.Delete(types.GetPendingValidatorChangeSetKey())
 }
 
-func (k Keeper) AppendPendingVSCPackets(ctx sdk.Context, addedPackets ...restaking.ValidatorSetChange) {
-	packets := append(k.GetPendingVSCPackets(ctx), addedPackets...)
+func (k Keeper) AppendPendingVSC(ctx sdk.Context, addedPackets ...restaking.ValidatorSetChange) {
+	vscList := append(k.GetPendingVSCList(ctx), addedPackets...)
 
 	store := ctx.KVStore(k.storeKey)
-	newPackets := restaking.ValidatorSetChanges{ValidatorSetChanges: packets}
+	newPackets := restaking.ValidatorSetChanges{ValidatorSetChanges: vscList}
 	buf, err := newPackets.Marshal()
 	if err != nil {
 		// An error here would indicate something is very wrong,
@@ -156,6 +156,43 @@ func (k Keeper) AppendPendingVSCPackets(ctx sdk.Context, addedPackets ...restaki
 		panic(fmt.Errorf("cannot marshal pending validator set changes: %w", err))
 	}
 	store.Set(types.GetPendingValidatorChangeSetKey(), buf)
+}
+
+func (k Keeper) GetPendingConsumerSlashList(ctx sdk.Context) []restaking.ConsumerSlash {
+	var slashList restaking.ConsumerSlashList
+
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.GetPendingConsumerSlashListKey())
+	if bz == nil {
+		return nil
+	}
+
+	if err := slashList.Unmarshal(bz); err != nil {
+		// An error here would indicate something is very wrong,
+		// the PendingVSCPackets are assumed to be correctly serialized in AppendPendingVSCPackets.
+		panic(fmt.Errorf("cannot unmarshal pending validator slash list: %w", err))
+	}
+
+	return slashList.Slashes
+}
+
+func (k Keeper) DeletePendingConsumerSlashList(ctx sdk.Context) {
+	store := ctx.KVStore(k.storeKey)
+	store.Delete(types.GetPendingConsumerSlashListKey())
+}
+
+func (k Keeper) AppendPendingConsumerSlash(ctx sdk.Context, addedSlashes ...restaking.ConsumerSlash) {
+	slashList := append(k.GetPendingConsumerSlashList(ctx), addedSlashes...)
+
+	store := ctx.KVStore(k.storeKey)
+	newSlashList := restaking.ConsumerSlashList{Slashes: slashList}
+	buf, err := newSlashList.Marshal()
+	if err != nil {
+		// An error here would indicate something is very wrong,
+		// packets is instantiated in this method and should be able to be marshaled.
+		panic(fmt.Errorf("cannot marshal pending validator set changes: %w", err))
+	}
+	store.Set(types.GetPendingConsumerSlashListKey(), buf)
 }
 
 func (k Keeper) SetCoordinatorChannelID(ctx sdk.Context, channelID string) {
@@ -172,10 +209,10 @@ func (k Keeper) GetCoordinatorChannelID(ctx sdk.Context) (string, error) {
 	return string(bz), nil
 }
 
-func (k Keeper) GetOperatorLocalAddress(ctx sdk.Context, operatorAddress string, validatorPk []byte) (addr sdk.AccAddress, found bool) {
+func (k Keeper) GetOperatorLocalAddress(ctx sdk.Context, operatorAddress string, valAddr string) (addr sdk.AccAddress, found bool) {
 	store := ctx.KVStore(k.storeKey)
 
-	bz := store.Get(types.OperatorAddressKey(validatorPk, operatorAddress))
+	bz := store.Get(types.OperatorAddressKey(valAddr, operatorAddress))
 	if bz == nil {
 		return addr, false
 	}
@@ -190,16 +227,16 @@ func (k Keeper) GetOperatorLocalAddress(ctx sdk.Context, operatorAddress string,
 func (k Keeper) GetOrCreateOperatorLocalAddress(
 	ctx sdk.Context,
 	srcChannel, srcPort, operatorAddress string,
-	validatorPk []byte,
+	valAddr string,
 ) sdk.AccAddress {
-	operatorLocalAddress, found := k.GetOperatorLocalAddress(ctx, operatorAddress, validatorPk)
+	operatorLocalAddress, found := k.GetOperatorLocalAddress(ctx, operatorAddress, valAddr)
 	if !found {
 		operatorLocalAccount := k.GenerateOperatorAccount(
 			ctx,
 			srcChannel,
 			srcPort,
 			operatorAddress,
-			validatorPk,
+			valAddr,
 		)
 
 		operatorLocalAddress = operatorLocalAccount.GetAddress()
@@ -207,7 +244,7 @@ func (k Keeper) GetOrCreateOperatorLocalAddress(
 	return operatorLocalAddress
 }
 
-func (k Keeper) SetOperatorLocalAddress(ctx sdk.Context, operatorAddress string, validatorPk []byte, localAddress sdk.AccAddress) {
+func (k Keeper) SetOperatorLocalAddress(ctx sdk.Context, operatorAddress, valAddr string, localAddress sdk.AccAddress) {
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.OperatorAddressKey(validatorPk, operatorAddress), []byte(localAddress.String()))
+	store.Set(types.OperatorAddressKey(valAddr, operatorAddress), []byte(localAddress.String()))
 }

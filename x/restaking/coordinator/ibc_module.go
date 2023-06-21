@@ -150,15 +150,15 @@ func (am AppModule) OnRecvPacket(
 	relayer sdk.AccAddress,
 ) exported.Acknowledgement {
 	var (
-		ack                        exported.Acknowledgement
-		consumerValidatorSetChange restaking.ValidatorSetChange
+		ack                exported.Acknowledgement
+		consumerPacketData restaking.ConsumerPacketData
 	)
 
-	if err := am.cdc.Unmarshal(packet.Data, &consumerValidatorSetChange); err != nil {
+	if err := consumerPacketData.Unmarshal(packet.Data); err != nil {
 		errAck := channeltypes.NewErrorAcknowledgement(fmt.Errorf("cannot unmarshal CCV packet data"))
 		ack = &errAck
 	} else {
-		ack = am.keeper.OnRecvConsumerValSetUpdates(ctx, packet, consumerValidatorSetChange)
+		ack = am.keeper.OnRecvConsumerPacketData(ctx, packet, consumerPacketData)
 	}
 
 	return ack

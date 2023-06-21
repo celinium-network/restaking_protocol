@@ -7,8 +7,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
 
-	abci "github.com/cometbft/cometbft/abci/types"
-	tmprotocrypto "github.com/cometbft/cometbft/proto/tendermint/crypto"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	tmtime "github.com/cometbft/cometbft/types/time"
 
@@ -17,7 +15,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 
-	cryptoutil "github.com/celinium-network/restaking_protocol/testutil/crypto"
 	testutilkeeper "github.com/celinium-network/restaking_protocol/testutil/keeper"
 	coordkeeper "github.com/celinium-network/restaking_protocol/x/restaking/coordinator/keeper"
 	"github.com/celinium-network/restaking_protocol/x/restaking/coordinator/types"
@@ -27,6 +24,8 @@ var (
 	consumerChainIDs  = []string{"consumer-0", "consumer-1", "consumer-2"}
 	consumerClientIDs = []string{"client-0", "client-1", "client-2"}
 	consumerChannels  = []string{"channel-0", "channel-1", "channel-2"}
+
+	PKs = simtestutil.CreateTestPubKeys(500)
 )
 
 type KeeperTestSuite struct {
@@ -81,19 +80,17 @@ func TestKeeperTestSuite(t *testing.T) {
 func (s *KeeperTestSuite) mockOperator() *types.Operator {
 	ctx, keeper := s.ctx, s.coordinatorKeeper
 
-	var tmPubkeys []tmprotocrypto.PublicKey
+	var consumerValidatorAddresses []string
 	for i := 0; i < len(consumerChainIDs); i++ {
 		keeper.SetConsumerClientID(ctx, consumerChainIDs[i], consumerClientIDs[i])
 		keeper.SetConsumerClientIDToChannel(ctx, consumerClientIDs[i], consumerChannels[i])
 
-		tmProtoPk, err := cryptoutil.CreateTmProtoPublicKey()
-		s.Require().NoError(err)
-		tmPubkeys = append(tmPubkeys, tmProtoPk)
+		valAddr := sdk.ValAddress(PKs[i].Address().Bytes()).String()
+		consumerValidatorAddresses = append(consumerValidatorAddresses, valAddr)
 
-		keeper.SetConsumerValidator(ctx, consumerClientIDs[i], []abci.ValidatorUpdate{{
-			PubKey: tmProtoPk,
-			Power:  1,
-		}})
+		keeper.SetConsumerValidator(ctx, consumerClientIDs[i], types.ConsumerValidator{
+			Address: valAddr,
+		})
 
 		keeper.SetConsumerRestakingToken(ctx, consumerClientIDs[i], []string{"stake"})
 		keeper.SetConsumerRewardToken(ctx, consumerClientIDs[i], []string{"stake"})
@@ -110,16 +107,16 @@ func (s *KeeperTestSuite) mockOperator() *types.Operator {
 		Shares:          math.ZeroInt(),
 		OperatedValidators: []types.OperatedValidator{
 			{
-				ChainID:     consumerChainIDs[0],
-				ValidatorPk: tmPubkeys[0],
+				ChainID:          consumerChainIDs[0],
+				ValidatorAddress: consumerValidatorAddresses[0],
 			},
 			{
-				ChainID:     consumerChainIDs[1],
-				ValidatorPk: tmPubkeys[1],
+				ChainID:          consumerChainIDs[1],
+				ValidatorAddress: consumerValidatorAddresses[1],
 			},
 			{
-				ChainID:     consumerChainIDs[2],
-				ValidatorPk: tmPubkeys[2],
+				ChainID:          consumerChainIDs[2],
+				ValidatorAddress: consumerValidatorAddresses[2],
 			},
 		},
 		Owner: userAddr.String(),

@@ -18,9 +18,13 @@ const (
 
 	ValidatorSetChangeSet
 
+	PendingValidatorSlashListKey
+
 	CoordinatorChannelID
 
 	OperatorAddressPrefix
+
+	NotifyUpdateValidators
 )
 
 func GetValidatorSetUpdateIDKey() []byte {
@@ -35,6 +39,14 @@ func GetCoordinatorChannelIDKey() []byte {
 	return []byte{CoordinatorChannelID}
 }
 
-func OperatorAddressKey(validatorPK []byte, operatorAddress string) []byte {
-	return append([]byte{OperatorAddressPrefix}, append([]byte(operatorAddress), validatorPK...)...)
+func OperatorAddressKey(operatorAddress string, valAddr string) []byte {
+	return append([]byte{OperatorAddressPrefix}, append([]byte(operatorAddress), valAddr...)...)
+}
+
+func GetPendingConsumerSlashListKey() []byte {
+	return []byte{PendingValidatorSlashListKey}
+}
+
+func NotifyUpdateValidatorKey() []byte {
+	return []byte{NotifyUpdateValidators}
 }

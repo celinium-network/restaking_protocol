@@ -3,57 +3,97 @@ syntax = "proto3";
 package restaking_protocol.restaking.v1;
 
 import "gogoproto/gogo.proto";
-import "tendermint/abci/types.proto";
-import "tendermint/crypto/keys.proto";
+import "cosmos_proto/cosmos.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
 option go_package = "restaking_protocol/x/restaking/types";
 
+// ValidatorSetChange represents changes of consumer validators.
 message ValidatorSetChange{
-    repeated .tendermint.abci.ValidatorUpdate validator_updates = 1 [
-      (gogoproto.nullable) = false,
-      (gogoproto.moretags) = "yaml:\"validator_updates\""
-    ];
-    uint64 valset_update_id = 2;
+    // Type defines the type of change: Add, Remove, or Update.
+    enum Type{
+        // The validators has been created at consumer.
+        ADD = 0;
+        // The validators has been removed at consumer.
+        REMOVE = 1;
+    }
+    // type specifies the type of change.
+    Type type  =1;
+    // addresses of consumer validator
+    repeated string validator_addresses = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 }
 
+// ValidatorSetChanges represents a collection of validator set changes.
 message ValidatorSetChanges{
+    // validator_set_changes contains the list of validator set changes.
     repeated ValidatorSetChange validator_set_changes = 1 [(gogoproto.nullable) = false];
 }
 
+// ConsumerSlash represents the slashing information for a consumer chain.
+message ConsumerSlash {
+    // validator_address is the address of the validator being slashed.
+    string validator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+    // slash_factor is the amount by which the validator is being slashed, represented as a decimal.
+    string slash_factor = 2 [
+        (cosmos_proto.scalar)  = "cosmos.Dec",
+        (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Dec",
+        (gogoproto.nullable)   = false
+    ];
+}
+
+// ConsumerSlashList represents a list of slashing information for consumer chains.
+message ConsumerSlashList {
+    repeated ConsumerSlash slashes = 1 [(gogoproto.nullable) = false];
+}
+
+ // ConsumerPacketData contains the data for a consumer packet.
+message ConsumerPacketData{
+    repeated ValidatorSetChange validator_set_changes =  1 [(gogoproto.nullable) = false];
+    repeated ConsumerSlash      consumer_slash_list = 2 [(gogoproto.nullable) = false];
+}
+
+ // DelegationPacket represents a packet containing delegation information.
 message DelegationPacket{
+    // Operator address
     string operator_address = 1;
-
-    .tendermint.crypto.PublicKey validator_pk = 2 [(gogoproto.nullable) = false];
-  
-    cosmos.base.v1beta1.Coin amount = 3[ 
+    // Address of the validator.
+    string validator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+    // Amount of tokens to be delegated
+    cosmos.base.v1beta1.Coin balance = 3[ 
         (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coin",
         (gogoproto.nullable) = false
     ];
 }
 
+// UndelegationPacket represents a packet containing undelegation information.
 message UndelegationPacket{
+    // Operator address
     string operator_address = 1;
-
-    .tendermint.crypto.PublicKey validator_pk = 2 [(gogoproto.nullable) = false];
-  
-    cosmos.base.v1beta1.Coin amount = 3[ 
+    // Address of the validator.
+    string validator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+    // Amount of tokens to be undelegated.
+    cosmos.base.v1beta1.Coin balance = 3[ 
         (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coin",
         (gogoproto.nullable) = false
     ];
 }
 
+// RestakingPacket represents a packet that send from coordinator to consumer.
 message RestakingPacket{
+    // The type of this packet
     enum PacketType{
+        // The packet contains delegation data.
         Delegation = 0;
+         // The packet contains undelegation data.
         Undelegation = 1;
     }
-    
+    // Type of the packet indicating delegation or undelegation.
     PacketType type = 1;
-
+    // Data payload of the packet.
     string data = 2;
 }
 
+// ConsumerUndelegateResponse contains the completion time for undelegation.
 message ConsumerUndelegateResponse{
     int64 completion_time = 1; 
 }
