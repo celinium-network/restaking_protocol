@@ -80,8 +80,10 @@ message ConsumerValidator{
 message OperatedValidator{
     // the chain id of consumer.
     string chainID  = 1;
+    // the chain id of consumer.
+    string clientID  = 2;
     // validator_address is the address of the validator being slashed.
-    string validator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+    string validator_address = 3 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 }
 
 // OperatorDelegationRecord represents a record of operator delegation in a epoch.

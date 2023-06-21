@@ -1,5 +1,7 @@
 package types
 
+import "github.com/cosmos/cosmos-sdk/types/address"
+
 const (
 	// ModuleName is the name of the restaking coordinator module
 	ModuleName = "restakingConsumer"
@@ -14,7 +16,7 @@ const (
 )
 
 const (
-	ValidatorSetUpdateIDKey = iota
+	ValidatorSetUpdateIDKey byte = iota
 
 	ValidatorSetChangeSet
 
@@ -40,7 +42,8 @@ func GetCoordinatorChannelIDKey() []byte {
 }
 
 func OperatorAddressKey(operatorAddress string, valAddr string) []byte {
-	return append([]byte{OperatorAddressPrefix}, append([]byte(operatorAddress), valAddr...)...)
+	// key: byte{prefix}| byte{valAddrLen}| valAddr| operatorAddr
+	return append([]byte{OperatorAddressPrefix}, append(address.MustLengthPrefix([]byte(valAddr)), operatorAddress...)...)
 }
 
 func GetPendingConsumerSlashListKey() []byte {
@@ -49,4 +52,10 @@ func GetPendingConsumerSlashListKey() []byte {
 
 func NotifyUpdateValidatorKey() []byte {
 	return []byte{NotifyUpdateValidators}
+}
+
+func ParseValidatorOperatorKey(key []byte) []byte {
+	valAddrLen := key[1]
+	prefixLen := valAddrLen + 2
+	return key[prefixLen:]
 }

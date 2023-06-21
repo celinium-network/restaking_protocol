@@ -1057,6 +1057,20 @@ func (mr *MockMultiStakingKeeperMockRecorder) MultiStakingDelegate(ctx, msg inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MultiStakingDelegate", reflect.TypeOf((*MockMultiStakingKeeper)(nil).MultiStakingDelegate), ctx, msg)
 }
 
+// SlashDelegator mocks base method.
+func (m *MockMultiStakingKeeper) SlashDelegator(ctx types1.Context, valAddr types1.ValAddress, delegator types1.AccAddress, slashCoin types1.Coin) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SlashDelegator", ctx, valAddr, delegator, slashCoin)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SlashDelegator indicates an expected call of SlashDelegator.
+func (mr *MockMultiStakingKeeperMockRecorder) SlashDelegator(ctx, valAddr, delegator, slashCoin interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SlashDelegator", reflect.TypeOf((*MockMultiStakingKeeper)(nil).SlashDelegator), ctx, valAddr, delegator, slashCoin)
+}
+
 // Unbond mocks base method.
 func (m *MockMultiStakingKeeper) Unbond(ctx types1.Context, delAddr types1.AccAddress, valAddr types1.ValAddress, token types1.Coin) (math.Int, error) {
 	m.ctrl.T.Helper()

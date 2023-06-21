@@ -38,3 +38,39 @@ func (k Keeper) SlashAgentByValidatorSlash(ctx sdk.Context, valAddr sdk.ValAddre
 		k.SetMultiStakingAgent(ctx, &agents[i])
 	}
 }
+
+func (k Keeper) SlashDelegator(ctx sdk.Context, valAddr sdk.ValAddress, delegator sdk.AccAddress, slashCoin sdk.Coin) error {
+	agent, found := k.GetMultiStakingAgent(ctx, slashCoin.Denom, valAddr.String())
+	if !found {
+		return types.ErrNotExistedAgent
+	}
+
+	removedShares := agent.Shares.Mul(slashCoin.Amount).Quo(agent.StakedAmount)
+	err := k.DecreaseMultiStakingShares(ctx, removedShares, agent.Id, delegator.String())
+	if err != nil {
+		return err
+	}
+	agent.StakedAmount = agent.StakedAmount.Sub(slashCoin.Amount)
+
+	agentDelegatorAddr, err := sdk.AccAddressFromBech32(agent.DelegateAddress)
+	if err != nil {
+		k.Logger(ctx).Error(fmt.Sprintf("agent't delegator is invalid: %s", err))
+		return err
+	}
+
+	if err := k.bankKeeper.SendCoinsFromAccountToModule(
+		ctx, agentDelegatorAddr, types.ModuleName, sdk.Coins{slashCoin},
+	); err != nil {
+		k.Logger(ctx).Error(fmt.Sprintf("send agent coins to module failed, agentID %d,error: %s", agent.Id, err))
+		return err
+	}
+
+	if err := k.bankKeeper.BurnCoins(ctx, types.ModuleName, sdk.Coins{slashCoin}); err != nil {
+		k.Logger(ctx).Error(fmt.Sprintf("burn agent cons failed: %s", err))
+		return err
+	}
+
+	k.SetMultiStakingAgent(ctx, agent)
+
+	return nil
+}

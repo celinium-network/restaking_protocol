@@ -40,6 +40,7 @@ func (k Keeper) RegisterOperator(ctx sdk.Context, msg types.MsgRegisterOperator)
 
 		operatedValidators = append(operatedValidators, types.OperatedValidator{
 			ChainID:          chainID,
+			ClientID:         string(clientID),
 			ValidatorAddress: msg.ConsumerValidatorAddresses[i],
 		})
 	}
