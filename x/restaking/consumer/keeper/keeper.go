@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/address"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	host "github.com/cosmos/ibc-go/v7/modules/core/24-host"
@@ -247,4 +248,10 @@ func (k Keeper) GetOrCreateOperatorLocalAddress(
 func (k Keeper) SetOperatorLocalAddress(ctx sdk.Context, operatorAddress, valAddr string, localAddress sdk.AccAddress) {
 	store := ctx.KVStore(k.storeKey)
 	store.Set(types.OperatorAddressKey(operatorAddress, valAddr), []byte(localAddress.String()))
+}
+
+func (k Keeper) ValidatorsOperatorStoreIterator(ctx sdk.Context, valAddr string) sdk.Iterator {
+	store := ctx.KVStore(k.storeKey)
+	key := append([]byte{types.OperatorAddressPrefix}, address.MustLengthPrefix([]byte(valAddr))...)
+	return sdk.KVStoreReversePrefixIterator(store, key)
 }

@@ -126,6 +126,16 @@ func (k Keeper) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, restak
 			respBz := k.cdc.MustMarshal(&resp)
 			ack = channeltypes.NewResultAcknowledgement(respBz)
 		}
+	case restaking.RestakingPacket_Slash:
+		var slashPacket restaking.SlashPacket
+		k.cdc.MustUnmarshal([]byte(restakingPacket.Data), &slashPacket)
+
+		err := k.HandleRestakingSlashPacket(ctx, packet, &slashPacket)
+		if err != nil {
+			return channeltypes.NewErrorAcknowledgement(err)
+		} else {
+			return channeltypes.NewResultAcknowledgement([]byte{1})
+		}
 	default:
 		return channeltypes.NewErrorAcknowledgement(fmt.Errorf("unknown restaking protocol packet type"))
 	}
@@ -214,4 +224,29 @@ func (k Keeper) GenerateOperatorAccount(
 	buf = append(buf, valAddr...)
 
 	return authtypes.NewEmptyModuleAccount(string(buf), authtypes.Staking)
+}
+
+func (k Keeper) HandleRestakingSlashPacket(
+	ctx sdk.Context,
+	packet channeltypes.Packet,
+	slash *restaking.SlashPacket,
+) error {
+	operatorLocalAddress := k.GetOrCreateOperatorLocalAddress(ctx, packet.SourceChannel, packet.SourcePort, slash.OperatorAddress, slash.ValidatorAddress)
+
+	validator, found := k.getValidator(ctx, slash.ValidatorAddress)
+	if !found {
+		return types.ErrUnknownValidator
+	}
+
+	valAddress, err := sdk.ValAddressFromBech32(validator.OperatorAddress)
+	if err != nil {
+		return err
+	}
+
+	err = k.multiStakingKeeper.SlashDelegator(ctx, valAddress, operatorLocalAddress, slash.Balance)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

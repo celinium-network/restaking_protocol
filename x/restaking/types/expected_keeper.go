@@ -124,4 +124,6 @@ type MultiStakingKeeper interface {
 	MultiStakingDelegate(ctx sdk.Context, msg multistakingtypes.MsgMultiStakingDelegate) error
 
 	Unbond(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, token sdk.Coin) (math.Int, error)
+
+	SlashDelegator(ctx sdk.Context, valAddr sdk.ValAddress, delegator sdk.AccAddress, slashCoin sdk.Coin) error
 }

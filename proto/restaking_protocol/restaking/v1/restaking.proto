@@ -31,8 +31,8 @@ message ValidatorSetChanges{
 
 // ConsumerSlash represents the slashing information for a consumer chain.
 message ConsumerSlash {
-    // validator_address is the address of the validator being slashed.
-    string validator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+    // operator_address is the address of the operator being slashed.
+    string operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
     // slash_factor is the amount by which the validator is being slashed, represented as a decimal.
     string slash_factor = 2 [
         (cosmos_proto.scalar)  = "cosmos.Dec",
@@ -78,14 +78,29 @@ message UndelegationPacket{
     ];
 }
 
+// SlashPacket represents a packet containing slash information
+message SlashPacket{
+    // Operator address
+    string operator_address = 1;
+    // Address of the validator.
+    string validator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+    // Amount of tokens to be slahed.
+    cosmos.base.v1beta1.Coin balance = 3[ 
+        (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coin",
+        (gogoproto.nullable) = false
+    ];
+}
+
 // RestakingPacket represents a packet that send from coordinator to consumer.
 message RestakingPacket{
     // The type of this packet
     enum PacketType{
         // The packet contains delegation data.
         Delegation = 0;
-         // The packet contains undelegation data.
+        // The packet contains undelegation data.
         Undelegation = 1;
+        // Slash
+        Slash =2;
     }
     // Type of the packet indicating delegation or undelegation.
     PacketType type = 1;
