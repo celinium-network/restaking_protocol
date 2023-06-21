@@ -4,8 +4,6 @@ package restaking_protocol.restaking.v1;
 
 import "gogoproto/gogo.proto";
 import "cosmos_proto/cosmos.proto";
-import "tendermint/abci/types.proto";
-import "tendermint/crypto/keys.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
 option go_package = "restaking_protocol/x/restaking/types";
