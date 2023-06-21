@@ -40,7 +40,7 @@ func GetCoordinatorChannelIDKey() []byte {
 }
 
 func OperatorAddressKey(operatorAddress string, valAddr string) []byte {
-	return append([]byte{OperatorAddressPrefix}, append([]byte(operatorAddress), valAddr...)...)
+	return append([]byte{OperatorAddressPrefix}, append([]byte(valAddr), operatorAddress...)...)
 }
 
 func GetPendingConsumerSlashListKey() []byte {

@@ -92,6 +92,6 @@ func (Hooks) BeforeValidatorModified(ctx types.Context, valAddr types.ValAddress
 }
 
 // BeforeValidatorSlashed implements types.StakingHooks.
-func (Hooks) BeforeValidatorSlashed(ctx types.Context, valAddr types.ValAddress, fraction math.LegacyDec) error {
+func (h Hooks) BeforeValidatorSlashed(ctx types.Context, valAddr types.ValAddress, fraction math.LegacyDec) error {
 	return nil
 }

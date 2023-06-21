@@ -142,7 +142,7 @@ func (k Keeper) HandleRestakingDelegationPacket(
 
 	k.SetOperatorLocalAddress(ctx, delegation.OperatorAddress, delegation.ValidatorAddress, operatorLocalAddress)
 
-	validator, found := k.getValidatorFromTmPublicKey(ctx, delegation.ValidatorAddress)
+	validator, found := k.getValidator(ctx, delegation.ValidatorAddress)
 	if !found {
 		return types.ErrUnknownValidator
 	}
@@ -172,7 +172,7 @@ func (k Keeper) HandleRestakingUndelegationPacket(
 ) error {
 	operatorLocalAddress := k.GetOrCreateOperatorLocalAddress(ctx, packet.SourceChannel, packet.SourcePort, delegation.OperatorAddress, delegation.ValidatorAddress)
 
-	validator, found := k.getValidatorFromTmPublicKey(ctx, delegation.ValidatorAddress)
+	validator, found := k.getValidator(ctx, delegation.ValidatorAddress)
 	if !found {
 		return types.ErrUnknownValidator
 	}
@@ -190,7 +190,7 @@ func (k Keeper) HandleRestakingUndelegationPacket(
 	return nil
 }
 
-func (k Keeper) getValidatorFromTmPublicKey(ctx sdk.Context, valAddr string) (stakingtypes.Validator, bool) {
+func (k Keeper) getValidator(ctx sdk.Context, valAddr string) (stakingtypes.Validator, bool) {
 	accAddr, err := sdk.ValAddressFromBech32(valAddr)
 	if err != nil {
 		return stakingtypes.Validator{}, false
