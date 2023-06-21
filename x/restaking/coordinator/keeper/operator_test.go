@@ -10,8 +10,6 @@ import (
 	"github.com/celinium-network/restaking_protocol/x/restaking/coordinator/types"
 )
 
-var PKs = simtestutil.CreateTestPubKeys(500)
-
 func (s *KeeperTestSuite) setupConsumerChain(
 	ctx sdk.Context,
 	chainID string,

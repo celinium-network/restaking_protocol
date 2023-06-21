@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"cosmossdk.io/math"
+	restaking "github.com/celinium-network/restaking_protocol/x/restaking/types"
 	"github.com/cosmos/cosmos-sdk/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
@@ -40,12 +41,33 @@ func (Hooks) AfterValidatorBonded(ctx types.Context, consAddr types.ConsAddress,
 }
 
 // AfterValidatorCreated implements types.StakingHooks.
-func (Hooks) AfterValidatorCreated(ctx types.Context, valAddr types.ValAddress) error {
+func (h Hooks) AfterValidatorCreated(ctx types.Context, valAddr types.ValAddress) error {
+	// TODO make added validators in a block into a ValidatorSetChange
+	_, err := h.k.GetCoordinatorChannelID(ctx)
+	if err != nil {
+		return nil
+	}
+
+	vsc := restaking.ValidatorSetChange{
+		Type:               restaking.ValidatorSetChange_ADD,
+		ValidatorAddresses: []string{valAddr.String()},
+	}
+	h.k.AppendPendingVSC(ctx, vsc)
 	return nil
 }
 
 // AfterValidatorRemoved implements types.StakingHooks.
-func (Hooks) AfterValidatorRemoved(ctx types.Context, consAddr types.ConsAddress, valAddr types.ValAddress) error {
+func (h Hooks) AfterValidatorRemoved(ctx types.Context, consAddr types.ConsAddress, valAddr types.ValAddress) error {
+	_, err := h.k.GetCoordinatorChannelID(ctx)
+	if err != nil {
+		return nil
+	}
+
+	vsc := restaking.ValidatorSetChange{
+		Type:               restaking.ValidatorSetChange_REMOVE,
+		ValidatorAddresses: []string{valAddr.String()},
+	}
+	h.k.AppendPendingVSC(ctx, vsc)
 	return nil
 }
 

@@ -574,6 +574,7 @@ func New(
 			app.DistrKeeper.Hooks(),
 			app.SlashingKeeper.Hooks(),
 			app.MultiStakingKeeper.Hooks(),
+			app.RestakingConsumerKeeper.Hooks(),
 		),
 	)
 

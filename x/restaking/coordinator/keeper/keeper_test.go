@@ -24,6 +24,8 @@ var (
 	consumerChainIDs  = []string{"consumer-0", "consumer-1", "consumer-2"}
 	consumerClientIDs = []string{"client-0", "client-1", "client-2"}
 	consumerChannels  = []string{"channel-0", "channel-1", "channel-2"}
+
+	PKs = simtestutil.CreateTestPubKeys(500)
 )
 
 type KeeperTestSuite struct {
