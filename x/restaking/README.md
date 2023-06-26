@@ -38,7 +38,7 @@ When a user initiates an undelegation, their shares are burned. The Operator per
 When a validator on the consumer side is slashed, the Restaking Consumer module receives a notification. The Restaking Consumer module sends the slash information, along with all the operators delegating to that validator, to the Coordinator. Upon receiving the slash information, the Coordinator immediately burns the corresponding tokens and notifies other consumers to modify their delegation corresponding to the Operator-Validator pair.
 
 #### Handling Simultaneous Slashes and Link Delays
-To ensure that restaking truly enhances the security of Proof-of-Stake (POS), it is necessary to ensure that any reported slash by a consumer can fully reduce the funds. So, under what circumstances might a slash be unable to occur?
+In order to ensure that restaking truly enhances the security of POS (Proof-of-Stake), it is crucial to ensure that any reported slash by a Consumer can fully reduce the funds. So, under what circumstances would it be impossible to perform a slash?
 
 ![avatar](../../docs/figures/report_notify.png)
 
