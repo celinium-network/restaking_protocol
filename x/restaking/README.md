@@ -1,12 +1,13 @@
 # Restaking
 ## Definition
 ### Provider
-Provider 是 restaking 资金的来源链，通常选择那些运行良好的链作为Provider。通过 LSD 或者原生token 引入它的 pos staking 资金。
+The Provider is the source chain for restaking funds and is typically chosen from well-performing chains. It introduces POS staking funds through LSD (Liquidity Staking Derivatives) or native tokens.
+
 ### Coordinator
-Coordinator 是Retaking 的中枢，它引入Provider 的资金，同时连接了 Consumer。它通过运行在其上的Operator 控制着 Restaking资金的 delegate/undelegate/slash. 
+The Coordinator serves as the central hub for restaking. It introduces funds from the Provider and connects with Consumers. It is controlled by an Operator running on it, overseeing delegate/undelegate/slash operations for the restaking funds.
 
 ### Consumer
-Consumer 连接 Coordinator, 消费其引入的资金，并给这些资金的提供者发放 pos staking 奖励。
+The Consumer connects to the Coordinator, consumes the introduced funds, and distributes POS staking rewards to the providers of those funds.
 
 ### Operator
 The Operator is a core role within the Restaking Protocol and is closely related to delegation, undelegation, and slashing. The Operator exists on the Coordinator. [Operator definition](https://github.com/celinium-network/restaking_protocol/blob/main/x/restaking/coordinator/types/coordinator.pb.go#L126). The Operator defines the token for restaking, records the amount of restaking, the total shares, and the validator on the consumer (each consumer can only select one validator).

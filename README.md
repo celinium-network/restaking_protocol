@@ -10,7 +10,7 @@ In new POS chains, the limited number of validators or low amount of staked fund
 
 Restaking Protocol introduces a mechanism to encourage restaking and increase the amount of staked funds in the network. By incentivizing validators to restake their funds, the protocol aims to strengthen the network's security and resilience against potential attacks.
 
-The protocol achieves this by offering rewards, delegation incentives, or other benefits to validators who actively participate in the consensus process and keep their funds staked. By promoting restaking, more validators are attracted to the network, ensuring a larger pool of staked funds and enhancing overall security.[Specific implementation](https://github.com/celinium-network/restaking_protocol/tree/main/x/restaking/README.md).
+The protocol achieves this by offering rewards, delegation incentives, or other benefits to validators who actively participate in the consensus process and keep their funds staked. By promoting restaking, more validators are attracted to the network, ensuring a larger pool of staked funds and enhancing overall security.[Specific implementation](./x/restaking/README.md).
 
 ### Repository Structure
 
