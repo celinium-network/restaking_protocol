@@ -151,7 +151,7 @@ func (am AppModule) OnRecvPacket(
 ) exported.Acknowledgement {
 	var (
 		ack                exported.Acknowledgement
-		consumerPacketData restaking.ConsumerPacketData
+		consumerPacketData restaking.ConsumerPacket
 	)
 
 	if err := consumerPacketData.Unmarshal(packet.Data); err != nil {

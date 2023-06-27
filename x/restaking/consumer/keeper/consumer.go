@@ -60,12 +60,12 @@ func (k Keeper) SendConsumerPendingPacket(ctx sdk.Context) {
 		return
 	}
 
-	pendingConsumerPacketData := restaking.ConsumerPacketData{
+	pendingConsumerPacket := restaking.ConsumerPacket{
 		ValidatorSetChanges: pendingVSCList,
 		ConsumerSlashList:   pendingSlashList,
 	}
 
-	bz := k.cdc.MustMarshal(&pendingConsumerPacketData)
+	bz := k.cdc.MustMarshal(&pendingConsumerPacket)
 
 	if _, err := restaking.SendIBCPacket(
 		ctx,
@@ -88,7 +88,7 @@ func (k Keeper) SendConsumerPendingPacket(ctx sdk.Context) {
 	k.DeletePendingVSCList(ctx)
 }
 
-func (k Keeper) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, restakingPacket *restaking.RestakingPacket) exported.Acknowledgement {
+func (k Keeper) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, coordinatorPacket *restaking.CoordinatorPacket) exported.Acknowledgement {
 	var ack exported.Acknowledgement
 
 	channelID, err := k.GetCoordinatorChannelID(ctx)
@@ -100,10 +100,10 @@ func (k Keeper) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, restak
 		return channeltypes.NewErrorAcknowledgement(err)
 	}
 
-	switch restakingPacket.Type {
-	case restaking.RestakingPacket_Delegation:
+	switch coordinatorPacket.Type {
+	case restaking.CoordinatorPacket_Delegation:
 		var delegatePacket restaking.DelegationPacket
-		k.cdc.MustUnmarshal([]byte(restakingPacket.Data), &delegatePacket)
+		k.cdc.MustUnmarshal([]byte(coordinatorPacket.Data), &delegatePacket)
 
 		err := k.HandleRestakingDelegationPacket(ctx, packet, &delegatePacket)
 		if err != nil {
@@ -111,9 +111,9 @@ func (k Keeper) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, restak
 		} else {
 			return channeltypes.NewResultAcknowledgement([]byte{1})
 		}
-	case restaking.RestakingPacket_Undelegation:
+	case restaking.CoordinatorPacket_Undelegation:
 		var undelegatePacket restaking.UndelegationPacket
-		k.cdc.MustUnmarshal([]byte(restakingPacket.Data), &undelegatePacket)
+		k.cdc.MustUnmarshal([]byte(coordinatorPacket.Data), &undelegatePacket)
 
 		err := k.HandleRestakingUndelegationPacket(ctx, packet, &undelegatePacket)
 		if err != nil {
@@ -126,9 +126,9 @@ func (k Keeper) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, restak
 			respBz := k.cdc.MustMarshal(&resp)
 			ack = channeltypes.NewResultAcknowledgement(respBz)
 		}
-	case restaking.RestakingPacket_Slash:
+	case restaking.CoordinatorPacket_Slash:
 		var slashPacket restaking.SlashPacket
-		k.cdc.MustUnmarshal([]byte(restakingPacket.Data), &slashPacket)
+		k.cdc.MustUnmarshal([]byte(coordinatorPacket.Data), &slashPacket)
 
 		err := k.HandleRestakingSlashPacket(ctx, packet, &slashPacket)
 		if err != nil {

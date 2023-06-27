@@ -86,7 +86,7 @@ func (AppModule) OnChanOpenTry(
 
 // OnRecvPacket implements types.IBCModule
 func (am AppModule) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, relayer sdk.AccAddress) exported.Acknowledgement {
-	var restakingProtocolPacket restaking.RestakingPacket
+	var restakingProtocolPacket restaking.CoordinatorPacket
 	err := am.cdc.Unmarshal(packet.Data, &restakingProtocolPacket)
 	if err != nil {
 		return channeltypes.NewErrorAcknowledgement(err)

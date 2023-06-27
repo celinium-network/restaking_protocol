@@ -175,7 +175,7 @@ func (k Keeper) SendDelegation(ctx sdk.Context, operator *types.Operator, amount
 		}
 
 		bz := k.cdc.MustMarshal(&delegationPacket)
-		restakingPacket := restaking.RestakingPacket{
+		restakingPacket := restaking.CoordinatorPacket{
 			Type: 0,
 			Data: string(bz),
 		}
@@ -307,7 +307,7 @@ func (k Keeper) SendUndelegation(ctx sdk.Context, operator *types.Operator, amou
 		}
 
 		bz := k.cdc.MustMarshal(&delegationPacket)
-		restakingPacket := restaking.RestakingPacket{
+		restakingPacket := restaking.CoordinatorPacket{
 			Type: 1,
 			Data: string(bz),
 		}

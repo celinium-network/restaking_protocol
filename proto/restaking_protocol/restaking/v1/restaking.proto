@@ -46,8 +46,8 @@ message ConsumerSlashList {
     repeated ConsumerSlash slashes = 1 [(gogoproto.nullable) = false];
 }
 
- // ConsumerPacketData contains the data for a consumer packet.
-message ConsumerPacketData{
+ // ConsumerPacket contains the data for a consumer packet.
+message ConsumerPacket{
     repeated ValidatorSetChange validator_set_changes =  1 [(gogoproto.nullable) = false];
     repeated ConsumerSlash      consumer_slash_list = 2 [(gogoproto.nullable) = false];
 }
@@ -78,6 +78,11 @@ message UndelegationPacket{
     ];
 }
 
+// ConsumerUndelegateResponse contains the completion time for undelegation.
+message ConsumerUndelegateResponse{
+    int64 completion_time = 1; 
+}
+
 // SlashPacket represents a packet containing slash information
 message SlashPacket{
     // Operator address
@@ -91,8 +96,8 @@ message SlashPacket{
     ];
 }
 
-// RestakingPacket represents a packet that send from coordinator to consumer.
-message RestakingPacket{
+// CoordinatorPacket represents a packet that send from coordinator to consumer.
+message CoordinatorPacket{
     // The type of this packet
     enum PacketType{
         // The packet contains delegation data.
@@ -106,9 +111,4 @@ message RestakingPacket{
     PacketType type = 1;
     // Data payload of the packet.
     string data = 2;
-}
-
-// ConsumerUndelegateResponse contains the completion time for undelegation.
-message ConsumerUndelegateResponse{
-    int64 completion_time = 1; 
 }
