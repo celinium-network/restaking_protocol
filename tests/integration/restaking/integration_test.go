@@ -5,11 +5,11 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/celinium-network/restaking_protocol/tests/integration"
+	restaking "github.com/celinium-network/restaking_protocol/tests/integration/restaking"
 )
 
 func TestRestakingSuite(t *testing.T) {
-	restakingSuite := integration.NewIntegrationTestSuite()
+	restakingSuite := restaking.NewIntegrationTestSuite()
 
 	suite.Run(t, restakingSuite)
 }

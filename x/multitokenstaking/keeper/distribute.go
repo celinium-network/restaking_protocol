@@ -29,7 +29,7 @@ func (k Keeper) WithdrawRestakingReward(ctx sdk.Context, agentAddress string, de
 	delegatorAccAddr := sdk.MustAccAddressFromBech32(delegator)
 	agentAccAddr := sdk.MustAccAddressFromBech32(agent.AgentAddress)
 
-	reward.Denom = k.stakingkeeper.BondDenom(ctx)
+	reward.Denom = k.stakingKeeper.BondDenom(ctx)
 	reward.Amount = amount
 	if err := k.sendCoinsFromAccountToAccount(
 		ctx, agentAccAddr, delegatorAccAddr, sdk.Coins{reward},

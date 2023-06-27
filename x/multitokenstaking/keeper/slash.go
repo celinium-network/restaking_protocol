@@ -11,7 +11,7 @@ import (
 func (k Keeper) SlashAgentByValidatorSlash(ctx sdk.Context, valAddr sdk.ValAddress, slashFactor sdk.Dec) {
 	agents := k.GetAllAgentsByVal(ctx, valAddr)
 
-	slashDenom := k.stakingkeeper.GetParams(ctx).BondDenom
+	slashDenom := k.stakingKeeper.GetParams(ctx).BondDenom
 	for i := 0; i < len(agents); i++ {
 		slashAmt := sdk.NewDecFromInt(agents[i].StakedAmount).Mul(slashFactor)
 		slashCoin := sdk.NewCoin(slashDenom, slashAmt.TruncateInt())

@@ -14,7 +14,7 @@ import (
 )
 
 func (k Keeper) MTStakingDelegate(ctx sdk.Context, msg types.MsgMTStakingDelegate) error {
-	defaultBondDenom := k.stakingkeeper.BondDenom(ctx)
+	defaultBondDenom := k.stakingKeeper.BondDenom(ctx)
 	if strings.Compare(msg.Balance.Denom, defaultBondDenom) == 0 {
 		return sdkerrors.Wrapf(types.ErrForbidStakingDenom, "denom: %s is native token", msg.Balance.Denom)
 	}
@@ -50,7 +50,7 @@ func (k Keeper) depositAndDelegate(ctx sdk.Context, agent *types.MTStakingAgent,
 		return err
 	}
 
-	defaultBondDenom := k.stakingkeeper.BondDenom(ctx)
+	defaultBondDenom := k.stakingKeeper.BondDenom(ctx)
 	bondTokenAmt, err := k.EquivalentCoinCalculator(ctx, amount, defaultBondDenom)
 	if err != nil {
 		return err
@@ -70,7 +70,7 @@ func (k Keeper) mintAndDelegate(ctx sdk.Context, agent *types.MTStakingAgent, va
 		return err
 	}
 
-	if _, err := k.stakingkeeper.Delegate(ctx,
+	if _, err := k.stakingKeeper.Delegate(ctx,
 		agentDelegateAccAddr, amount.Amount,
 		stakingtypes.Unbonded, validator, true,
 	); err != nil {
@@ -97,7 +97,7 @@ func (k Keeper) MTStakingUndelegate(ctx sdk.Context, msg *types.MsgMTStakingUnde
 	}
 
 	unbonding := k.GetOrCreateMTStakingUnbonding(ctx, agent.AgentAddress, msg.DelegatorAddress)
-	unbondingTime := k.stakingkeeper.GetParams(ctx).UnbondingTime
+	unbondingTime := k.stakingKeeper.GetParams(ctx).UnbondingTime
 
 	// TODO Whether the length of the entries should be limited ?
 	undelegateCompleteTime := ctx.BlockTime().Add(unbondingTime)
@@ -129,7 +129,7 @@ func (k Keeper) Unbond(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValA
 		return removeShares, err
 	}
 
-	defaultBondDenom := k.stakingkeeper.BondDenom(ctx)
+	defaultBondDenom := k.stakingKeeper.BondDenom(ctx)
 	undelegateAmt, err := k.EquivalentCoinCalculator(ctx, token, defaultBondDenom)
 	if err != nil {
 		return removeShares, err
@@ -165,7 +165,7 @@ func (k Keeper) Unbond(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValA
 func (k Keeper) undelegateAndBurn(ctx sdk.Context, agent *types.MTStakingAgent, valAddr sdk.ValAddress, undelegateAmt sdk.Coin) error {
 	agentDelegateAccAddr := sdk.MustAccAddressFromBech32(agent.AgentAddress)
 
-	stakedShares, err := k.stakingkeeper.ValidateUnbondAmount(ctx, agentDelegateAccAddr, valAddr, undelegateAmt.Amount)
+	stakedShares, err := k.stakingKeeper.ValidateUnbondAmount(ctx, agentDelegateAccAddr, valAddr, undelegateAmt.Amount)
 	if err != nil {
 		return err
 	}
@@ -194,7 +194,7 @@ func (k Keeper) agentValidator(ctx sdk.Context, agent *types.MTStakingAgent) (*s
 		return nil, err
 	}
 
-	validator, found := k.stakingkeeper.GetValidator(ctx, valAddr)
+	validator, found := k.stakingKeeper.GetValidator(ctx, valAddr)
 	if !found {
 		return nil, sdkerrors.Wrapf(types.ErrNotExistedValidator, "address %s", valAddr)
 	}
@@ -250,17 +250,17 @@ func (k Keeper) GenerateAccount(ctx sdk.Context, prefix, suffix string) *authtyp
 func (k Keeper) instantUndelegate(
 	ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, sharesAmount sdk.Dec,
 ) (sdk.Coins, error) {
-	validator, found := k.stakingkeeper.GetValidator(ctx, valAddr)
+	validator, found := k.stakingKeeper.GetValidator(ctx, valAddr)
 	if !found {
 		return nil, stakingtypes.ErrNoDelegatorForAddress
 	}
 
-	returnAmount, err := k.stakingkeeper.Unbond(ctx, delAddr, valAddr, sharesAmount)
+	returnAmount, err := k.stakingKeeper.Unbond(ctx, delAddr, valAddr, sharesAmount)
 	if err != nil {
 		return nil, err
 	}
 
-	bondDenom := k.stakingkeeper.GetParams(ctx).BondDenom
+	bondDenom := k.stakingKeeper.GetParams(ctx).BondDenom
 
 	amt := sdk.NewCoin(bondDenom, returnAmount)
 	res := sdk.NewCoins(amt)
@@ -285,14 +285,14 @@ func (k Keeper) RefreshAgentDelegationAmount(ctx sdk.Context) {
 			panic(err)
 		}
 
-		validator, found := k.stakingkeeper.GetValidator(ctx, valAddress)
+		validator, found := k.stakingKeeper.GetValidator(ctx, valAddress)
 		if !found {
 			continue
 		}
 
 		var currentAmount math.Int
 		delegator := sdk.MustAccAddressFromBech32(agents[i].AgentAddress)
-		delegation, found := k.stakingkeeper.GetDelegation(ctx, delegator, valAddress)
+		delegation, found := k.stakingKeeper.GetDelegation(ctx, delegator, valAddress)
 		if !found {
 			continue
 		} else {

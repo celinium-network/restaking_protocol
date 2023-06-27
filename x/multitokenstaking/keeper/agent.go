@@ -8,7 +8,7 @@ import (
 )
 
 func (k Keeper) GetExpectedDelegationAmount(ctx sdk.Context, coin sdk.Coin) (sdk.Coin, error) {
-	defaultBondDenom := k.stakingkeeper.BondDenom(ctx)
+	defaultBondDenom := k.stakingKeeper.BondDenom(ctx)
 
 	return k.EquivalentCoinCalculator(ctx, coin, defaultBondDenom)
 }

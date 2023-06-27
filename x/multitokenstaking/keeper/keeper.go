@@ -23,7 +23,7 @@ type Keeper struct {
 	accountKeeper      types.AccountKeeper
 	bankKeeper         types.BankKeeper
 	epochKeeper        types.EpochKeeper
-	stakingkeeper      types.StakingKeeper
+	stakingKeeper      types.StakingKeeper
 	distributionKeeper types.DistributionKeeper
 
 	EquivalentCoinCalculator CalculateEquivalentCoin
@@ -44,7 +44,7 @@ func NewKeeper(
 		accountKeeper:            accountKeeper,
 		bankKeeper:               bankKeeper,
 		epochKeeper:              epochKeeper,
-		stakingkeeper:            stakingKeeper,
+		stakingKeeper:            stakingKeeper,
 		distributionKeeper:       distributionKeeper,
 		EquivalentCoinCalculator: defaultCalculateEquivalentCoin,
 	}
