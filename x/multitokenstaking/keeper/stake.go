@@ -10,36 +10,36 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	"github.com/celinium-network/restaking_protocol/x/multistaking/types"
+	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 )
 
-func (k Keeper) MultiStakingDelegate(ctx sdk.Context, msg types.MsgMultiStakingDelegate) error {
-	defaultBondDenom := k.stakingkeeper.BondDenom(ctx)
-	if strings.Compare(msg.Amount.Denom, defaultBondDenom) == 0 {
-		return sdkerrors.Wrapf(types.ErrForbidStakingDenom, "denom: %s is native token", msg.Amount.Denom)
+func (k Keeper) MTStakingDelegate(ctx sdk.Context, msg types.MsgMTStakingDelegate) error {
+	defaultBondDenom := k.stakingKeeper.BondDenom(ctx)
+	if strings.Compare(msg.Balance.Denom, defaultBondDenom) == 0 {
+		return sdkerrors.Wrapf(types.ErrForbidStakingDenom, "denom: %s is native token", msg.Balance.Denom)
 	}
 
-	if !k.denomInWhiteList(ctx, msg.Amount.Denom) {
-		return sdkerrors.Wrapf(types.ErrForbidStakingDenom, "denom: %s not in white list", msg.Amount.Denom)
+	if !k.denomInWhiteList(ctx, msg.Balance.Denom) {
+		return sdkerrors.Wrapf(types.ErrForbidStakingDenom, "denom: %s not in white list", msg.Balance.Denom)
 	}
 
-	agent := k.GetOrCreateMultiStakingAgent(ctx, msg.Amount.Denom, msg.ValidatorAddress)
+	agent := k.GetOrCreateMTStakingAgent(ctx, msg.Balance.Denom, msg.ValidatorAddress)
 	delegatorAccAddr := sdk.MustAccAddressFromBech32(msg.DelegatorAddress)
 
-	if err := k.depositAndDelegate(ctx, agent, msg.Amount, delegatorAccAddr); err != nil {
+	if err := k.depositAndDelegate(ctx, agent, msg.Balance, delegatorAccAddr); err != nil {
 		return err
 	}
 
-	shares := agent.CalculateShares(msg.Amount.Amount)
+	shares := agent.CalculateShares(msg.Balance.Amount)
 	agent.Shares = agent.Shares.Add(shares)
-	agent.StakedAmount = agent.StakedAmount.Add(msg.Amount.Amount)
+	agent.StakedAmount = agent.StakedAmount.Add(msg.Balance.Amount)
 
-	k.SetMultiStakingAgent(ctx, agent)
-	return k.IncreaseMultiStakingShares(ctx, shares, agent.Id, msg.DelegatorAddress)
+	k.SetMTStakingAgent(ctx, agent)
+	return k.IncreaseMTStakingShares(ctx, shares, agent.AgentAddress, msg.DelegatorAddress)
 }
 
-func (k Keeper) depositAndDelegate(ctx sdk.Context, agent *types.MultiStakingAgent, amount sdk.Coin, delegator sdk.AccAddress) error {
-	agentDelegateAccAddr := sdk.MustAccAddressFromBech32(agent.DelegateAddress)
+func (k Keeper) depositAndDelegate(ctx sdk.Context, agent *types.MTStakingAgent, amount sdk.Coin, delegator sdk.AccAddress) error {
+	agentDelegateAccAddr := sdk.MustAccAddressFromBech32(agent.AgentAddress)
 
 	validator, err := k.agentValidator(ctx, agent)
 	if err != nil {
@@ -50,7 +50,7 @@ func (k Keeper) depositAndDelegate(ctx sdk.Context, agent *types.MultiStakingAge
 		return err
 	}
 
-	defaultBondDenom := k.stakingkeeper.BondDenom(ctx)
+	defaultBondDenom := k.stakingKeeper.BondDenom(ctx)
 	bondTokenAmt, err := k.EquivalentCoinCalculator(ctx, amount, defaultBondDenom)
 	if err != nil {
 		return err
@@ -59,8 +59,8 @@ func (k Keeper) depositAndDelegate(ctx sdk.Context, agent *types.MultiStakingAge
 	return k.mintAndDelegate(ctx, agent, *validator, bondTokenAmt)
 }
 
-func (k Keeper) mintAndDelegate(ctx sdk.Context, agent *types.MultiStakingAgent, validator stakingtypes.Validator, amount sdk.Coin) error {
-	agentDelegateAccAddr := sdk.MustAccAddressFromBech32(agent.DelegateAddress)
+func (k Keeper) mintAndDelegate(ctx sdk.Context, agent *types.MTStakingAgent, validator stakingtypes.Validator, amount sdk.Coin) error {
+	agentDelegateAccAddr := sdk.MustAccAddressFromBech32(agent.AgentAddress)
 
 	if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.Coins{amount}); err != nil {
 		return err
@@ -70,7 +70,7 @@ func (k Keeper) mintAndDelegate(ctx sdk.Context, agent *types.MultiStakingAgent,
 		return err
 	}
 
-	if _, err := k.stakingkeeper.Delegate(ctx,
+	if _, err := k.stakingKeeper.Delegate(ctx,
 		agentDelegateAccAddr, amount.Amount,
 		stakingtypes.Unbonded, validator, true,
 	); err != nil {
@@ -79,8 +79,8 @@ func (k Keeper) mintAndDelegate(ctx sdk.Context, agent *types.MultiStakingAgent,
 	return nil
 }
 
-func (k Keeper) MultiStakingUndelegate(ctx sdk.Context, msg *types.MsgMultiStakingUndelegate) error {
-	agent, found := k.GetMultiStakingAgent(ctx, msg.Amount.Denom, msg.ValidatorAddress)
+func (k Keeper) MTStakingUndelegate(ctx sdk.Context, msg *types.MsgMTStakingUndelegate) error {
+	agent, found := k.GetMTStakingAgent(ctx, msg.Balance.Denom, msg.ValidatorAddress)
 	if !found {
 		return types.ErrNotExistedAgent
 	}
@@ -91,28 +91,28 @@ func (k Keeper) MultiStakingUndelegate(ctx sdk.Context, msg *types.MsgMultiStaki
 		return err
 	}
 
-	removeShares, err := k.Unbond(ctx, delegatorAddr, valAddr, msg.Amount)
+	removeShares, err := k.Unbond(ctx, delegatorAddr, valAddr, msg.Balance)
 	if err != nil {
 		return err
 	}
 
-	unbonding := k.GetOrCreateMultiStakingUnbonding(ctx, agent.Id, msg.DelegatorAddress)
-	unbondingTime := k.stakingkeeper.GetParams(ctx).UnbondingTime
+	unbonding := k.GetOrCreateMTStakingUnbonding(ctx, agent.AgentAddress, msg.DelegatorAddress)
+	unbondingTime := k.stakingKeeper.GetParams(ctx).UnbondingTime
 
 	// TODO Whether the length of the entries should be limited ?
 	undelegateCompleteTime := ctx.BlockTime().Add(unbondingTime)
-	unbonding.Entries = append(unbonding.Entries, types.MultiStakingUnbondingEntry{
+	unbonding.Entries = append(unbonding.Entries, types.MTStakingUnbondingEntry{
 		CompletionTime: undelegateCompleteTime,
-		InitialBalance: msg.Amount,
-		Balance:        msg.Amount,
+		InitialBalance: msg.Balance,
+		Balance:        msg.Balance,
 	})
 
-	k.SetMultiStakingUnbonding(ctx, agent.Id, msg.DelegatorAddress, unbonding)
+	k.SetMTStakingUnbonding(ctx, agent.AgentAddress, msg.DelegatorAddress, unbonding)
 
 	agent.Shares = agent.Shares.Sub(removeShares)
-	agent.StakedAmount = agent.StakedAmount.Sub(msg.Amount.Amount)
+	agent.StakedAmount = agent.StakedAmount.Sub(msg.Balance.Amount)
 
-	k.SetMultiStakingAgent(ctx, agent)
+	k.SetMTStakingAgent(ctx, agent)
 	k.InsertUBDQueue(ctx, unbonding, undelegateCompleteTime)
 
 	return nil
@@ -120,22 +120,22 @@ func (k Keeper) MultiStakingUndelegate(ctx sdk.Context, msg *types.MsgMultiStaki
 
 func (k Keeper) Unbond(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, token sdk.Coin) (math.Int, error) {
 	var removeShares math.Int
-	agent, found := k.GetMultiStakingAgent(ctx, token.Denom, valAddr.String())
+	agent, found := k.GetMTStakingAgent(ctx, token.Denom, valAddr.String())
 	if !found {
 		return removeShares, types.ErrNotExistedAgent
 	}
 	removeShares = agent.CalculateShares(token.Amount)
-	if err := k.DecreaseMultiStakingShares(ctx, removeShares, agent.Id, delAddr.String()); err != nil {
+	if err := k.DecreaseMTStakingShares(ctx, removeShares, agent.AgentAddress, delAddr.String()); err != nil {
 		return removeShares, err
 	}
 
-	defaultBondDenom := k.stakingkeeper.BondDenom(ctx)
+	defaultBondDenom := k.stakingKeeper.BondDenom(ctx)
 	undelegateAmt, err := k.EquivalentCoinCalculator(ctx, token, defaultBondDenom)
 	if err != nil {
 		return removeShares, err
 	}
 
-	agentDelegatorAccAddr := sdk.MustAccAddressFromBech32(agent.DelegateAddress)
+	agentDelegatorAccAddr := sdk.MustAccAddressFromBech32(agent.AgentAddress)
 	rewards, err := k.distributionKeeper.WithdrawDelegationRewards(ctx, agentDelegatorAccAddr, valAddr)
 	if err != nil {
 		k.Logger(ctx).Error(fmt.Sprintf("withdraw delegation rewards failed %s", err))
@@ -162,10 +162,10 @@ func (k Keeper) Unbond(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValA
 	return removeShares, err
 }
 
-func (k Keeper) undelegateAndBurn(ctx sdk.Context, agent *types.MultiStakingAgent, valAddr sdk.ValAddress, undelegateAmt sdk.Coin) error {
-	agentDelegateAccAddr := sdk.MustAccAddressFromBech32(agent.DelegateAddress)
+func (k Keeper) undelegateAndBurn(ctx sdk.Context, agent *types.MTStakingAgent, valAddr sdk.ValAddress, undelegateAmt sdk.Coin) error {
+	agentDelegateAccAddr := sdk.MustAccAddressFromBech32(agent.AgentAddress)
 
-	stakedShares, err := k.stakingkeeper.ValidateUnbondAmount(ctx, agentDelegateAccAddr, valAddr, undelegateAmt.Amount)
+	stakedShares, err := k.stakingKeeper.ValidateUnbondAmount(ctx, agentDelegateAccAddr, valAddr, undelegateAmt.Amount)
 	if err != nil {
 		return err
 	}
@@ -188,13 +188,13 @@ func (k Keeper) undelegateAndBurn(ctx sdk.Context, agent *types.MultiStakingAgen
 	return nil
 }
 
-func (k Keeper) agentValidator(ctx sdk.Context, agent *types.MultiStakingAgent) (*stakingtypes.Validator, error) {
+func (k Keeper) agentValidator(ctx sdk.Context, agent *types.MTStakingAgent) (*stakingtypes.Validator, error) {
 	valAddr, err := sdk.ValAddressFromBech32(agent.ValidatorAddress)
 	if err != nil {
 		return nil, err
 	}
 
-	validator, found := k.stakingkeeper.GetValidator(ctx, valAddr)
+	validator, found := k.stakingKeeper.GetValidator(ctx, valAddr)
 	if !found {
 		return nil, sdkerrors.Wrapf(types.ErrNotExistedValidator, "address %s", valAddr)
 	}
@@ -202,7 +202,7 @@ func (k Keeper) agentValidator(ctx sdk.Context, agent *types.MultiStakingAgent) 
 }
 
 func (k Keeper) denomInWhiteList(ctx sdk.Context, denom string) bool {
-	whiteList, found := k.GetMultiStakingDenomWhiteList(ctx)
+	whiteList, found := k.GetMTStakingDenomWhiteList(ctx)
 	if !found {
 		return false
 	}
@@ -214,21 +214,19 @@ func (k Keeper) denomInWhiteList(ctx sdk.Context, denom string) bool {
 	return false
 }
 
-func (k Keeper) GetOrCreateMultiStakingAgent(ctx sdk.Context, denom, valAddr string) *types.MultiStakingAgent {
-	agent, found := k.GetMultiStakingAgent(ctx, denom, valAddr)
+func (k Keeper) GetOrCreateMTStakingAgent(ctx sdk.Context, denom, valAddr string) *types.MTStakingAgent {
+	agent, found := k.GetMTStakingAgent(ctx, denom, valAddr)
 	if found {
 		return agent
 	}
 
-	newAgentID := k.GetLatestMultiStakingAgentID(ctx)
 	newAccount := k.GenerateAccount(ctx, denom, valAddr)
 
-	agent = &types.MultiStakingAgent{
-		Id:               newAgentID + 1,
+	agent = &types.MTStakingAgent{
 		StakeDenom:       denom,
-		DelegateAddress:  newAccount.Address,
+		AgentAddress:     newAccount.Address,
 		ValidatorAddress: valAddr,
-		WithdrawAddress:  newAccount.Address,
+		RewardAddress:    newAccount.Address,
 		StakedAmount:     math.ZeroInt(),
 		Shares:           math.ZeroInt(),
 		RewardAmount:     math.ZeroInt(),
@@ -252,17 +250,17 @@ func (k Keeper) GenerateAccount(ctx sdk.Context, prefix, suffix string) *authtyp
 func (k Keeper) instantUndelegate(
 	ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, sharesAmount sdk.Dec,
 ) (sdk.Coins, error) {
-	validator, found := k.stakingkeeper.GetValidator(ctx, valAddr)
+	validator, found := k.stakingKeeper.GetValidator(ctx, valAddr)
 	if !found {
 		return nil, stakingtypes.ErrNoDelegatorForAddress
 	}
 
-	returnAmount, err := k.stakingkeeper.Unbond(ctx, delAddr, valAddr, sharesAmount)
+	returnAmount, err := k.stakingKeeper.Unbond(ctx, delAddr, valAddr, sharesAmount)
 	if err != nil {
 		return nil, err
 	}
 
-	bondDenom := k.stakingkeeper.GetParams(ctx).BondDenom
+	bondDenom := k.stakingKeeper.GetParams(ctx).BondDenom
 
 	amt := sdk.NewCoin(bondDenom, returnAmount)
 	res := sdk.NewCoins(amt)
@@ -287,14 +285,14 @@ func (k Keeper) RefreshAgentDelegationAmount(ctx sdk.Context) {
 			panic(err)
 		}
 
-		validator, found := k.stakingkeeper.GetValidator(ctx, valAddress)
+		validator, found := k.stakingKeeper.GetValidator(ctx, valAddress)
 		if !found {
 			continue
 		}
 
 		var currentAmount math.Int
-		delegator := sdk.MustAccAddressFromBech32(agents[i].DelegateAddress)
-		delegation, found := k.stakingkeeper.GetDelegation(ctx, delegator, valAddress)
+		delegator := sdk.MustAccAddressFromBech32(agents[i].AgentAddress)
+		delegation, found := k.stakingKeeper.GetDelegation(ctx, delegator, valAddress)
 		if !found {
 			continue
 		} else {
@@ -306,13 +304,13 @@ func (k Keeper) RefreshAgentDelegationAmount(ctx sdk.Context) {
 			adjustment := refreshedAmount.Amount.Sub(currentAmount)
 			err = k.mintAndDelegate(ctx, &agents[i], validator, sdk.NewCoin(refreshedAmount.Denom, adjustment))
 			if err != nil {
-				ctx.Logger().Error(fmt.Sprintf("MultiStaking mintAndDelegate has error: %s", err))
+				ctx.Logger().Error(fmt.Sprintf("MTStaking mintAndDelegate has error: %s", err))
 			}
 		} else if refreshedAmount.Amount.LT(currentAmount) {
 			adjustment := currentAmount.Sub(refreshedAmount.Amount)
 			err := k.undelegateAndBurn(ctx, &agents[i], valAddress, sdk.NewCoin(refreshedAmount.Denom, adjustment))
 			if err != nil {
-				ctx.Logger().Error(fmt.Sprintf("MultiStaking undelegateAndBurn has error: %s", err))
+				ctx.Logger().Error(fmt.Sprintf("MTStaking undelegateAndBurn has error: %s", err))
 			}
 		}
 	}
@@ -321,11 +319,11 @@ func (k Keeper) RefreshAgentDelegationAmount(ctx sdk.Context) {
 func (k Keeper) CollectAgentsReward(ctx sdk.Context) {
 	store := ctx.KVStore(k.storeKey)
 
-	iterator := sdk.KVStorePrefixIterator(store, types.MultiStakingAgentPrefix)
+	iterator := sdk.KVStorePrefixIterator(store, types.MTStakingAgentPrefix)
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {
-		var agent types.MultiStakingAgent
+		var agent types.MTStakingAgent
 		// TODO panic or continue ?
 		err := k.cdc.Unmarshal(iterator.Value(), &agent)
 		if err != nil {
@@ -333,7 +331,7 @@ func (k Keeper) CollectAgentsReward(ctx sdk.Context) {
 			continue
 		}
 
-		delegator := sdk.MustAccAddressFromBech32(agent.DelegateAddress)
+		delegator := sdk.MustAccAddressFromBech32(agent.AgentAddress)
 		valAddr, err := sdk.ValAddressFromBech32(agent.ValidatorAddress)
 		if err != nil {
 			ctx.Logger().Error(fmt.Sprintf("convert validator address from bech32:%s failed, err: %s", agent.ValidatorAddress, err))
@@ -341,7 +339,7 @@ func (k Keeper) CollectAgentsReward(ctx sdk.Context) {
 		}
 		rewards, err := k.distributionKeeper.WithdrawDelegationRewards(ctx, delegator, valAddr)
 		if err != nil {
-			ctx.Logger().Error(fmt.Sprintf("Withdraw delegation reward failed. AgentID: %d", agent.Id))
+			ctx.Logger().Error(fmt.Sprintf("Withdraw delegation reward failed. AgentID: %s", agent.AgentAddress))
 			continue
 		}
 

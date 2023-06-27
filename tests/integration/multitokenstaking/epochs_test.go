@@ -1,7 +1,7 @@
 package keeper_test
 
 import (
-	"github.com/celinium-network/restaking_protocol/x/multistaking/types"
+	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -20,27 +20,29 @@ func (suite *KeeperTestSuite) TestRefreshDelegationAmountWhenRateRise() {
 
 	multiRestakingCoin := sdk.NewCoin(mockMultiRestakingDenom, sdk.NewInt(10000000))
 	suite.mintCoin(multiRestakingCoin, delegatorAddrs[0])
-	suite.app.MultiStakingKeeper.SetMultiStakingDenom(suite.ctx, mockMultiRestakingDenom)
+	suite.app.MTStakingKeeper.SetMTStakingDenom(suite.ctx, mockMultiRestakingDenom)
 
-	err := suite.app.MultiStakingKeeper.MultiStakingDelegate(suite.ctx, types.MsgMultiStakingDelegate{
+	err := suite.app.MTStakingKeeper.MTStakingDelegate(suite.ctx, types.MsgMTStakingDelegate{
 		DelegatorAddress: delegatorAddrs[0].String(),
 		ValidatorAddress: validators[0].OperatorAddress,
-		Amount:           multiRestakingCoin,
+		Balance:          multiRestakingCoin,
 	})
 	suite.Require().NoError(err)
 
-	suite.app.MultiStakingKeeper.EquivalentCoinCalculator = RiseRateCalculateEquivalentCoin
-	suite.app.MultiStakingKeeper.RefreshAgentDelegationAmount(suite.ctx)
+	suite.app.MTStakingKeeper.EquivalentCoinCalculator = RiseRateCalculateEquivalentCoin
+	suite.app.MTStakingKeeper.RefreshAgentDelegationAmount(suite.ctx)
 
 	increaseCoin, _ := RiseRateCalculateEquivalentCoin(suite.ctx, multiRestakingCoin, defaultBondDenom)
 
-	agentID := suite.app.MultiStakingKeeper.GetLatestMultiStakingAgentID(suite.ctx)
-	agent, found := suite.app.MultiStakingKeeper.GetMultiStakingAgentByID(suite.ctx, agentID)
+	agents := suite.app.MTStakingKeeper.GetAllAgent(suite.ctx)
+	suite.Require().Equal(len(agents), 1)
+
+	agent, found := suite.app.MTStakingKeeper.GetMTStakingAgentByAddress(suite.ctx, agents[0].AgentAddress)
 	suite.Require().True(found)
 	suite.Require().True(agent.Shares.Equal(multiRestakingCoin.Amount))
 	suite.Require().True(agent.StakedAmount.Equal(multiRestakingCoin.Amount))
 
-	agentDelegateAccAddr := sdk.MustAccAddressFromBech32(agent.DelegateAddress)
+	agentDelegateAccAddr := sdk.MustAccAddressFromBech32(agent.AgentAddress)
 	valAddr, _ := sdk.ValAddressFromBech32(validators[0].OperatorAddress)
 
 	v, found := suite.app.StakingKeeper.GetValidator(suite.ctx, valAddr)

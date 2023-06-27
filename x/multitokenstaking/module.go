@@ -13,8 +13,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 
-	"github.com/celinium-network/restaking_protocol/x/multistaking/keeper"
-	"github.com/celinium-network/restaking_protocol/x/multistaking/types"
+	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/keeper"
+	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 )
 
 var (

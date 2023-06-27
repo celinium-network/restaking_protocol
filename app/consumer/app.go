@@ -117,9 +117,9 @@ import (
 	epochskeeper "github.com/celinium-network/restaking_protocol/x/epochs/keeper"
 	epochstypes "github.com/celinium-network/restaking_protocol/x/epochs/types"
 
-	multistaking "github.com/celinium-network/restaking_protocol/x/multistaking"
-	multistakingkeeper "github.com/celinium-network/restaking_protocol/x/multistaking/keeper"
-	multistakingtypes "github.com/celinium-network/restaking_protocol/x/multistaking/types"
+	multistaking "github.com/celinium-network/restaking_protocol/x/multitokenstaking"
+	multistakingkeeper "github.com/celinium-network/restaking_protocol/x/multitokenstaking/keeper"
+	multistakingtypes "github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 
 	"github.com/celinium-network/restaking_protocol/x/restaking/consumer"
 	consumerkeeper "github.com/celinium-network/restaking_protocol/x/restaking/consumer/keeper"
@@ -254,7 +254,7 @@ type App struct {
 	ConsensusParamsKeeper consensusparamkeeper.Keeper
 
 	EpochsKeeper            epochskeeper.Keeper
-	MultiStakingKeeper      multistakingkeeper.Keeper
+	MTStakingKeeper         multistakingkeeper.Keeper
 	RestakingConsumerKeeper consumerkeeper.Keeper
 
 	// make scoped keepers public for test purposes
@@ -452,7 +452,7 @@ func New(
 
 	app.EpochsKeeper = *epochskeeper.NewKeeper(appCodec, keys[epochstypes.StoreKey])
 
-	app.MultiStakingKeeper = multistakingkeeper.NewKeeper(
+	app.MTStakingKeeper = multistakingkeeper.NewKeeper(
 		appCodec,
 		keys[multistakingtypes.StoreKey],
 		app.AccountKeeper,
@@ -521,7 +521,7 @@ func New(
 		app.IBCKeeper.ChannelKeeper, &app.IBCKeeper.PortKeeper,
 		app.IBCKeeper.ConnectionKeeper, app.IBCKeeper.ClientKeeper,
 		app.TransferKeeper, app.BankKeeper, app.StakingKeeper,
-		app.SlashingKeeper, app.AccountKeeper, app.MultiStakingKeeper)
+		app.SlashingKeeper, app.AccountKeeper, app.MTStakingKeeper)
 
 	restakingConsumerIBCModule := consumer.NewAppModule(appCodec, app.RestakingConsumerKeeper)
 
@@ -573,13 +573,13 @@ func New(
 			// insert staking hooks receivers here
 			app.DistrKeeper.Hooks(),
 			app.SlashingKeeper.Hooks(),
-			app.MultiStakingKeeper.Hooks(),
+			app.MTStakingKeeper.Hooks(),
 			app.RestakingConsumerKeeper.Hooks(),
 		),
 	)
 
 	app.EpochsKeeper.SetHooks(epochskeeper.NewMultiEpochHooks(
-		app.MultiStakingKeeper.Hooks(),
+		app.MTStakingKeeper.Hooks(),
 	))
 
 	/**** Module Options ****/
@@ -619,7 +619,7 @@ func New(
 		icaModule,
 
 		epochs.NewAppModule(appCodec, app.EpochsKeeper),
-		multistaking.NewAppModule(appCodec, app.MultiStakingKeeper),
+		multistaking.NewAppModule(appCodec, app.MTStakingKeeper),
 		restakingConsumerIBCModule,
 
 		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)), // always be last to make sure that it checks for all invariants and not only part of them
