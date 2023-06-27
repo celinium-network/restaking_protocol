@@ -1,4 +1,4 @@
-package keeper_test
+package mtstaking_test
 
 import (
 	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"

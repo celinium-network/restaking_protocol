@@ -1,4 +1,4 @@
-package keeper_test
+package mtstaking_test
 
 import (
 	"testing"
