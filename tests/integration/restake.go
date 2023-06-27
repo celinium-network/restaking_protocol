@@ -56,13 +56,13 @@ func (s *IntegrationTestSuite) TestDelegation() {
 	localOperatorAccAddr, found := consumerKeeper.GetOperatorLocalAddress(consumerCtx, operator.OperatorAddress, valSets[0].Address)
 	s.Require().True(found)
 
-	agents := consumerApp.MultiStakingKeeper.GetAllAgent(consumerCtx)
+	agents := consumerApp.MTStakingKeeper.GetAllAgent(consumerCtx)
 
 	agentAccAddr := sdk.MustAccAddressFromBech32(agents[0].DelegateAddress)
 
 	delegations := consumerApp.StakingKeeper.GetDelegatorDelegations(consumerCtx, agentAccAddr, 10)
 	s.Require().Equal(len(delegations), 1)
-	shares := consumerApp.MultiStakingKeeper.GetMultiStakingShares(consumerCtx, agents[0].Id, localOperatorAccAddr.String())
+	shares := consumerApp.MTStakingKeeper.GetMTStakingShares(consumerCtx, agents[0].Id, localOperatorAccAddr.String())
 	s.Require().True(shares.Equal(amount))
 }
 

@@ -33,7 +33,7 @@ type Keeper struct {
 	bankKeeper     restaking.BankKeeper
 	authKeeper     restaking.AccountKeeper
 
-	multiStakingKeeper restaking.MultiStakingKeeper
+	multiStakingKeeper restaking.MTStakingKeeper
 }
 
 func NewKeeper(
@@ -49,7 +49,7 @@ func NewKeeper(
 	standaloneStakingKeeper restaking.StakingKeeper,
 	slashingKeeper restaking.SlashingKeeper,
 	authKeeper restaking.AccountKeeper,
-	multiStakingKeeper restaking.MultiStakingKeeper,
+	multiStakingKeeper restaking.MTStakingKeeper,
 ) Keeper {
 	k := Keeper{
 		storeKey:           storeKey,

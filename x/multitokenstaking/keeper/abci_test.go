@@ -1,7 +1,7 @@
 package keeper_test
 
 import (
-	"github.com/celinium-network/restaking_protocol/x/multistaking/types"
+	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -11,16 +11,16 @@ func (suite *KeeperTestSuite) bootstrapABCITest() (delegator, validator string, 
 
 	multiRestakingCoin := sdk.NewCoin(mockMultiRestakingDenom, sdk.NewInt(10000000))
 	suite.mintCoin(multiRestakingCoin, delegatorAddrs[0])
-	suite.app.MultiStakingKeeper.SetMultiStakingDenom(suite.ctx, mockMultiRestakingDenom)
+	suite.app.MTStakingKeeper.SetMTStakingDenom(suite.ctx, mockMultiRestakingDenom)
 
-	err := suite.app.MultiStakingKeeper.MultiStakingDelegate(suite.ctx, types.MsgMultiStakingDelegate{
+	err := suite.app.MTStakingKeeper.MTStakingDelegate(suite.ctx, types.MsgMTStakingDelegate{
 		DelegatorAddress: delegatorAddrs[0].String(),
 		ValidatorAddress: validators[0].OperatorAddress,
 		Amount:           multiRestakingCoin,
 	})
 	suite.Require().NoError(err)
 
-	err = suite.app.MultiStakingKeeper.MultiStakingUndelegate(suite.ctx, &types.MsgMultiStakingUndelegate{
+	err = suite.app.MTStakingKeeper.MTStakingUndelegate(suite.ctx, &types.MsgMTStakingUndelegate{
 		DelegatorAddress: delegatorAddrs[0].String(),
 		ValidatorAddress: validators[0].OperatorAddress,
 		Amount:           multiRestakingCoin,
@@ -39,7 +39,7 @@ func (suite *KeeperTestSuite) TestProcessCompleteUnbonding() {
 
 	delegatorAccAddr := sdk.MustAccAddressFromBech32(delegator)
 	balanceBeforeUBComplete := suite.app.BankKeeper.GetBalance(suite.ctx, delegatorAccAddr, mockMultiRestakingDenom)
-	_, err := suite.app.MultiStakingKeeper.EndBlocker(suite.ctx)
+	_, err := suite.app.MTStakingKeeper.EndBlocker(suite.ctx)
 	suite.Require().NoError(err)
 
 	balanceAfterUBComplete := suite.app.BankKeeper.GetBalance(suite.ctx, delegatorAccAddr, mockMultiRestakingDenom)

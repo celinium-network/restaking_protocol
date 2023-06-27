@@ -3,7 +3,7 @@ package keeper
 import (
 	"fmt"
 
-	"github.com/celinium-network/restaking_protocol/x/multistaking/types"
+	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -13,15 +13,15 @@ func (k Keeper) GetExpectedDelegationAmount(ctx sdk.Context, coin sdk.Coin) (sdk
 	return k.EquivalentCoinCalculator(ctx, coin, defaultBondDenom)
 }
 
-func (k Keeper) GetAllAgentsByVal(ctx sdk.Context, valAddr sdk.ValAddress) []types.MultiStakingAgent {
+func (k Keeper) GetAllAgentsByVal(ctx sdk.Context, valAddr sdk.ValAddress) []types.MTStakingAgent {
 	store := ctx.KVStore(k.storeKey)
-	iterator := sdk.KVStorePrefixIterator(store, types.MultiStakingAgentPrefix)
+	iterator := sdk.KVStorePrefixIterator(store, types.MTStakingAgentPrefix)
 	defer iterator.Close()
 
 	valAddrStr := valAddr.String()
-	var agents []types.MultiStakingAgent
+	var agents []types.MTStakingAgent
 	for ; iterator.Valid(); iterator.Next() {
-		var agent types.MultiStakingAgent
+		var agent types.MTStakingAgent
 
 		err := k.cdc.Unmarshal(iterator.Value(), &agent)
 		if err != nil {

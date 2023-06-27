@@ -3,7 +3,7 @@ package keeper
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/celinium-network/restaking_protocol/x/multistaking/types"
+	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 )
 
 func (h Hooks) AfterEpochEnd(ctx sdk.Context, _ string, _ int64) {

@@ -3,7 +3,7 @@ package keeper
 import (
 	"fmt"
 
-	"github.com/celinium-network/restaking_protocol/x/multistaking/types"
+	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -35,18 +35,18 @@ func (k Keeper) SlashAgentByValidatorSlash(ctx sdk.Context, valAddr sdk.ValAddre
 		}
 
 		agents[i].StakedAmount = agents[i].StakedAmount.Sub(slashCoin.Amount)
-		k.SetMultiStakingAgent(ctx, &agents[i])
+		k.SetMTStakingAgent(ctx, &agents[i])
 	}
 }
 
 func (k Keeper) SlashDelegator(ctx sdk.Context, valAddr sdk.ValAddress, delegator sdk.AccAddress, slashCoin sdk.Coin) error {
-	agent, found := k.GetMultiStakingAgent(ctx, slashCoin.Denom, valAddr.String())
+	agent, found := k.GetMTStakingAgent(ctx, slashCoin.Denom, valAddr.String())
 	if !found {
 		return types.ErrNotExistedAgent
 	}
 
 	removedShares := agent.Shares.Mul(slashCoin.Amount).Quo(agent.StakedAmount)
-	err := k.DecreaseMultiStakingShares(ctx, removedShares, agent.Id, delegator.String())
+	err := k.DecreaseMTStakingShares(ctx, removedShares, agent.Id, delegator.String())
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (k Keeper) SlashDelegator(ctx sdk.Context, valAddr sdk.ValAddress, delegato
 		return err
 	}
 
-	k.SetMultiStakingAgent(ctx, agent)
+	k.SetMTStakingAgent(ctx, agent)
 
 	return nil
 }

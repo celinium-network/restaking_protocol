@@ -12,7 +12,7 @@ import (
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 	"github.com/cosmos/ibc-go/v7/modules/core/exported"
 
-	multistakingtypes "github.com/celinium-network/restaking_protocol/x/multistaking/types"
+	multistakingtypes "github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 	"github.com/celinium-network/restaking_protocol/x/restaking/consumer/types"
 	restaking "github.com/celinium-network/restaking_protocol/x/restaking/types"
 )
@@ -168,7 +168,7 @@ func (k Keeper) HandleRestakingDelegationPacket(
 		return err
 	}
 
-	return k.multiStakingKeeper.MultiStakingDelegate(ctx, multistakingtypes.MsgMultiStakingDelegate{
+	return k.multiStakingKeeper.MTStakingDelegate(ctx, multistakingtypes.MsgMTStakingDelegate{
 		DelegatorAddress: operatorLocalAddress.String(),
 		ValidatorAddress: validator.OperatorAddress,
 		Amount:           delegation.Balance,

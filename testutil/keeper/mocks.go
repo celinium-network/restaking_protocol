@@ -10,7 +10,7 @@ import (
 	time "time"
 
 	math "cosmossdk.io/math"
-	types "github.com/celinium-network/restaking_protocol/x/multistaking/types"
+	types "github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 	types0 "github.com/cometbft/cometbft/abci/types"
 	types1 "github.com/cosmos/cosmos-sdk/types"
 	types2 "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -1020,45 +1020,45 @@ func (mr *MockIBCTransferKeeperMockRecorder) Transfer(arg0, arg1 interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Transfer", reflect.TypeOf((*MockIBCTransferKeeper)(nil).Transfer), arg0, arg1)
 }
 
-// MockMultiStakingKeeper is a mock of MultiStakingKeeper interface.
-type MockMultiStakingKeeper struct {
+// MockMTStakingKeeper is a mock of MTStakingKeeper interface.
+type MockMTStakingKeeper struct {
 	ctrl     *gomock.Controller
-	recorder *MockMultiStakingKeeperMockRecorder
+	recorder *MockMTStakingKeeperMockRecorder
 }
 
-// MockMultiStakingKeeperMockRecorder is the mock recorder for MockMultiStakingKeeper.
-type MockMultiStakingKeeperMockRecorder struct {
-	mock *MockMultiStakingKeeper
+// MockMTStakingKeeperMockRecorder is the mock recorder for MockMTStakingKeeper.
+type MockMTStakingKeeperMockRecorder struct {
+	mock *MockMTStakingKeeper
 }
 
-// NewMockMultiStakingKeeper creates a new mock instance.
-func NewMockMultiStakingKeeper(ctrl *gomock.Controller) *MockMultiStakingKeeper {
-	mock := &MockMultiStakingKeeper{ctrl: ctrl}
-	mock.recorder = &MockMultiStakingKeeperMockRecorder{mock}
+// NewMockMTStakingKeeper creates a new mock instance.
+func NewMockMTStakingKeeper(ctrl *gomock.Controller) *MockMTStakingKeeper {
+	mock := &MockMTStakingKeeper{ctrl: ctrl}
+	mock.recorder = &MockMTStakingKeeperMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockMultiStakingKeeper) EXPECT() *MockMultiStakingKeeperMockRecorder {
+func (m *MockMTStakingKeeper) EXPECT() *MockMTStakingKeeperMockRecorder {
 	return m.recorder
 }
 
-// MultiStakingDelegate mocks base method.
-func (m *MockMultiStakingKeeper) MultiStakingDelegate(ctx types1.Context, msg types.MsgMultiStakingDelegate) error {
+// MTStakingDelegate mocks base method.
+func (m *MockMTStakingKeeper) MTStakingDelegate(ctx types1.Context, msg types.MsgMTStakingDelegate) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MultiStakingDelegate", ctx, msg)
+	ret := m.ctrl.Call(m, "MTStakingDelegate", ctx, msg)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// MultiStakingDelegate indicates an expected call of MultiStakingDelegate.
-func (mr *MockMultiStakingKeeperMockRecorder) MultiStakingDelegate(ctx, msg interface{}) *gomock.Call {
+// MTStakingDelegate indicates an expected call of MTStakingDelegate.
+func (mr *MockMTStakingKeeperMockRecorder) MTStakingDelegate(ctx, msg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MultiStakingDelegate", reflect.TypeOf((*MockMultiStakingKeeper)(nil).MultiStakingDelegate), ctx, msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MTStakingDelegate", reflect.TypeOf((*MockMTStakingKeeper)(nil).MTStakingDelegate), ctx, msg)
 }
 
 // SlashDelegator mocks base method.
-func (m *MockMultiStakingKeeper) SlashDelegator(ctx types1.Context, valAddr types1.ValAddress, delegator types1.AccAddress, slashCoin types1.Coin) error {
+func (m *MockMTStakingKeeper) SlashDelegator(ctx types1.Context, valAddr types1.ValAddress, delegator types1.AccAddress, slashCoin types1.Coin) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SlashDelegator", ctx, valAddr, delegator, slashCoin)
 	ret0, _ := ret[0].(error)
@@ -1066,13 +1066,13 @@ func (m *MockMultiStakingKeeper) SlashDelegator(ctx types1.Context, valAddr type
 }
 
 // SlashDelegator indicates an expected call of SlashDelegator.
-func (mr *MockMultiStakingKeeperMockRecorder) SlashDelegator(ctx, valAddr, delegator, slashCoin interface{}) *gomock.Call {
+func (mr *MockMTStakingKeeperMockRecorder) SlashDelegator(ctx, valAddr, delegator, slashCoin interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SlashDelegator", reflect.TypeOf((*MockMultiStakingKeeper)(nil).SlashDelegator), ctx, valAddr, delegator, slashCoin)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SlashDelegator", reflect.TypeOf((*MockMTStakingKeeper)(nil).SlashDelegator), ctx, valAddr, delegator, slashCoin)
 }
 
 // Unbond mocks base method.
-func (m *MockMultiStakingKeeper) Unbond(ctx types1.Context, delAddr types1.AccAddress, valAddr types1.ValAddress, token types1.Coin) (math.Int, error) {
+func (m *MockMTStakingKeeper) Unbond(ctx types1.Context, delAddr types1.AccAddress, valAddr types1.ValAddress, token types1.Coin) (math.Int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Unbond", ctx, delAddr, valAddr, token)
 	ret0, _ := ret[0].(math.Int)
@@ -1081,7 +1081,7 @@ func (m *MockMultiStakingKeeper) Unbond(ctx types1.Context, delAddr types1.AccAd
 }
 
 // Unbond indicates an expected call of Unbond.
-func (mr *MockMultiStakingKeeperMockRecorder) Unbond(ctx, delAddr, valAddr, token interface{}) *gomock.Call {
+func (mr *MockMTStakingKeeperMockRecorder) Unbond(ctx, delAddr, valAddr, token interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unbond", reflect.TypeOf((*MockMultiStakingKeeper)(nil).Unbond), ctx, delAddr, valAddr, token)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unbond", reflect.TypeOf((*MockMTStakingKeeper)(nil).Unbond), ctx, delAddr, valAddr, token)
 }

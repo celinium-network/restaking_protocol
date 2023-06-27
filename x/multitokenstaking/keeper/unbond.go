@@ -6,7 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/celinium-network/restaking_protocol/x/multistaking/types"
+	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 )
 
 func (k Keeper) ProcessCompletedUnbonding(ctx sdk.Context) {
@@ -39,12 +39,12 @@ func (k Keeper) DequeueAllMatureUBDQueue(ctx sdk.Context, currTime time.Time) (m
 }
 
 func (k Keeper) CompleteUnbonding(ctx sdk.Context, delegator string, agentID uint64) (sdk.Coins, error) {
-	ubd, found := k.GetMultiStakingUnbonding(ctx, agentID, delegator)
+	ubd, found := k.GetMTStakingUnbonding(ctx, agentID, delegator)
 	if !found {
 		return nil, types.ErrNoUnbondingDelegation
 	}
 
-	agent, found := k.GetMultiStakingAgentByID(ctx, agentID)
+	agent, found := k.GetMTStakingAgentByID(ctx, agentID)
 	if !found {
 		return nil, types.ErrNoUnbondingDelegation
 	}
@@ -76,9 +76,9 @@ func (k Keeper) CompleteUnbonding(ctx sdk.Context, delegator string, agentID uin
 	}
 
 	if len(ubd.Entries) == 0 {
-		k.RemoveMultiStakingUnbonding(ctx, agentID, delegator)
+		k.RemoveMTStakingUnbonding(ctx, agentID, delegator)
 	} else {
-		k.SetMultiStakingUnbonding(ctx, agentID, delegator, ubd)
+		k.SetMTStakingUnbonding(ctx, agentID, delegator, ubd)
 	}
 
 	return balances, nil

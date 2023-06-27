@@ -23,83 +23,83 @@ const (
 
 var (
 	// Key for the denom white list which allow used for multistaking
-	MultiStakingDenomWhiteListKey = []byte{0x11}
+	MTStakingDenomWhiteListKey = []byte{0x11}
 
-	// Prefix for key which used in `{denom + validator_address} => MultiStakingAgent's ID`
-	MultiStakingAgentIDPrefix = []byte{0x21}
+	// Prefix for key which used in `{denom + validator_address} => MTStakingAgent's ID`
+	MTStakingAgentIDPrefix = []byte{0x21}
 
-	// Prefix for Key which used in `id => MultiStakingAgent`
-	MultiStakingAgentPrefix = []byte{0x22}
+	// Prefix for Key which used in `id => MTStakingAgent`
+	MTStakingAgentPrefix = []byte{0x22}
 
-	MultiStakingLatestAgentIDKey = []byte{0x23}
+	MTStakingLatestAgentIDKey = []byte{0x23}
 
-	// Prefix for key which used in `{agent_id + delegator_address} => MultiStakingUnbonding`
-	MultiStakingUnbondingPrefix = []byte{0x31}
+	// Prefix for key which used in `{agent_id + delegator_address} => MTStakingUnbonding`
+	MTStakingUnbondingPrefix = []byte{0x31}
 
-	MultiStakingUnbondingQueueKey = []byte{0x32}
+	MTStakingUnbondingQueueKey = []byte{0x32}
 
 	// Prefix for key which used in `{agent_id + delegator_address} => shares_amount`
-	MultiStakingSharesPrefix = []byte{0x41}
+	MTStakingSharesPrefix = []byte{0x41}
 )
 
-func GetMultiStakingAgentIDKey(denom, valAddr string) []byte {
+func GetMTStakingAgentIDKey(denom, valAddr string) []byte {
 	denomBz := utils.BytesLengthPrefix([]byte(denom))
 	valAddrBz := utils.BytesLengthPrefix([]byte(valAddr))
 
-	prefixLen := len(MultiStakingAgentIDPrefix)
+	prefixLen := len(MTStakingAgentIDPrefix)
 	denomBzLen := len(denomBz)
 	valAddrBzLen := len(valAddrBz)
 
 	bz := make([]byte, prefixLen+denomBzLen+valAddrBzLen)
 
-	copy(bz[:prefixLen], MultiStakingAgentIDPrefix)
+	copy(bz[:prefixLen], MTStakingAgentIDPrefix)
 	copy(bz[prefixLen:prefixLen+denomBzLen], denomBz)
 	copy(bz[prefixLen+denomBzLen:], valAddrBz)
 
 	return bz
 }
 
-func GetMultiStakingAgentKey(agentID uint64) []byte {
+func GetMTStakingAgentKey(agentID uint64) []byte {
 	idBz := sdk.Uint64ToBigEndian(agentID)
-	return append(MultiStakingAgentPrefix, idBz...)
+	return append(MTStakingAgentPrefix, idBz...)
 }
 
-func GetMultiStakingSharesKey(agentID uint64, delegator string) []byte {
+func GetMTStakingSharesKey(agentID uint64, delegator string) []byte {
 	idBz := sdk.Uint64ToBigEndian(agentID)
 	delegatorBz := utils.BytesLengthPrefix([]byte(delegator))
-	prefixLen := len(MultiStakingSharesPrefix)
+	prefixLen := len(MTStakingSharesPrefix)
 
 	bz := make([]byte, prefixLen+8+len(delegatorBz))
-	copy(bz[:prefixLen], MultiStakingSharesPrefix)
+	copy(bz[:prefixLen], MTStakingSharesPrefix)
 	copy(bz[prefixLen:prefixLen+8], idBz)
 	copy(bz[prefixLen+8:], delegatorBz)
 
 	return bz
 }
 
-func GetMultiStakingUnbondingKey(agentID uint64, delegator string) []byte {
+func GetMTStakingUnbondingKey(agentID uint64, delegator string) []byte {
 	idBz := sdk.Uint64ToBigEndian(agentID)
 	delegatorBz := utils.BytesLengthPrefix([]byte(delegator))
-	prefixLen := len(MultiStakingUnbondingPrefix)
+	prefixLen := len(MTStakingUnbondingPrefix)
 
 	bz := make([]byte, prefixLen+8+len(delegatorBz))
 
-	copy(bz[:prefixLen], MultiStakingUnbondingPrefix)
+	copy(bz[:prefixLen], MTStakingUnbondingPrefix)
 	copy(bz[prefixLen:prefixLen+8], idBz)
 	copy(bz[prefixLen+8:], delegatorBz)
 
 	return bz
 }
 
-func GetMultiStakingUnbondingDelegationTimeKey(timestamp time.Time) []byte {
+func GetMTStakingUnbondingDelegationTimeKey(timestamp time.Time) []byte {
 	bz := sdk.FormatTimeBytes(timestamp)
-	return append(MultiStakingUnbondingQueueKey, bz...)
+	return append(MTStakingUnbondingQueueKey, bz...)
 }
 
-func (ubd *MultiStakingUnbonding) RemoveEntry(i int64) {
+func (ubd *MTStakingUnbonding) RemoveEntry(i int64) {
 	ubd.Entries = append(ubd.Entries[:i], ubd.Entries[i+1:]...)
 }
 
-func (e MultiStakingUnbondingEntry) IsMature(currentTime time.Time) bool {
+func (e MTStakingUnbondingEntry) IsMature(currentTime time.Time) bool {
 	return !e.CompletionTime.After(currentTime)
 }

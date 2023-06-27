@@ -5,7 +5,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-func (ma MultiStakingAgent) CalculateShares(tokenAmt math.Int) math.Int {
+func (ma MTStakingAgent) CalculateShares(tokenAmt math.Int) math.Int {
 	if ma.StakedAmount.IsZero() {
 		return tokenAmt
 	}
@@ -13,7 +13,7 @@ func (ma MultiStakingAgent) CalculateShares(tokenAmt math.Int) math.Int {
 	return sdk.NewDecFromInt(tokenAmt).QuoInt(ma.StakedAmount).MulInt(ma.Shares).TruncateInt()
 }
 
-func (ma MultiStakingAgent) CalculateCoins(shareAmt math.Int) math.Int {
+func (ma MTStakingAgent) CalculateCoins(shareAmt math.Int) math.Int {
 	if ma.StakedAmount.IsZero() {
 		return math.ZeroInt()
 	}
