@@ -32,7 +32,7 @@ message MsgMTStakingDelegate{
   
     string                   delegator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
     string                   validator_address = 2 [(cosmos_proto.scalar) = "cosmos.ValidatorAddressString"];
-    cosmos.base.v1beta1.Coin amount            = 3 [(gogoproto.nullable) = false];   
+    cosmos.base.v1beta1.Coin balance            = 3 [(gogoproto.nullable) = false];   
 }
 
 message MsgMTStakingDelegateResponse {}
@@ -43,7 +43,7 @@ message MsgMTStakingUndelegate{
   
     string                   delegator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
     string                   validator_address = 2 [(cosmos_proto.scalar) = "cosmos.ValidatorAddressString"];
-    cosmos.base.v1beta1.Coin amount            = 3 [(gogoproto.nullable) = false ];
+    cosmos.base.v1beta1.Coin balance            = 3 [(gogoproto.nullable) = false ];
 }
 
 message MsgMTStakingUndelegateResponse {

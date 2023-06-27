@@ -106,9 +106,9 @@ func (k Keeper) SetMTStakingDenom(ctx sdk.Context, denom string) bool {
 	return true
 }
 
-func (k Keeper) GetMTStakingAgentByID(ctx sdk.Context, id uint64) (*types.MTStakingAgent, bool) {
+func (k Keeper) GetMTStakingAgentByAddress(ctx sdk.Context, agentAddr string) (*types.MTStakingAgent, bool) {
 	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.GetMTStakingAgentKey(id))
+	bz := store.Get(types.GetMTStakingAgentKey(agentAddr))
 
 	if bz == nil {
 		return nil, false
@@ -121,64 +121,44 @@ func (k Keeper) GetMTStakingAgentByID(ctx sdk.Context, id uint64) (*types.MTStak
 }
 
 func (k Keeper) GetMTStakingAgent(ctx sdk.Context, denom string, valAddr string) (*types.MTStakingAgent, bool) {
-	agentID, found := k.GetMTStakingAgentIDByDenomAndVal(ctx, denom, valAddr)
+	agentID, found := k.GetMTStakingAgentAressByDenomAndVal(ctx, denom, valAddr)
 	if !found {
 		return nil, false
 	}
 
-	return k.GetMTStakingAgentByID(ctx, agentID)
+	return k.GetMTStakingAgentByAddress(ctx, agentID)
 }
 
 func (k Keeper) SetMTStakingAgent(ctx sdk.Context, agent *types.MTStakingAgent) {
 	bz := k.cdc.MustMarshal(agent)
 	store := ctx.KVStore(k.storeKey)
 
-	store.Set(types.GetMTStakingAgentKey(agent.Id), bz)
+	store.Set(types.GetMTStakingAgentKey(agent.AgentAddress), bz)
 
-	k.SetMTStakingAgentIDByDenomAndVal(ctx, agent.Id, agent.StakeDenom, agent.ValidatorAddress)
-	k.SetLatestMTStakingAgentID(ctx, agent.Id)
+	k.SetMTStakingDenomAndValWithAgentAddress(ctx, agent.AgentAddress, agent.StakeDenom, agent.ValidatorAddress)
 }
 
-func (k Keeper) GetMTStakingAgentIDByDenomAndVal(ctx sdk.Context, denom string, valAddr string) (uint64, bool) {
+func (k Keeper) GetMTStakingAgentAressByDenomAndVal(ctx sdk.Context, denom string, valAddr string) (string, bool) {
 	store := ctx.KVStore(k.storeKey)
 
 	bz := store.Get(types.GetMTStakingAgentIDKey(denom, valAddr))
 	if bz == nil {
-		return 0, false
+		return "", false
 	}
 
-	return sdk.BigEndianToUint64(bz), true
+	return string(bz), true
 }
 
-func (k Keeper) SetMTStakingAgentIDByDenomAndVal(ctx sdk.Context, id uint64, denom, valAddr string) {
+func (k Keeper) SetMTStakingDenomAndValWithAgentAddress(ctx sdk.Context, agentAddress string, denom, valAddr string) {
 	store := ctx.KVStore(k.storeKey)
-	idBz := sdk.Uint64ToBigEndian(id)
 
-	store.Set(types.GetMTStakingAgentIDKey(denom, valAddr), idBz)
+	store.Set(types.GetMTStakingAgentIDKey(denom, valAddr), []byte(agentAddress))
 }
 
-func (k Keeper) GetLatestMTStakingAgentID(ctx sdk.Context) uint64 {
+func (k Keeper) GetMTStakingUnbonding(ctx sdk.Context, agentAddress string, delegatorAddr string) (*types.MTStakingUnbonding, bool) {
 	store := ctx.KVStore(k.storeKey)
 
-	bz := store.Get(types.MTStakingLatestAgentIDKey)
-	if bz == nil {
-		return 0
-	}
-
-	return sdk.BigEndianToUint64(bz)
-}
-
-func (k Keeper) SetLatestMTStakingAgentID(ctx sdk.Context, id uint64) {
-	store := ctx.KVStore(k.storeKey)
-	idBz := sdk.Uint64ToBigEndian(id)
-
-	store.Set(types.MTStakingLatestAgentIDKey, idBz)
-}
-
-func (k Keeper) GetMTStakingUnbonding(ctx sdk.Context, agentID uint64, delegatorAddr string) (*types.MTStakingUnbonding, bool) {
-	store := ctx.KVStore(k.storeKey)
-
-	bz := store.Get(types.GetMTStakingUnbondingKey(agentID, delegatorAddr))
+	bz := store.Get(types.GetMTStakingUnbondingKey(agentAddress, delegatorAddr))
 	if bz == nil {
 		return nil, false
 	}
@@ -188,36 +168,36 @@ func (k Keeper) GetMTStakingUnbonding(ctx sdk.Context, agentID uint64, delegator
 	return unbonding, true
 }
 
-func (k Keeper) GetOrCreateMTStakingUnbonding(ctx sdk.Context, agentID uint64, delegatorAddr string) *types.MTStakingUnbonding {
-	unbonding, found := k.GetMTStakingUnbonding(ctx, agentID, delegatorAddr)
+func (k Keeper) GetOrCreateMTStakingUnbonding(ctx sdk.Context, agentAddress string, delegatorAddr string) *types.MTStakingUnbonding {
+	unbonding, found := k.GetMTStakingUnbonding(ctx, agentAddress, delegatorAddr)
 	if found {
 		return unbonding
 	}
 
 	unbonding = &types.MTStakingUnbonding{
-		AgentId:          agentID,
+		AgentAddress:     agentAddress,
 		DelegatorAddress: delegatorAddr,
 		Entries:          []types.MTStakingUnbondingEntry{},
 	}
 	return unbonding
 }
 
-func (k Keeper) SetMTStakingUnbonding(ctx sdk.Context, agentID uint64, delegatorAddr string, unbonding *types.MTStakingUnbonding) {
+func (k Keeper) SetMTStakingUnbonding(ctx sdk.Context, agentAddress string, delegatorAddr string, unbonding *types.MTStakingUnbonding) {
 	store := ctx.KVStore(k.storeKey)
 	bz := k.cdc.MustMarshal(unbonding)
 
-	store.Set(types.GetMTStakingUnbondingKey(agentID, delegatorAddr), bz)
+	store.Set(types.GetMTStakingUnbondingKey(agentAddress, delegatorAddr), bz)
 }
 
-func (k Keeper) RemoveMTStakingUnbonding(ctx sdk.Context, agentID uint64, delegatorAddr string) {
+func (k Keeper) RemoveMTStakingUnbonding(ctx sdk.Context, agentAddress string, delegatorAddr string) {
 	store := ctx.KVStore(k.storeKey)
-	store.Delete(types.GetMTStakingUnbondingKey(agentID, delegatorAddr))
+	store.Delete(types.GetMTStakingUnbondingKey(agentAddress, delegatorAddr))
 }
 
-func (k Keeper) GetMTStakingShares(ctx sdk.Context, agentID uint64, delegator string) math.Int {
+func (k Keeper) GetMTStakingShares(ctx sdk.Context, agentAddress string, delegator string) math.Int {
 	amount := math.ZeroInt()
 	store := ctx.KVStore(k.storeKey)
-	key := types.GetMTStakingSharesKey(agentID, delegator)
+	key := types.GetMTStakingSharesKey(agentAddress, delegator)
 	bz := store.Get(key)
 
 	if bz == nil {
@@ -231,12 +211,12 @@ func (k Keeper) GetMTStakingShares(ctx sdk.Context, agentID uint64, delegator st
 	return amount
 }
 
-func (k Keeper) IncreaseMTStakingShares(ctx sdk.Context, shares math.Int, agentID uint64, delegator string) error {
+func (k Keeper) IncreaseMTStakingShares(ctx sdk.Context, shares math.Int, agentAddress string, delegator string) error {
 	var err error
 	amount := math.ZeroInt()
 
 	store := ctx.KVStore(k.storeKey)
-	key := types.GetMTStakingSharesKey(agentID, delegator)
+	key := types.GetMTStakingSharesKey(agentAddress, delegator)
 	bz := store.Get(key)
 	if bz != nil {
 		if err = amount.Unmarshal(bz); err != nil {
@@ -253,12 +233,12 @@ func (k Keeper) IncreaseMTStakingShares(ctx sdk.Context, shares math.Int, agentI
 	return nil
 }
 
-func (k Keeper) DecreaseMTStakingShares(ctx sdk.Context, shares math.Int, agentID uint64, delegator string) error {
+func (k Keeper) DecreaseMTStakingShares(ctx sdk.Context, shares math.Int, agentAddress string, delegator string) error {
 	var err error
 	var amount math.Int
 
 	store := ctx.KVStore(k.storeKey)
-	key := types.GetMTStakingSharesKey(agentID, delegator)
+	key := types.GetMTStakingSharesKey(agentAddress, delegator)
 	bz := store.Get(key)
 
 	if bz == nil {
@@ -303,7 +283,7 @@ func (k Keeper) UBDQueueIterator(ctx sdk.Context, endTime time.Time) sdk.Iterato
 }
 
 func (k Keeper) InsertUBDQueue(ctx sdk.Context, ubd *types.MTStakingUnbonding, completionTime time.Time) {
-	daPair := types.DAPair{DelegatorAddress: ubd.DelegatorAddress, AgentId: ubd.AgentId}
+	daPair := types.DAPair{DelegatorAddress: ubd.DelegatorAddress, AgentAddress: ubd.AgentAddress}
 
 	timeSlice := k.GetUBDQueueTimeSlice(ctx, completionTime)
 	if len(timeSlice) == 0 {

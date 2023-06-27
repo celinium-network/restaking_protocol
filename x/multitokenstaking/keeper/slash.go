@@ -16,7 +16,7 @@ func (k Keeper) SlashAgentByValidatorSlash(ctx sdk.Context, valAddr sdk.ValAddre
 		slashAmt := sdk.NewDecFromInt(agents[i].StakedAmount).Mul(slashFactor)
 		slashCoin := sdk.NewCoin(slashDenom, slashAmt.TruncateInt())
 
-		agentDelegatorAddr, err := sdk.AccAddressFromBech32(agents[i].DelegateAddress)
+		agentDelegatorAddr, err := sdk.AccAddressFromBech32(agents[i].AgentAddress)
 		if err != nil {
 			k.Logger(ctx).Error(fmt.Sprintf("agent't delegator is invalid: %s", err))
 			continue
@@ -25,7 +25,7 @@ func (k Keeper) SlashAgentByValidatorSlash(ctx sdk.Context, valAddr sdk.ValAddre
 		if err := k.bankKeeper.SendCoinsFromAccountToModule(
 			ctx, agentDelegatorAddr, types.ModuleName, sdk.Coins{slashCoin},
 		); err != nil {
-			k.Logger(ctx).Error(fmt.Sprintf("send agent coins to module failed, agentID %d,error: %s", agents[i].Id, err))
+			k.Logger(ctx).Error(fmt.Sprintf("send agent coins to module failed, agentID %s,error: %s", agents[i].AgentAddress, err))
 			continue
 		}
 
@@ -46,13 +46,13 @@ func (k Keeper) SlashDelegator(ctx sdk.Context, valAddr sdk.ValAddress, delegato
 	}
 
 	removedShares := agent.Shares.Mul(slashCoin.Amount).Quo(agent.StakedAmount)
-	err := k.DecreaseMTStakingShares(ctx, removedShares, agent.Id, delegator.String())
+	err := k.DecreaseMTStakingShares(ctx, removedShares, agent.AgentAddress, delegator.String())
 	if err != nil {
 		return err
 	}
 	agent.StakedAmount = agent.StakedAmount.Sub(slashCoin.Amount)
 
-	agentDelegatorAddr, err := sdk.AccAddressFromBech32(agent.DelegateAddress)
+	agentDelegatorAddr, err := sdk.AccAddressFromBech32(agent.AgentAddress)
 	if err != nil {
 		k.Logger(ctx).Error(fmt.Sprintf("agent't delegator is invalid: %s", err))
 		return err
@@ -61,7 +61,7 @@ func (k Keeper) SlashDelegator(ctx sdk.Context, valAddr sdk.ValAddress, delegato
 	if err := k.bankKeeper.SendCoinsFromAccountToModule(
 		ctx, agentDelegatorAddr, types.ModuleName, sdk.Coins{slashCoin},
 	); err != nil {
-		k.Logger(ctx).Error(fmt.Sprintf("send agent coins to module failed, agentID %d,error: %s", agent.Id, err))
+		k.Logger(ctx).Error(fmt.Sprintf("send agent coins to module failed, agentID %s,error: %s", agent.AgentAddress, err))
 		return err
 	}
 

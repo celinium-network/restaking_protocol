@@ -25,7 +25,7 @@ func (suite *KeeperTestSuite) TestRefreshDelegationAmountWhenRateRise() {
 	err := suite.app.MTStakingKeeper.MTStakingDelegate(suite.ctx, types.MsgMTStakingDelegate{
 		DelegatorAddress: delegatorAddrs[0].String(),
 		ValidatorAddress: validators[0].OperatorAddress,
-		Amount:           multiRestakingCoin,
+		Balance:          multiRestakingCoin,
 	})
 	suite.Require().NoError(err)
 
@@ -34,13 +34,15 @@ func (suite *KeeperTestSuite) TestRefreshDelegationAmountWhenRateRise() {
 
 	increaseCoin, _ := RiseRateCalculateEquivalentCoin(suite.ctx, multiRestakingCoin, defaultBondDenom)
 
-	agentID := suite.app.MTStakingKeeper.GetLatestMTStakingAgentID(suite.ctx)
-	agent, found := suite.app.MTStakingKeeper.GetMTStakingAgentByID(suite.ctx, agentID)
+	agents := suite.app.MTStakingKeeper.GetAllAgent(suite.ctx)
+	suite.Require().Equal(len(agents), 1)
+
+	agent, found := suite.app.MTStakingKeeper.GetMTStakingAgentByAddress(suite.ctx, agents[0].AgentAddress)
 	suite.Require().True(found)
 	suite.Require().True(agent.Shares.Equal(multiRestakingCoin.Amount))
 	suite.Require().True(agent.StakedAmount.Equal(multiRestakingCoin.Amount))
 
-	agentDelegateAccAddr := sdk.MustAccAddressFromBech32(agent.DelegateAddress)
+	agentDelegateAccAddr := sdk.MustAccAddressFromBech32(agent.AgentAddress)
 	valAddr, _ := sdk.ValAddressFromBech32(validators[0].OperatorAddress)
 
 	v, found := suite.app.StakingKeeper.GetValidator(suite.ctx, valAddr)

@@ -6,14 +6,14 @@ import (
 	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 )
 
-func (k Keeper) WithdrawRestakingReward(ctx sdk.Context, agentID uint64, delegator string) (sdk.Coin, error) {
+func (k Keeper) WithdrawRestakingReward(ctx sdk.Context, agentAddress string, delegator string) (sdk.Coin, error) {
 	var reward sdk.Coin
-	shares := k.GetMTStakingShares(ctx, agentID, delegator)
+	shares := k.GetMTStakingShares(ctx, agentAddress, delegator)
 	if shares.IsZero() {
 		return sdk.Coin{}, types.ErrNoShares
 	}
 
-	agent, found := k.GetMTStakingAgentByID(ctx, agentID)
+	agent, found := k.GetMTStakingAgentByAddress(ctx, agentAddress)
 	if !found {
 		return sdk.Coin{}, types.ErrNotExistedAgent
 	}
@@ -27,7 +27,7 @@ func (k Keeper) WithdrawRestakingReward(ctx sdk.Context, agentID uint64, delegat
 		return sdk.Coin{}, nil
 	}
 	delegatorAccAddr := sdk.MustAccAddressFromBech32(delegator)
-	agentAccAddr := sdk.MustAccAddressFromBech32(agent.DelegateAddress)
+	agentAccAddr := sdk.MustAccAddressFromBech32(agent.AgentAddress)
 
 	reward.Denom = k.stakingkeeper.BondDenom(ctx)
 	reward.Amount = amount

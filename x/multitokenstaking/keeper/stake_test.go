@@ -15,7 +15,7 @@ import (
 
 var (
 	PKs                     = simtestutil.CreateTestPubKeys(500)
-	mockMultiRestakingDenom = "mmrd"
+	mockMultiRestakingDenom = "non_native_token"
 )
 
 func createValAddrs(count int) ([]sdk.AccAddress, []sdk.ValAddress) {
@@ -37,18 +37,18 @@ func (suite *KeeperTestSuite) TestDelegate() {
 	msg := types.MsgMTStakingDelegate{
 		DelegatorAddress: delegatorAddrs[0].String(),
 		ValidatorAddress: validators[0].OperatorAddress,
-		Amount:           multiRestakingCoin,
+		Balance:          multiRestakingCoin,
 	}
 	err := suite.app.MTStakingKeeper.MTStakingDelegate(suite.ctx, msg)
 	suite.NoError(err)
 
-	agentID := suite.app.MTStakingKeeper.GetLatestMTStakingAgentID(suite.ctx)
-	suite.Require().Equal(agentID, uint64(1))
+	agents := suite.app.MTStakingKeeper.GetAllAgent(suite.ctx)
+	suite.Require().Equal(len(agents), 1)
 
-	delegatorShares := suite.app.MTStakingKeeper.GetMTStakingShares(suite.ctx, agentID, msg.DelegatorAddress)
+	delegatorShares := suite.app.MTStakingKeeper.GetMTStakingShares(suite.ctx, agents[0].AgentAddress, msg.DelegatorAddress)
 	suite.Require().True(delegatorShares.Equal(multiRestakingCoin.Amount))
 
-	agent, found := suite.app.MTStakingKeeper.GetMTStakingAgentByID(suite.ctx, agentID)
+	agent, found := suite.app.MTStakingKeeper.GetMTStakingAgentByAddress(suite.ctx, agents[0].AgentAddress)
 	suite.Require().True(found)
 	suite.Require().True(agent.StakedAmount.Equal(multiRestakingCoin.Amount))
 	suite.Require().True(agent.Shares.Equal(delegatorShares))
@@ -57,14 +57,14 @@ func (suite *KeeperTestSuite) TestDelegate() {
 	msg2 := types.MsgMTStakingDelegate{
 		DelegatorAddress: delegatorAddrs[1].String(),
 		ValidatorAddress: validators[0].OperatorAddress,
-		Amount:           multiRestakingCoin,
+		Balance:          multiRestakingCoin,
 	}
 	err = suite.app.MTStakingKeeper.MTStakingDelegate(suite.ctx, msg2)
 	suite.NoError(err)
 
-	delegator2Shares := suite.app.MTStakingKeeper.GetMTStakingShares(suite.ctx, agentID, msg.DelegatorAddress)
+	delegator2Shares := suite.app.MTStakingKeeper.GetMTStakingShares(suite.ctx, agents[0].AgentAddress, msg2.DelegatorAddress)
 	suite.Require().True(delegator2Shares.Equal(multiRestakingCoin.Amount))
-	agent, found = suite.app.MTStakingKeeper.GetMTStakingAgentByID(suite.ctx, agentID)
+	agent, found = suite.app.MTStakingKeeper.GetMTStakingAgentByAddress(suite.ctx, agents[0].AgentAddress)
 	suite.Require().True(found)
 	suite.Require().True(agent.StakedAmount.Equal(multiRestakingCoin.Amount.MulRaw(2)))
 	suite.Require().True(agent.Shares.Equal(delegatorShares.MulRaw(2)))
@@ -81,28 +81,29 @@ func (suite *KeeperTestSuite) TestUndelegate() {
 	err := suite.app.MTStakingKeeper.MTStakingDelegate(suite.ctx, types.MsgMTStakingDelegate{
 		DelegatorAddress: delegatorAddrs[0].String(),
 		ValidatorAddress: validators[0].OperatorAddress,
-		Amount:           multiRestakingCoin,
+		Balance:          multiRestakingCoin,
 	})
 	suite.Require().NoError(err)
 
 	err = suite.app.MTStakingKeeper.MTStakingUndelegate(suite.ctx, &types.MsgMTStakingUndelegate{
 		DelegatorAddress: delegatorAddrs[0].String(),
 		ValidatorAddress: validators[0].OperatorAddress,
-		Amount:           multiRestakingCoin,
+		Balance:          multiRestakingCoin,
 	})
 	suite.Require().NoError(err)
 
-	agentID := suite.app.MTStakingKeeper.GetLatestMTStakingAgentID(suite.ctx)
+	agents := suite.app.MTStakingKeeper.GetAllAgent(suite.ctx)
+	suite.Require().Equal(len(agents), 1)
 
-	delegator2Shares := suite.app.MTStakingKeeper.GetMTStakingShares(suite.ctx, agentID, delegatorAddrs[0].String())
+	delegator2Shares := suite.app.MTStakingKeeper.GetMTStakingShares(suite.ctx, agents[0].AgentAddress, delegatorAddrs[0].String())
 	suite.Require().True(delegator2Shares.Equal(math.ZeroInt()))
-	agent, found := suite.app.MTStakingKeeper.GetMTStakingAgentByID(suite.ctx, agentID)
+	agent, found := suite.app.MTStakingKeeper.GetMTStakingAgentByAddress(suite.ctx, agents[0].AgentAddress)
 	suite.Require().True(found)
 	suite.Require().True(agent.StakedAmount.Equal(math.ZeroInt()))
 	suite.Require().True(agent.Shares.Equal(math.ZeroInt()))
 
 	// check unbonding records
-	unbonding, found := suite.app.MTStakingKeeper.GetMTStakingUnbonding(suite.ctx, agentID, delegatorAddrs[0].String())
+	unbonding, found := suite.app.MTStakingKeeper.GetMTStakingUnbonding(suite.ctx, agents[0].AgentAddress, delegatorAddrs[0].String())
 	suite.Require().True(found)
 	suite.Require().Equal(len(unbonding.Entries), 1)
 
@@ -116,7 +117,7 @@ func (suite *KeeperTestSuite) TestUndelegate() {
 	unbondingQueue := suite.app.MTStakingKeeper.GetUBDQueueTimeSlice(suite.ctx, entry.CompletionTime)
 	suite.Require().Equal(len(unbondingQueue), 1)
 	unbondingDAPair := unbondingQueue[0]
-	suite.Require().Equal(unbondingDAPair.AgentId, agentID)
+	suite.Require().Equal(unbondingDAPair.AgentAddress, agents[0].AgentAddress)
 	suite.Require().Equal(unbondingDAPair.DelegatorAddress, delegatorAddrs[0].String())
 }
 
@@ -131,7 +132,7 @@ func (suite *KeeperTestSuite) TestUndelegateReward() {
 	err := suite.app.MTStakingKeeper.MTStakingDelegate(suite.ctx, types.MsgMTStakingDelegate{
 		DelegatorAddress: delegatorAddrs[0].String(),
 		ValidatorAddress: validators[0].OperatorAddress,
-		Amount:           multiRestakingCoin,
+		Balance:          multiRestakingCoin,
 	})
 	suite.Require().NoError(err)
 
@@ -145,8 +146,10 @@ func (suite *KeeperTestSuite) TestUndelegateReward() {
 	err = suite.app.BankKeeper.SendCoinsFromModuleToModule(suite.ctx, minttypes.ModuleName, distrtypes.ModuleName, rewardCoins)
 	suite.Require().NoError(err)
 
-	agentID := suite.app.MTStakingKeeper.GetLatestMTStakingAgentID(suite.ctx)
-	agent, _ := suite.app.MTStakingKeeper.GetMTStakingAgentByID(suite.ctx, agentID)
+	agents := suite.app.MTStakingKeeper.GetAllAgent(suite.ctx)
+	suite.Require().Equal(len(agents), 1)
+
+	agent, _ := suite.app.MTStakingKeeper.GetMTStakingAgentByAddress(suite.ctx, agents[0].AgentAddress)
 	valAddr, _ := sdk.ValAddressFromBech32(agent.ValidatorAddress)
 	validator := suite.app.StakingKeeper.Validator(suite.ctx, valAddr)
 
@@ -161,7 +164,7 @@ func (suite *KeeperTestSuite) TestUndelegateReward() {
 	err = suite.app.MTStakingKeeper.MTStakingUndelegate(suite.ctx, &types.MsgMTStakingUndelegate{
 		DelegatorAddress: delegatorAddrs[0].String(),
 		ValidatorAddress: validators[0].OperatorAddress,
-		Amount:           multiRestakingCoin,
+		Balance:          multiRestakingCoin,
 	})
 	suite.Require().NoError(err)
 

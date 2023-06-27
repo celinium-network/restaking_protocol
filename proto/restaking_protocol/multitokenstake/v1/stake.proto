@@ -33,9 +33,9 @@ message EquivalentMultiplierRecord {
 // MTStakingDelegation represents a multi-token staking delegation.
 message MTStakingDelegation {
     // Delegator's address.
-    string delegator_address = 1;  
+    string delegator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];  
     // Validator's address.
-    string validator_address = 2;
+    string validator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
     // Amount being delegated.
     cosmos.base.v1beta1.Coin delegation_amount = 3 [
       (gogoproto.nullable) = false,
@@ -48,30 +48,29 @@ message MTStakingDelegation {
 
 // MTStakingAgent represents a multi-token staking agent.
 message MTStakingAgent{
-    // Agent ID.
-    uint64 id = 1;
+    // Address represent this agent, used for delegate/undelegate/slash.
+    string agent_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
     // The denom of staking token.
     string stake_denom = 2;
     // Validator's address.
     string validator_address = 3 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-    // Address is used for delegate.
-    string delegate_address = 4 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
     // Address is used for receive staking reward
-    string reward_address = 5 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+    string reward_address = 4 [(cosmos_proto.scalar) = "cosmos.AddressString"];
     // Amount being staked.
-    string staked_amount = 6 [
+    string staked_amount = 5 [
         (cosmos_proto.scalar)  = "cosmos.Int",
         (gogoproto.customtype) = "Int",
         (gogoproto.nullable)   = false
     ];
     // Total shares of all delegtor of this agent.
-    string shares = 7 [
+    string shares = 6 [
         (cosmos_proto.scalar)  = "cosmos.Int",
         (gogoproto.customtype) = "Int",
         (gogoproto.nullable)   = false
     ];   
     // Reward amount earned by the agent.
-    string reward_amount = 8 [
+    string reward_amount = 7 [
         (cosmos_proto.scalar)  = "cosmos.Int",
         (gogoproto.customtype) = "Int",
         (gogoproto.nullable)   = false
@@ -81,7 +80,7 @@ message MTStakingAgent{
 // MTStakingUnbonding represents the unbonding information for a multi-token staking agent.
 message MTStakingUnbonding{
     // Agent ID.
-    uint64 agent_id = 1;
+    string agent_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
     // Delegator's address.
     string delegator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; 
     // List of unbonding entries.
@@ -105,7 +104,7 @@ message DAPair{
     // Delegator's address.
     string delegator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; 
     // Agent ID.
-    uint64 agent_id = 2;
+    string agent_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 }
 
 // DAPairs represents a collection of delegation-agent pairs.

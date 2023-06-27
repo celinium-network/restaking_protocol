@@ -70,7 +70,7 @@ func (s *KeeperTestSuite) TestHandleRestakingDelegationPacket() {
 	s.multiStakingKeeper.EXPECT().MTStakingDelegate(gomock.Any(), multistakingtypes.MsgMTStakingDelegate{
 		DelegatorAddress: localOperator.String(),
 		ValidatorAddress: valAddress.String(),
-		Amount:           restakingDelegation.Balance,
+		Balance:          restakingDelegation.Balance,
 	})
 
 	s.keeper.HandleRestakingDelegationPacket(s.ctx, packet, &restakingDelegation)

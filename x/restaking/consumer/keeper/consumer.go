@@ -171,7 +171,7 @@ func (k Keeper) HandleRestakingDelegationPacket(
 	return k.multiStakingKeeper.MTStakingDelegate(ctx, multistakingtypes.MsgMTStakingDelegate{
 		DelegatorAddress: operatorLocalAddress.String(),
 		ValidatorAddress: validator.OperatorAddress,
-		Amount:           delegation.Balance,
+		Balance:          delegation.Balance,
 	})
 }
 

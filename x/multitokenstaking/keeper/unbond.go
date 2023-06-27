@@ -12,7 +12,7 @@ import (
 func (k Keeper) ProcessCompletedUnbonding(ctx sdk.Context) {
 	matureUnbonds := k.DequeueAllMatureUBDQueue(ctx, ctx.BlockHeader().Time)
 	for _, dvPair := range matureUnbonds {
-		_, err := k.CompleteUnbonding(ctx, dvPair.DelegatorAddress, dvPair.AgentId)
+		_, err := k.CompleteUnbonding(ctx, dvPair.DelegatorAddress, dvPair.AgentAddress)
 		if err != nil {
 			continue
 		}
@@ -38,18 +38,18 @@ func (k Keeper) DequeueAllMatureUBDQueue(ctx sdk.Context, currTime time.Time) (m
 	return matureUnbonds
 }
 
-func (k Keeper) CompleteUnbonding(ctx sdk.Context, delegator string, agentID uint64) (sdk.Coins, error) {
-	ubd, found := k.GetMTStakingUnbonding(ctx, agentID, delegator)
+func (k Keeper) CompleteUnbonding(ctx sdk.Context, delegator string, agentAddress string) (sdk.Coins, error) {
+	ubd, found := k.GetMTStakingUnbonding(ctx, agentAddress, delegator)
 	if !found {
 		return nil, types.ErrNoUnbondingDelegation
 	}
 
-	agent, found := k.GetMTStakingAgentByID(ctx, agentID)
+	agent, found := k.GetMTStakingAgentByAddress(ctx, agentAddress)
 	if !found {
 		return nil, types.ErrNoUnbondingDelegation
 	}
 
-	agentDelegateAddress := sdk.MustAccAddressFromBech32(agent.DelegateAddress)
+	agentDelegateAddress := sdk.MustAccAddressFromBech32(agent.AgentAddress)
 
 	balances := sdk.NewCoins()
 	ctxTime := ctx.BlockHeader().Time
@@ -76,9 +76,9 @@ func (k Keeper) CompleteUnbonding(ctx sdk.Context, delegator string, agentID uin
 	}
 
 	if len(ubd.Entries) == 0 {
-		k.RemoveMTStakingUnbonding(ctx, agentID, delegator)
+		k.RemoveMTStakingUnbonding(ctx, agentAddress, delegator)
 	} else {
-		k.SetMTStakingUnbonding(ctx, agentID, delegator, ubd)
+		k.SetMTStakingUnbonding(ctx, agentAddress, delegator, ubd)
 	}
 
 	return balances, nil

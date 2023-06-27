@@ -16,14 +16,14 @@ func (suite *KeeperTestSuite) bootstrapABCITest() (delegator, validator string, 
 	err := suite.app.MTStakingKeeper.MTStakingDelegate(suite.ctx, types.MsgMTStakingDelegate{
 		DelegatorAddress: delegatorAddrs[0].String(),
 		ValidatorAddress: validators[0].OperatorAddress,
-		Amount:           multiRestakingCoin,
+		Balance:          multiRestakingCoin,
 	})
 	suite.Require().NoError(err)
 
 	err = suite.app.MTStakingKeeper.MTStakingUndelegate(suite.ctx, &types.MsgMTStakingUndelegate{
 		DelegatorAddress: delegatorAddrs[0].String(),
 		ValidatorAddress: validators[0].OperatorAddress,
-		Amount:           multiRestakingCoin,
+		Balance:          multiRestakingCoin,
 	})
 	suite.Require().NoError(err)
 

@@ -4,6 +4,7 @@ import (
 	time "time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/address"
 
 	"github.com/celinium-network/restaking_protocol/utils"
 )
@@ -28,17 +29,15 @@ var (
 	// Prefix for key which used in `{denom + validator_address} => MTStakingAgent's ID`
 	MTStakingAgentIDPrefix = []byte{0x21}
 
-	// Prefix for Key which used in `id => MTStakingAgent`
+	// Prefix for Key which used in `agent_address => MTStakingAgent`
 	MTStakingAgentPrefix = []byte{0x22}
 
-	MTStakingLatestAgentIDKey = []byte{0x23}
-
-	// Prefix for key which used in `{agent_id + delegator_address} => MTStakingUnbonding`
+	// Prefix for key which used in `{agent_address + delegator_address} => MTStakingUnbonding`
 	MTStakingUnbondingPrefix = []byte{0x31}
 
 	MTStakingUnbondingQueueKey = []byte{0x32}
 
-	// Prefix for key which used in `{agent_id + delegator_address} => shares_amount`
+	// Prefix for key which used in `{agent_address + delegator_address} => shares_amount`
 	MTStakingSharesPrefix = []byte{0x41}
 )
 
@@ -59,34 +58,33 @@ func GetMTStakingAgentIDKey(denom, valAddr string) []byte {
 	return bz
 }
 
-func GetMTStakingAgentKey(agentID uint64) []byte {
-	idBz := sdk.Uint64ToBigEndian(agentID)
-	return append(MTStakingAgentPrefix, idBz...)
+func GetMTStakingAgentKey(agentAddr string) []byte {
+	return append(MTStakingAgentPrefix, []byte(agentAddr)...)
 }
 
-func GetMTStakingSharesKey(agentID uint64, delegator string) []byte {
-	idBz := sdk.Uint64ToBigEndian(agentID)
+func GetMTStakingSharesKey(agentAddr string, delegator string) []byte {
+	agentAddBz := address.MustLengthPrefix([]byte(agentAddr))
 	delegatorBz := utils.BytesLengthPrefix([]byte(delegator))
 	prefixLen := len(MTStakingSharesPrefix)
 
-	bz := make([]byte, prefixLen+8+len(delegatorBz))
+	bz := make([]byte, prefixLen+len(agentAddBz)+len(delegatorBz))
 	copy(bz[:prefixLen], MTStakingSharesPrefix)
-	copy(bz[prefixLen:prefixLen+8], idBz)
-	copy(bz[prefixLen+8:], delegatorBz)
+	copy(bz[prefixLen:prefixLen+len(agentAddBz)], agentAddBz)
+	copy(bz[prefixLen+len(agentAddBz):], delegatorBz)
 
 	return bz
 }
 
-func GetMTStakingUnbondingKey(agentID uint64, delegator string) []byte {
-	idBz := sdk.Uint64ToBigEndian(agentID)
-	delegatorBz := utils.BytesLengthPrefix([]byte(delegator))
+func GetMTStakingUnbondingKey(agentAddr string, delegator string) []byte {
+	agentAddBz := address.MustLengthPrefix([]byte(agentAddr))
+	delegatorBz := address.MustLengthPrefix([]byte(delegator))
 	prefixLen := len(MTStakingUnbondingPrefix)
 
-	bz := make([]byte, prefixLen+8+len(delegatorBz))
+	bz := make([]byte, prefixLen+len(agentAddBz)+len(delegatorBz))
 
 	copy(bz[:prefixLen], MTStakingUnbondingPrefix)
-	copy(bz[prefixLen:prefixLen+8], idBz)
-	copy(bz[prefixLen+8:], delegatorBz)
+	copy(bz[prefixLen:prefixLen+len(agentAddBz)], agentAddBz)
+	copy(bz[prefixLen+len(agentAddBz):], delegatorBz)
 
 	return bz
 }
