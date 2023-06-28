@@ -7,8 +7,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// SlashValidatorOfAgents define a method to slash all agent which delegate to the slashed validator.
-func (k Keeper) SlashValidatorOfAgents(ctx sdk.Context, valAddr sdk.ValAddress, slashFactor sdk.Dec) {
+// SlashDelegatingAgentsToValidator define a method to slash all agent which delegate to the slashed validator.
+func (k Keeper) SlashDelegatingAgentsToValidator(ctx sdk.Context, valAddr sdk.ValAddress, slashFactor sdk.Dec) {
 	store := ctx.KVStore(k.storeKey)
 	iterator := sdk.KVStorePrefixIterator(store, types.MTStakingAgentPrefix)
 	defer iterator.Close()
