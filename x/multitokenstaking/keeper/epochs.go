@@ -13,7 +13,7 @@ func (h Hooks) AfterEpochEnd(ctx sdk.Context, _ string, _ int64) {
 func (h Hooks) BeforeEpochStart(ctx sdk.Context, epochIdentifier string, epochNumber int64) {
 	switch epochIdentifier {
 	case types.RefreshAgentDelegationEpochID:
-		h.k.RefreshAgentDelegationAmount(ctx)
+		h.k.RefreshAllAgentDelegation(ctx)
 	case types.CollectAgentStakingRewardEpochID:
 		// TODO remove it from epoch ?
 		h.k.CollectAgentsReward(ctx)

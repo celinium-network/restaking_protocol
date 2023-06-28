@@ -26,7 +26,7 @@ type Keeper struct {
 	stakingKeeper      types.StakingKeeper
 	distributionKeeper types.DistributionKeeper
 
-	EquivalentCoinCalculator CalculateEquivalentCoin
+	EquivalentNativeCoinMultiplier EquivalentNativeCoinMultiplier
 }
 
 func NewKeeper(
@@ -39,22 +39,22 @@ func NewKeeper(
 	distributionKeeper types.DistributionKeeper,
 ) Keeper {
 	return Keeper{
-		storeKey:                 storeKey,
-		cdc:                      cdc,
-		accountKeeper:            accountKeeper,
-		bankKeeper:               bankKeeper,
-		epochKeeper:              epochKeeper,
-		stakingKeeper:            stakingKeeper,
-		distributionKeeper:       distributionKeeper,
-		EquivalentCoinCalculator: defaultCalculateEquivalentCoin,
+		storeKey:                       storeKey,
+		cdc:                            cdc,
+		accountKeeper:                  accountKeeper,
+		bankKeeper:                     bankKeeper,
+		epochKeeper:                    epochKeeper,
+		stakingKeeper:                  stakingKeeper,
+		distributionKeeper:             distributionKeeper,
+		EquivalentNativeCoinMultiplier: defaultEquivalentCoinMultiplier,
 	}
 }
 
 // TODO Temporarily use this method to feed prices !!!
-type CalculateEquivalentCoin func(ctx sdk.Context, coin sdk.Coin, targetDenom string) (sdk.Coin, error)
+type EquivalentNativeCoinMultiplier func(ctx sdk.Context, denom string) (sdk.Dec, error)
 
-func defaultCalculateEquivalentCoin(ctx sdk.Context, coin sdk.Coin, targetDenom string) (sdk.Coin, error) {
-	return sdk.NewCoin(targetDenom, coin.Amount), nil
+func defaultEquivalentCoinMultiplier(ctx sdk.Context, denom string) (sdk.Dec, error) {
+	return sdk.OneDec(), nil
 }
 
 // Logger returns a module-specific logger.
@@ -77,6 +77,47 @@ func (k Keeper) GetMTStakingDenomWhiteList(ctx sdk.Context) (*types.MTStakingDen
 	}
 
 	return whiteList, true
+}
+
+func (k Keeper) SetEquivalentNativeCoinMultiplier(ctx sdk.Context, epoch int64, denom string, multiplier sdk.Dec) {
+	store := ctx.KVStore(k.storeKey)
+	record := types.EquivalentMultiplierRecord{
+		EpochNumber: epoch,
+		Denom:       denom,
+		Multiplier:  multiplier,
+	}
+	bz := k.cdc.MustMarshal(&record)
+
+	store.Set(types.GetMTTokenMultiplierKey(denom), bz)
+}
+
+func (k Keeper) GetEquivalentNativeCoinMultiplier(ctx sdk.Context, denom string) (multiplier sdk.Dec, found bool) {
+	var record types.EquivalentMultiplierRecord
+	store := ctx.KVStore(k.storeKey)
+
+	bz := store.Get(types.GetMTTokenMultiplierKey(denom))
+	if bz == nil {
+		return multiplier, false
+	}
+	if err := k.cdc.Unmarshal(bz, &record); err != nil {
+		return multiplier, false
+	}
+
+	multiplier = record.Multiplier
+
+	return multiplier, true
+}
+
+func (k Keeper) CalculateEquivalentNativeCoin(ctx sdk.Context, coin sdk.Coin) (targetCoin sdk.Coin, err error) {
+	multiplier, found := k.GetEquivalentNativeCoinMultiplier(ctx, coin.Denom)
+	if !found {
+		return targetCoin, types.ErrNoCoinMultiplierFound
+	}
+
+	targetCoin.Denom = k.stakingKeeper.BondDenom(ctx)
+	targetCoin.Amount = multiplier.MulInt(coin.Amount).TruncateInt()
+
+	return targetCoin, nil
 }
 
 func (k Keeper) SetMTStakingDenom(ctx sdk.Context, denom string) bool {
@@ -134,8 +175,6 @@ func (k Keeper) SetMTStakingAgent(ctx sdk.Context, agent *types.MTStakingAgent) 
 	store := ctx.KVStore(k.storeKey)
 
 	store.Set(types.GetMTStakingAgentKey(agent.AgentAddress), bz)
-
-	k.SetMTStakingDenomAndValWithAgentAddress(ctx, agent.AgentAddress, agent.StakeDenom, agent.ValidatorAddress)
 }
 
 func (k Keeper) GetMTStakingAgentAressByDenomAndVal(ctx sdk.Context, denom string, valAddr string) (string, bool) {
@@ -211,7 +250,7 @@ func (k Keeper) GetMTStakingShares(ctx sdk.Context, agentAddress string, delegat
 	return amount
 }
 
-func (k Keeper) IncreaseMTStakingShares(ctx sdk.Context, shares math.Int, agentAddress string, delegator string) error {
+func (k Keeper) IncreaseDelegatorAgentShares(ctx sdk.Context, shares math.Int, agentAddress string, delegator string) error {
 	var err error
 	amount := math.ZeroInt()
 
@@ -233,7 +272,7 @@ func (k Keeper) IncreaseMTStakingShares(ctx sdk.Context, shares math.Int, agentA
 	return nil
 }
 
-func (k Keeper) DecreaseMTStakingShares(ctx sdk.Context, shares math.Int, agentAddress string, delegator string) error {
+func (k Keeper) DecreaseDelegatorAgentShares(ctx sdk.Context, shares math.Int, agentAddress string, delegator string) error {
 	var err error
 	var amount math.Int
 

@@ -123,7 +123,7 @@ type IBCTransferKeeper interface {
 type MTStakingKeeper interface {
 	MTStakingDelegate(ctx sdk.Context, msg multistakingtypes.MsgMTStakingDelegate) error
 
-	Unbond(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, token sdk.Coin) (math.Int, error)
+	Unbond(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, token sdk.Coin) error
 
 	SlashDelegator(ctx sdk.Context, valAddr sdk.ValAddress, delegator sdk.AccAddress, slashCoin sdk.Coin) error
 }

@@ -1072,12 +1072,11 @@ func (mr *MockMTStakingKeeperMockRecorder) SlashDelegator(ctx, valAddr, delegato
 }
 
 // Unbond mocks base method.
-func (m *MockMTStakingKeeper) Unbond(ctx types1.Context, delAddr types1.AccAddress, valAddr types1.ValAddress, token types1.Coin) (math.Int, error) {
+func (m *MockMTStakingKeeper) Unbond(ctx types1.Context, delAddr types1.AccAddress, valAddr types1.ValAddress, token types1.Coin) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Unbond", ctx, delAddr, valAddr, token)
-	ret0, _ := ret[0].(math.Int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // Unbond indicates an expected call of Unbond.

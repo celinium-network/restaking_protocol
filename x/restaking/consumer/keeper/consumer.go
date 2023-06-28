@@ -192,7 +192,7 @@ func (k Keeper) HandleRestakingUndelegationPacket(
 		return err
 	}
 
-	_, err = k.multiStakingKeeper.Unbond(ctx, operatorLocalAddress, valAddress, delegation.Balance)
+	err = k.multiStakingKeeper.Unbond(ctx, operatorLocalAddress, valAddress, delegation.Balance)
 	if err != nil {
 		return err
 	}

@@ -39,6 +39,12 @@ var (
 
 	// Prefix for key which used in `{agent_address + delegator_address} => shares_amount`
 	MTStakingSharesPrefix = []byte{0x41}
+
+	// Prefix for key used in store total minted
+	MTStakingMintedKey = []byte{0x51}
+
+	// Prefix for key used in store EquivalentMultiplierRecord
+	MTTokenMultiplierPrefix = []byte{0x61}
 )
 
 func GetMTStakingAgentIDKey(denom, valAddr string) []byte {
@@ -92,6 +98,14 @@ func GetMTStakingUnbondingKey(agentAddr string, delegator string) []byte {
 func GetMTStakingUnbondingDelegationTimeKey(timestamp time.Time) []byte {
 	bz := sdk.FormatTimeBytes(timestamp)
 	return append(MTStakingUnbondingQueueKey, bz...)
+}
+
+func GetMTStakingMintedKey() []byte {
+	return MTStakingMintedKey
+}
+
+func GetMTTokenMultiplierKey(denom string) []byte {
+	return append(MTTokenMultiplierPrefix, denom...)
 }
 
 func (ubd *MTStakingUnbonding) RemoveEntry(i int64) {

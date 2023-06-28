@@ -6,6 +6,7 @@ import (
 
 	sdkerrors "cosmossdk.io/errors"
 	"cosmossdk.io/math"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -13,6 +14,7 @@ import (
 	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 )
 
+// MTStakingDelegate defines a method for performing a delegation of non native coins from a delegator to a validator
 func (k Keeper) MTStakingDelegate(ctx sdk.Context, msg types.MsgMTStakingDelegate) error {
 	defaultBondDenom := k.stakingKeeper.BondDenom(ctx)
 	if strings.Compare(msg.Balance.Denom, defaultBondDenom) == 0 {
@@ -26,59 +28,59 @@ func (k Keeper) MTStakingDelegate(ctx sdk.Context, msg types.MsgMTStakingDelegat
 	agent := k.GetOrCreateMTStakingAgent(ctx, msg.Balance.Denom, msg.ValidatorAddress)
 	delegatorAccAddr := sdk.MustAccAddressFromBech32(msg.DelegatorAddress)
 
-	if err := k.depositAndDelegate(ctx, agent, msg.Balance, delegatorAccAddr); err != nil {
+	if err := k.depositAndDelegate(ctx, delegatorAccAddr, agent.AgentAddress, agent.ValidatorAddress, msg.Balance); err != nil {
 		return err
 	}
 
-	shares := agent.CalculateShares(msg.Balance.Amount)
+	shares := agent.CalculateSharesFromTokenAmount(msg.Balance.Amount)
 	agent.Shares = agent.Shares.Add(shares)
 	agent.StakedAmount = agent.StakedAmount.Add(msg.Balance.Amount)
 
 	k.SetMTStakingAgent(ctx, agent)
-	return k.IncreaseMTStakingShares(ctx, shares, agent.AgentAddress, msg.DelegatorAddress)
+	k.SetMTStakingDenomAndValWithAgentAddress(ctx, agent.AgentAddress, agent.StakeDenom, agent.ValidatorAddress)
+
+	return k.IncreaseDelegatorAgentShares(ctx, shares, agent.AgentAddress, msg.DelegatorAddress)
 }
 
-func (k Keeper) depositAndDelegate(ctx sdk.Context, agent *types.MTStakingAgent, amount sdk.Coin, delegator sdk.AccAddress) error {
-	agentDelegateAccAddr := sdk.MustAccAddressFromBech32(agent.AgentAddress)
-
-	validator, err := k.agentValidator(ctx, agent)
+// depositAndDelegate defines a method deposit coin for delegator to agent and mint shares to delegator.
+func (k Keeper) depositAndDelegate(ctx sdk.Context, delegator sdk.AccAddress, agentAddress, validatorAddress string, balance sdk.Coin) error {
+	agentAccAddr := sdk.MustAccAddressFromBech32(agentAddress)
+	validator, err := k.getValidator(ctx, validatorAddress)
 	if err != nil {
 		return err
 	}
 
-	if err := k.sendCoinsFromAccountToAccount(ctx, delegator, agentDelegateAccAddr, sdk.Coins{amount}); err != nil {
+	if err := k.sendCoinsFromAccountToAccount(ctx, delegator, agentAccAddr, sdk.Coins{balance}); err != nil {
 		return err
 	}
 
-	defaultBondDenom := k.stakingKeeper.BondDenom(ctx)
-	bondTokenAmt, err := k.EquivalentCoinCalculator(ctx, amount, defaultBondDenom)
+	eqNativeCoin, err := k.CalculateEquivalentNativeCoin(ctx, balance)
 	if err != nil {
 		return err
 	}
 
-	return k.mintAndDelegate(ctx, agent, *validator, bondTokenAmt)
+	// mint equivalent coin to agent account then agent delegate to validator.
+	return k.mintAndDelegate(ctx, agentAccAddr, validator, eqNativeCoin)
 }
 
-func (k Keeper) mintAndDelegate(ctx sdk.Context, agent *types.MTStakingAgent, validator stakingtypes.Validator, amount sdk.Coin) error {
-	agentDelegateAccAddr := sdk.MustAccAddressFromBech32(agent.AgentAddress)
-
-	if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.Coins{amount}); err != nil {
+// depositAndDelegate defines a method mint coin to agent account and delegate to a validator.
+func (k Keeper) mintAndDelegate(ctx sdk.Context, agentAccAddr sdk.AccAddress, validator *stakingtypes.Validator, balance sdk.Coin) error {
+	if err := k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.Coins{balance}); err != nil {
 		return err
 	}
 
-	if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, agentDelegateAccAddr, sdk.Coins{amount}); err != nil {
+	if err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, agentAccAddr, sdk.Coins{balance}); err != nil {
 		return err
 	}
 
-	if _, err := k.stakingKeeper.Delegate(ctx,
-		agentDelegateAccAddr, amount.Amount,
-		stakingtypes.Unbonded, validator, true,
-	); err != nil {
+	if _, err := k.stakingKeeper.Delegate(ctx, agentAccAddr, balance.Amount, stakingtypes.Unbonded, *validator, true); err != nil {
 		return err
 	}
 	return nil
 }
 
+// MTStakingUndelegate defines a method for performing an undelegation from a delegate and a validator.
+// Delegator burn the shares of the agents. Then agent account begin undelegate.
 func (k Keeper) MTStakingUndelegate(ctx sdk.Context, msg *types.MsgMTStakingUndelegate) error {
 	agent, found := k.GetMTStakingAgent(ctx, msg.Balance.Denom, msg.ValidatorAddress)
 	if !found {
@@ -91,8 +93,7 @@ func (k Keeper) MTStakingUndelegate(ctx sdk.Context, msg *types.MsgMTStakingUnde
 		return err
 	}
 
-	removeShares, err := k.Unbond(ctx, delegatorAddr, valAddr, msg.Balance)
-	if err != nil {
+	if k.Unbond(ctx, delegatorAddr, valAddr, msg.Balance) != nil {
 		return err
 	}
 
@@ -108,76 +109,77 @@ func (k Keeper) MTStakingUndelegate(ctx sdk.Context, msg *types.MsgMTStakingUnde
 	})
 
 	k.SetMTStakingUnbonding(ctx, agent.AgentAddress, msg.DelegatorAddress, unbonding)
-
-	agent.Shares = agent.Shares.Sub(removeShares)
-	agent.StakedAmount = agent.StakedAmount.Sub(msg.Balance.Amount)
-
-	k.SetMTStakingAgent(ctx, agent)
 	k.InsertUBDQueue(ctx, unbonding, undelegateCompleteTime)
 
 	return nil
 }
 
-func (k Keeper) Unbond(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, token sdk.Coin) (math.Int, error) {
+// Unbond defines a method for removing shares from an agent by a delegator then agent undelegate funds from a validator.
+func (k Keeper) Unbond(ctx sdk.Context, delegatorAccAddr sdk.AccAddress, valAddr sdk.ValAddress, balance sdk.Coin) error {
 	var removeShares math.Int
-	agent, found := k.GetMTStakingAgent(ctx, token.Denom, valAddr.String())
+	agent, found := k.GetMTStakingAgent(ctx, balance.Denom, valAddr.String())
 	if !found {
-		return removeShares, types.ErrNotExistedAgent
-	}
-	removeShares = agent.CalculateShares(token.Amount)
-	if err := k.DecreaseMTStakingShares(ctx, removeShares, agent.AgentAddress, delAddr.String()); err != nil {
-		return removeShares, err
+		return types.ErrNotExistedAgent
 	}
 
-	defaultBondDenom := k.stakingKeeper.BondDenom(ctx)
-	undelegateAmt, err := k.EquivalentCoinCalculator(ctx, token, defaultBondDenom)
-	if err != nil {
-		return removeShares, err
+	delegatorAddr := delegatorAccAddr.String()
+	removeShares = agent.CalculateSharesFromTokenAmount(balance.Amount)
+	if err := k.DecreaseDelegatorAgentShares(ctx, removeShares, agent.AgentAddress, delegatorAddr); err != nil {
+		return err
 	}
 
-	agentDelegatorAccAddr := sdk.MustAccAddressFromBech32(agent.AgentAddress)
-	rewards, err := k.distributionKeeper.WithdrawDelegationRewards(ctx, agentDelegatorAccAddr, valAddr)
+	nativeCoinDenom := k.stakingKeeper.BondDenom(ctx)
+	agentAccAddr := sdk.MustAccAddressFromBech32(agent.AgentAddress)
+	rewards, err := k.distributionKeeper.WithdrawDelegationRewards(ctx, agentAccAddr, valAddr)
 	if err != nil {
 		k.Logger(ctx).Error(fmt.Sprintf("withdraw delegation rewards failed %s", err))
+		return err
 	}
-	agent.RewardAmount = agent.RewardAmount.Add(rewards.AmountOf(defaultBondDenom))
 
+	// Currently only native coin rewards are considered
+	agent.RewardAmount = agent.RewardAmount.Add(rewards.AmountOf(nativeCoinDenom))
 	if !agent.RewardAmount.IsZero() {
-		rewardAmount := agent.RewardAmount.Mul(removeShares).Quo(agent.Shares)
-		if !rewardAmount.IsZero() {
-
-			if err := k.sendCoinsFromAccountToAccount(
-				ctx, agentDelegatorAccAddr, delAddr,
-				sdk.Coins{sdk.NewCoin(defaultBondDenom, rewardAmount)},
-			); err != nil {
-				return removeShares, err
+		delegatorRewardAmt := agent.RewardAmount.Mul(removeShares).Quo(agent.Shares)
+		if !delegatorRewardAmt.IsZero() {
+			// delegator get staking rewards immediately.
+			rewardCoins := sdk.Coins{sdk.NewCoin(nativeCoinDenom, delegatorRewardAmt)}
+			if err := k.sendCoinsFromAccountToAccount(ctx, agentAccAddr, delegatorAccAddr, rewardCoins); err != nil {
+				return err
 			}
-			agent.RewardAmount.Sub(rewardAmount)
+
+			agent.RewardAmount.Sub(delegatorRewardAmt)
 		}
 	}
 
-	if err := k.undelegateAndBurn(ctx, agent, valAddr, undelegateAmt); err != nil {
-		return removeShares, err
+	eqNativeBalance, err := k.CalculateEquivalentNativeCoin(ctx, balance)
+	if err != nil {
+		return err
 	}
-	return removeShares, err
+
+	if err := k.undelegateAndBurn(ctx, agentAccAddr, valAddr, eqNativeBalance); err != nil {
+		return err
+	}
+
+	agent.Shares = agent.Shares.Sub(removeShares)
+	agent.StakedAmount = agent.StakedAmount.Sub(balance.Amount)
+	k.SetMTStakingAgent(ctx, agent)
+
+	return nil
 }
 
-func (k Keeper) undelegateAndBurn(ctx sdk.Context, agent *types.MTStakingAgent, valAddr sdk.ValAddress, undelegateAmt sdk.Coin) error {
-	agentDelegateAccAddr := sdk.MustAccAddressFromBech32(agent.AgentAddress)
-
-	stakedShares, err := k.stakingKeeper.ValidateUnbondAmount(ctx, agentDelegateAccAddr, valAddr, undelegateAmt.Amount)
+// undelegateAndBurn performs immediate undelegation from the staking module and burns the undelegated funds.
+func (k Keeper) undelegateAndBurn(ctx sdk.Context, agentAccAddr sdk.AccAddress, valAddr sdk.ValAddress, balance sdk.Coin) error {
+	stakedShares, err := k.stakingKeeper.ValidateUnbondAmount(ctx, agentAccAddr, valAddr, balance.Amount)
 	if err != nil {
 		return err
 	}
 
-	undelegationCoins, err := k.instantUndelegate(ctx, agentDelegateAccAddr, valAddr, stakedShares)
+	undelegationCoins, err := k.instantUndelegate(ctx, agentAccAddr, valAddr, stakedShares)
 	if err != nil {
 		return err
 	}
 
-	if err := k.bankKeeper.SendCoinsFromAccountToModule(ctx,
-		agentDelegateAccAddr, types.ModuleName, undelegationCoins,
-	); err != nil {
+	if err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, agentAccAddr, types.ModuleName, undelegationCoins); err != nil {
 		return err
 	}
 
@@ -188,8 +190,8 @@ func (k Keeper) undelegateAndBurn(ctx sdk.Context, agent *types.MTStakingAgent, 
 	return nil
 }
 
-func (k Keeper) agentValidator(ctx sdk.Context, agent *types.MTStakingAgent) (*stakingtypes.Validator, error) {
-	valAddr, err := sdk.ValAddressFromBech32(agent.ValidatorAddress)
+func (k Keeper) getValidator(ctx sdk.Context, validatorAddress string) (*stakingtypes.Validator, error) {
+	valAddr, err := sdk.ValAddressFromBech32(validatorAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -247,80 +249,110 @@ func (k Keeper) GenerateAccount(ctx sdk.Context, prefix, suffix string) *authtyp
 	return authtypes.NewEmptyModuleAccount(addrBuf, authtypes.Staking)
 }
 
-func (k Keeper) instantUndelegate(
-	ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, sharesAmount sdk.Dec,
-) (sdk.Coins, error) {
-	validator, found := k.stakingKeeper.GetValidator(ctx, valAddr)
+// instantUndelegate define a method for immediately undelegate from staking module
+func (k Keeper) instantUndelegate(ctx sdk.Context, delegatorAccAddr sdk.AccAddress, validatorAddr sdk.ValAddress, sharesAmount sdk.Dec) (sdk.Coins, error) {
+	validator, found := k.stakingKeeper.GetValidator(ctx, validatorAddr)
 	if !found {
-		return nil, stakingtypes.ErrNoDelegatorForAddress
+		return nil, stakingtypes.ErrNoValidatorFound
 	}
 
-	returnAmount, err := k.stakingKeeper.Unbond(ctx, delAddr, valAddr, sharesAmount)
+	unbondAmount, err := k.stakingKeeper.Unbond(ctx, delegatorAccAddr, validatorAddr, sharesAmount)
 	if err != nil {
 		return nil, err
 	}
 
 	bondDenom := k.stakingKeeper.GetParams(ctx).BondDenom
-
-	amt := sdk.NewCoin(bondDenom, returnAmount)
-	res := sdk.NewCoins(amt)
+	unbondCoin := sdk.NewCoin(bondDenom, unbondAmount)
+	unbondCoins := sdk.NewCoins(unbondCoin)
 
 	moduleName := stakingtypes.NotBondedPoolName
 	if validator.IsBonded() {
 		moduleName = stakingtypes.BondedPoolName
 	}
-	err = k.bankKeeper.UndelegateCoinsFromModuleToAccount(ctx, moduleName, delAddr, res)
+
+	err = k.bankKeeper.UndelegateCoinsFromModuleToAccount(ctx, moduleName, delegatorAccAddr, unbondCoins)
 	if err != nil {
 		return nil, err
 	}
-	return res, nil
+
+	return unbondCoins, nil
 }
 
-func (k Keeper) RefreshAgentDelegationAmount(ctx sdk.Context) {
+// UpdateEquivalentNativeCoinMultiplier defines a method for updating the equivalent
+// native coin multiplier for all token in white list
+func (k Keeper) UpdateEquivalentNativeCoinMultiplier(ctx sdk.Context, epoch int64) {
+	store := ctx.KVStore(k.storeKey)
+	prefixStore := prefix.NewStore(store, types.MTStakingDenomWhiteListKey)
+	iterator := sdk.KVStorePrefixIterator(prefixStore, nil)
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		denom := iterator.Value()
+		multiplier, err := k.EquivalentNativeCoinMultiplier(ctx, string(denom))
+		if err != nil {
+			ctx.Logger().Error(fmt.Sprintf("get equivalent native coin multiplier of %s failed", denom))
+			continue
+		}
+
+		k.SetEquivalentNativeCoinMultiplier(ctx, epoch, string(denom), multiplier)
+	}
+}
+
+// RefreshAllAgentDelegation defines a method for updating all agent delegation amount base on current multiplier.
+func (k Keeper) RefreshAllAgentDelegation(ctx sdk.Context) {
 	agents := k.GetAllAgent(ctx)
 
 	for i := 0; i < len(agents); i++ {
-		valAddress, err := sdk.ValAddressFromBech32(agents[i].ValidatorAddress)
+		err := k.refreshAgentDelegation(ctx, &agents[i])
 		if err != nil {
-			panic(err)
-		}
-
-		validator, found := k.stakingKeeper.GetValidator(ctx, valAddress)
-		if !found {
-			continue
-		}
-
-		var currentAmount math.Int
-		delegator := sdk.MustAccAddressFromBech32(agents[i].AgentAddress)
-		delegation, found := k.stakingKeeper.GetDelegation(ctx, delegator, valAddress)
-		if !found {
-			continue
-		} else {
-			currentAmount = validator.TokensFromShares(delegation.Shares).RoundInt()
-		}
-		refreshedAmount, _ := k.GetExpectedDelegationAmount(ctx, sdk.NewCoin(agents[i].StakeDenom, agents[i].StakedAmount))
-
-		if refreshedAmount.Amount.GT(currentAmount) {
-			adjustment := refreshedAmount.Amount.Sub(currentAmount)
-			err = k.mintAndDelegate(ctx, &agents[i], validator, sdk.NewCoin(refreshedAmount.Denom, adjustment))
-			if err != nil {
-				ctx.Logger().Error(fmt.Sprintf("MTStaking mintAndDelegate has error: %s", err))
-			}
-		} else if refreshedAmount.Amount.LT(currentAmount) {
-			adjustment := currentAmount.Sub(refreshedAmount.Amount)
-			err := k.undelegateAndBurn(ctx, &agents[i], valAddress, sdk.NewCoin(refreshedAmount.Denom, adjustment))
-			if err != nil {
-				ctx.Logger().Error(fmt.Sprintf("MTStaking undelegateAndBurn has error: %s", err))
-			}
+			ctx.Logger().Error(fmt.Sprintf("refreshAgentDelegation failed, agentAddress %s", err))
 		}
 	}
 }
 
+func (k Keeper) refreshAgentDelegation(ctx sdk.Context, agent *types.MTStakingAgent) error {
+	valAddress, err := sdk.ValAddressFromBech32(agent.ValidatorAddress)
+	if err != nil {
+		return err
+	}
+
+	validator, found := k.stakingKeeper.GetValidator(ctx, valAddress)
+	if !found {
+		return stakingtypes.ErrNoValidatorFound
+	}
+
+	var currentAmount math.Int
+	agentAccAddr := sdk.MustAccAddressFromBech32(agent.AgentAddress)
+	agentDelegation, found := k.stakingKeeper.GetDelegation(ctx, agentAccAddr, valAddress)
+	if !found {
+		return stakingtypes.ErrNoDelegation
+	} else {
+		currentAmount = validator.TokensFromShares(agentDelegation.Shares).RoundInt()
+	}
+
+	refreshedAmount, err := k.CalculateEquivalentNativeCoin(ctx, sdk.NewCoin(agent.StakeDenom, agent.StakedAmount))
+	if err != nil {
+		return err
+	}
+
+	if refreshedAmount.Amount.GT(currentAmount) {
+		adjustment := refreshedAmount.Amount.Sub(currentAmount)
+		err = k.mintAndDelegate(ctx, agentAccAddr, &validator, sdk.NewCoin(refreshedAmount.Denom, adjustment))
+	} else if refreshedAmount.Amount.LT(currentAmount) {
+		adjustment := currentAmount.Sub(refreshedAmount.Amount)
+		err = k.undelegateAndBurn(ctx, agentAccAddr, valAddress, sdk.NewCoin(refreshedAmount.Denom, adjustment))
+	}
+
+	return err
+}
+
+// CollectAgentsReward defines a method for withdraw staking reward for all agents.
 func (k Keeper) CollectAgentsReward(ctx sdk.Context) {
 	store := ctx.KVStore(k.storeKey)
 
 	iterator := sdk.KVStorePrefixIterator(store, types.MTStakingAgentPrefix)
 	defer iterator.Close()
+	nativeCoinDenom := k.stakingKeeper.BondDenom(ctx)
 
 	for ; iterator.Valid(); iterator.Next() {
 		var agent types.MTStakingAgent
@@ -343,8 +375,7 @@ func (k Keeper) CollectAgentsReward(ctx sdk.Context) {
 			continue
 		}
 
-		// TODO multi kind reward coins
-		agent.RewardAmount = agent.RewardAmount.Add(rewards[0].Amount)
+		agent.RewardAmount = agent.RewardAmount.Add(rewards.AmountOf(nativeCoinDenom))
 		agentBz, err := k.cdc.Marshal(&agent)
 		if err != nil {
 			ctx.Logger().Error(err.Error())

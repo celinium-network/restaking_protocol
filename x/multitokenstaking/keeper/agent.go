@@ -7,12 +7,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-func (k Keeper) GetExpectedDelegationAmount(ctx sdk.Context, coin sdk.Coin) (sdk.Coin, error) {
-	defaultBondDenom := k.stakingKeeper.BondDenom(ctx)
-
-	return k.EquivalentCoinCalculator(ctx, coin, defaultBondDenom)
-}
-
 func (k Keeper) GetAllAgentsByVal(ctx sdk.Context, valAddr sdk.ValAddress) []types.MTStakingAgent {
 	store := ctx.KVStore(k.storeKey)
 	iterator := sdk.KVStorePrefixIterator(store, types.MTStakingAgentPrefix)

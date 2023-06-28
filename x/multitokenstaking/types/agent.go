@@ -5,7 +5,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-func (ma MTStakingAgent) CalculateShares(tokenAmt math.Int) math.Int {
+func (ma MTStakingAgent) CalculateSharesFromTokenAmount(tokenAmt math.Int) math.Int {
 	if ma.StakedAmount.IsZero() {
 		return tokenAmt
 	}

@@ -7,25 +7,32 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// TODO more detailed research about slash
-func (k Keeper) SlashAgentByValidatorSlash(ctx sdk.Context, valAddr sdk.ValAddress, slashFactor sdk.Dec) {
-	agents := k.GetAllAgentsByVal(ctx, valAddr)
+// SlashValidatorOfAgents define a method to slash all agent which delegate to the slashed validator.
+func (k Keeper) SlashValidatorOfAgents(ctx sdk.Context, valAddr sdk.ValAddress, slashFactor sdk.Dec) {
+	store := ctx.KVStore(k.storeKey)
+	iterator := sdk.KVStorePrefixIterator(store, types.MTStakingAgentPrefix)
+	defer iterator.Close()
 
-	slashDenom := k.stakingKeeper.GetParams(ctx).BondDenom
-	for i := 0; i < len(agents); i++ {
-		slashAmt := sdk.NewDecFromInt(agents[i].StakedAmount).Mul(slashFactor)
-		slashCoin := sdk.NewCoin(slashDenom, slashAmt.TruncateInt())
+	for ; iterator.Valid(); iterator.Next() {
+		var agent types.MTStakingAgent
+		err := k.cdc.Unmarshal(iterator.Value(), &agent)
+		if err != nil {
+			ctx.Logger().Error(fmt.Sprintf("unmarshal has err %s", err))
+			continue
+		}
 
-		agentDelegatorAddr, err := sdk.AccAddressFromBech32(agents[i].AgentAddress)
+		slashAmount := sdk.NewDecFromInt(agent.StakedAmount).Mul(slashFactor).TruncateInt()
+		slashCoin := sdk.NewCoin(agent.StakeDenom, slashAmount)
+		agentAccAddr, err := sdk.AccAddressFromBech32(agent.AgentAddress)
 		if err != nil {
 			k.Logger(ctx).Error(fmt.Sprintf("agent't delegator is invalid: %s", err))
 			continue
 		}
 
 		if err := k.bankKeeper.SendCoinsFromAccountToModule(
-			ctx, agentDelegatorAddr, types.ModuleName, sdk.Coins{slashCoin},
+			ctx, agentAccAddr, types.ModuleName, sdk.Coins{slashCoin},
 		); err != nil {
-			k.Logger(ctx).Error(fmt.Sprintf("send agent coins to module failed, agentID %s,error: %s", agents[i].AgentAddress, err))
+			k.Logger(ctx).Error(fmt.Sprintf("send agent coins to module failed, agentID %s,error: %s", agent.AgentAddress, err))
 			continue
 		}
 
@@ -34,11 +41,18 @@ func (k Keeper) SlashAgentByValidatorSlash(ctx sdk.Context, valAddr sdk.ValAddre
 			continue
 		}
 
-		agents[i].StakedAmount = agents[i].StakedAmount.Sub(slashCoin.Amount)
-		k.SetMTStakingAgent(ctx, &agents[i])
+		agent.StakedAmount = agent.StakedAmount.Sub(slashAmount)
+
+		bz, err := k.cdc.Marshal(&agent)
+		if err != nil {
+			ctx.Logger().Error(fmt.Sprintf("marshal agent failed: %v", agent))
+			continue
+		}
+		store.Set(iterator.Key(), bz)
 	}
 }
 
+// SlashDelegator define a method for slash the delegator of an agent.
 func (k Keeper) SlashDelegator(ctx sdk.Context, valAddr sdk.ValAddress, delegator sdk.AccAddress, slashCoin sdk.Coin) error {
 	agent, found := k.GetMTStakingAgent(ctx, slashCoin.Denom, valAddr.String())
 	if !found {
@@ -46,21 +60,19 @@ func (k Keeper) SlashDelegator(ctx sdk.Context, valAddr sdk.ValAddress, delegato
 	}
 
 	removedShares := agent.Shares.Mul(slashCoin.Amount).Quo(agent.StakedAmount)
-	err := k.DecreaseMTStakingShares(ctx, removedShares, agent.AgentAddress, delegator.String())
+	err := k.DecreaseDelegatorAgentShares(ctx, removedShares, agent.AgentAddress, delegator.String())
 	if err != nil {
 		return err
 	}
 	agent.StakedAmount = agent.StakedAmount.Sub(slashCoin.Amount)
 
-	agentDelegatorAddr, err := sdk.AccAddressFromBech32(agent.AgentAddress)
+	agentAccAddr, err := sdk.AccAddressFromBech32(agent.AgentAddress)
 	if err != nil {
 		k.Logger(ctx).Error(fmt.Sprintf("agent't delegator is invalid: %s", err))
 		return err
 	}
 
-	if err := k.bankKeeper.SendCoinsFromAccountToModule(
-		ctx, agentDelegatorAddr, types.ModuleName, sdk.Coins{slashCoin},
-	); err != nil {
+	if err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, agentAccAddr, types.ModuleName, sdk.Coins{slashCoin}); err != nil {
 		k.Logger(ctx).Error(fmt.Sprintf("send agent coins to module failed, agentID %s,error: %s", agent.AgentAddress, err))
 		return err
 	}
@@ -68,6 +80,11 @@ func (k Keeper) SlashDelegator(ctx sdk.Context, valAddr sdk.ValAddress, delegato
 	if err := k.bankKeeper.BurnCoins(ctx, types.ModuleName, sdk.Coins{slashCoin}); err != nil {
 		k.Logger(ctx).Error(fmt.Sprintf("burn agent cons failed: %s", err))
 		return err
+	}
+
+	// the delegation of the agent must be slashed immediately.
+	if err := k.refreshAgentDelegation(ctx, agent); err != nil {
+		ctx.Logger().Error(fmt.Sprintf("refreshAgentDelegation failed, agentAddress %s", err))
 	}
 
 	k.SetMTStakingAgent(ctx, agent)

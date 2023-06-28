@@ -11,4 +11,5 @@ var (
 	ErrNotExistedAgent       = sdkioerrors.Register(ModuleName, 4, "The validator has't multistaking agent")
 	ErrNoUnbondingDelegation = sdkioerrors.Register(ModuleName, 5, "The unbonding delegation is not existed")
 	ErrNoShares              = sdkioerrors.Register(ModuleName, 6, "The user has't shares in this agent")
+	ErrNoCoinMultiplierFound = sdkioerrors.Register(ModuleName, 7, "")
 )
