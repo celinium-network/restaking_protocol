@@ -15,7 +15,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 
-	testutilkeeper "github.com/celinium-network/restaking_protocol/testutil/keeper"
+	testutilkeeper "github.com/celinium-network/restaking_protocol/testutil/keeper/restaking"
 	coordkeeper "github.com/celinium-network/restaking_protocol/x/restaking/coordinator/keeper"
 	"github.com/celinium-network/restaking_protocol/x/restaking/coordinator/types"
 )
