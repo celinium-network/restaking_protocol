@@ -32,7 +32,7 @@ func (k Keeper) MTStakingDelegate(ctx sdk.Context, msg types.MsgMTStakingDelegat
 		return err
 	}
 
-	shares := agent.CalculateSharesFromTokenAmount(msg.Balance.Amount)
+	shares := agent.CalculateShareFromCoin(msg.Balance.Amount)
 	agent.Shares = agent.Shares.Add(shares)
 	agent.StakedAmount = agent.StakedAmount.Add(msg.Balance.Amount)
 
@@ -123,7 +123,7 @@ func (k Keeper) Unbond(ctx sdk.Context, delegatorAccAddr sdk.AccAddress, valAddr
 	}
 
 	delegatorAddr := delegatorAccAddr.String()
-	removeShares = agent.CalculateSharesFromTokenAmount(balance.Amount)
+	removeShares = agent.CalculateShareFromCoin(balance.Amount)
 	if err := k.DecreaseDelegatorAgentShares(ctx, removeShares, agent.AgentAddress, delegatorAddr); err != nil {
 		return err
 	}
@@ -198,7 +198,7 @@ func (k Keeper) getValidator(ctx sdk.Context, validatorAddress string) (*staking
 
 	validator, found := k.stakingKeeper.GetValidator(ctx, valAddr)
 	if !found {
-		return nil, sdkerrors.Wrapf(types.ErrNotExistedValidator, "address %s", valAddr)
+		return nil, sdkerrors.Wrapf(stakingtypes.ErrNoValidatorFound, "address %s", valAddr)
 	}
 	return &validator, nil
 }
@@ -282,7 +282,7 @@ func (k Keeper) instantUndelegate(ctx sdk.Context, delegatorAccAddr sdk.AccAddre
 // native coin multiplier for all token in white list
 func (k Keeper) UpdateEquivalentNativeCoinMultiplier(ctx sdk.Context, epoch int64) {
 	store := ctx.KVStore(k.storeKey)
-	prefixStore := prefix.NewStore(store, types.MTStakingDenomWhiteListKey)
+	prefixStore := prefix.NewStore(store, types.DenomWhiteListKey)
 	iterator := sdk.KVStorePrefixIterator(prefixStore, nil)
 	defer iterator.Close()
 
@@ -350,7 +350,7 @@ func (k Keeper) refreshAgentDelegation(ctx sdk.Context, agent *types.MTStakingAg
 func (k Keeper) CollectAgentsReward(ctx sdk.Context) {
 	store := ctx.KVStore(k.storeKey)
 
-	iterator := sdk.KVStorePrefixIterator(store, types.MTStakingAgentPrefix)
+	iterator := sdk.KVStorePrefixIterator(store, types.AgentPrefix)
 	defer iterator.Close()
 	nativeCoinDenom := k.stakingKeeper.BondDenom(ctx)
 

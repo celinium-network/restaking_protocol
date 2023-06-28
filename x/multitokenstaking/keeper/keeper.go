@@ -65,7 +65,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 func (k Keeper) GetMTStakingDenomWhiteList(ctx sdk.Context) (*types.MTStakingDenomWhiteList, bool) {
 	store := ctx.KVStore(k.storeKey)
 
-	bz := store.Get(types.MTStakingDenomWhiteListKey)
+	bz := store.Get(types.DenomWhiteListKey)
 	if bz == nil {
 		return nil, false
 	}
@@ -142,7 +142,7 @@ func (k Keeper) SetMTStakingDenom(ctx sdk.Context, denom string) bool {
 	}
 
 	store := ctx.KVStore(k.storeKey)
-	store.Set(types.MTStakingDenomWhiteListKey, bz)
+	store.Set(types.DenomWhiteListKey, bz)
 
 	return true
 }
@@ -317,7 +317,7 @@ func (k Keeper) sendCoinsFromAccountToAccount(ctx sdk.Context, senderAddr sdk.Ac
 // UBDQueueIterator returns all the unbonding queue timeslices from time 0 until endTime.
 func (k Keeper) UBDQueueIterator(ctx sdk.Context, endTime time.Time) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
-	return store.Iterator(types.MTStakingUnbondingQueueKey,
+	return store.Iterator(types.UnbondingQueueKey,
 		sdk.InclusiveEndBytes(types.GetMTStakingUnbondingDelegationTimeKey(endTime)))
 }
 
@@ -355,7 +355,7 @@ func (k Keeper) SetUBDQueueTimeSlice(ctx sdk.Context, timestamp time.Time, keys 
 
 func (k Keeper) GetAllAgent(ctx sdk.Context) []types.MTStakingAgent {
 	store := ctx.KVStore(k.storeKey)
-	prefixStore := prefix.NewStore(store, types.MTStakingAgentPrefix)
+	prefixStore := prefix.NewStore(store, types.AgentPrefix)
 
 	iterator := sdk.KVStorePrefixIterator(prefixStore, nil)
 	defer iterator.Close()

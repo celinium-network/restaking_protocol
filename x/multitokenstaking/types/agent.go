@@ -2,21 +2,20 @@ package types
 
 import (
 	"cosmossdk.io/math"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-func (ma MTStakingAgent) CalculateSharesFromTokenAmount(tokenAmt math.Int) math.Int {
+func (ma MTStakingAgent) CalculateShareFromCoin(tokenAmt math.Int) math.Int {
 	if ma.StakedAmount.IsZero() {
 		return tokenAmt
 	}
 
-	return sdk.NewDecFromInt(tokenAmt).QuoInt(ma.StakedAmount).MulInt(ma.Shares).TruncateInt()
+	return tokenAmt.Mul(ma.Shares).Quo(ma.StakedAmount)
 }
 
-func (ma MTStakingAgent) CalculateCoins(shareAmt math.Int) math.Int {
+func (ma MTStakingAgent) CalculateCoinFromShare(shareAmt math.Int) math.Int {
 	if ma.StakedAmount.IsZero() {
 		return math.ZeroInt()
 	}
 
-	return sdk.NewDecFromInt(shareAmt).QuoInt(ma.Shares).MulInt(ma.StakedAmount).TruncateInt()
+	return shareAmt.Mul(ma.StakedAmount).Quo(ma.Shares)
 }

@@ -24,27 +24,27 @@ const (
 
 var (
 	// Key for the denom white list which allow used for multistaking
-	MTStakingDenomWhiteListKey = []byte{0x11}
+	DenomWhiteListKey = []byte{0x11}
 
 	// Prefix for key which used in `{denom + validator_address} => MTStakingAgent's ID`
 	MTStakingAgentIDPrefix = []byte{0x21}
 
 	// Prefix for Key which used in `agent_address => MTStakingAgent`
-	MTStakingAgentPrefix = []byte{0x22}
+	AgentPrefix = []byte{0x22}
 
 	// Prefix for key which used in `{agent_address + delegator_address} => MTStakingUnbonding`
-	MTStakingUnbondingPrefix = []byte{0x31}
+	UnbondingPrefix = []byte{0x31}
 
-	MTStakingUnbondingQueueKey = []byte{0x32}
+	UnbondingQueueKey = []byte{0x32}
 
 	// Prefix for key which used in `{agent_address + delegator_address} => shares_amount`
-	MTStakingSharesPrefix = []byte{0x41}
+	SharesPrefix = []byte{0x41}
 
 	// Prefix for key used in store total minted
-	MTStakingMintedKey = []byte{0x51}
+	MintedKey = []byte{0x51}
 
 	// Prefix for key used in store EquivalentMultiplierRecord
-	MTTokenMultiplierPrefix = []byte{0x61}
+	TokenMultiplierPrefix = []byte{0x61}
 )
 
 func GetMTStakingAgentIDKey(denom, valAddr string) []byte {
@@ -65,16 +65,16 @@ func GetMTStakingAgentIDKey(denom, valAddr string) []byte {
 }
 
 func GetMTStakingAgentKey(agentAddr string) []byte {
-	return append(MTStakingAgentPrefix, []byte(agentAddr)...)
+	return append(AgentPrefix, []byte(agentAddr)...)
 }
 
 func GetMTStakingSharesKey(agentAddr string, delegator string) []byte {
 	agentAddBz := address.MustLengthPrefix([]byte(agentAddr))
 	delegatorBz := utils.BytesLengthPrefix([]byte(delegator))
-	prefixLen := len(MTStakingSharesPrefix)
+	prefixLen := len(SharesPrefix)
 
 	bz := make([]byte, prefixLen+len(agentAddBz)+len(delegatorBz))
-	copy(bz[:prefixLen], MTStakingSharesPrefix)
+	copy(bz[:prefixLen], SharesPrefix)
 	copy(bz[prefixLen:prefixLen+len(agentAddBz)], agentAddBz)
 	copy(bz[prefixLen+len(agentAddBz):], delegatorBz)
 
@@ -84,11 +84,11 @@ func GetMTStakingSharesKey(agentAddr string, delegator string) []byte {
 func GetMTStakingUnbondingKey(agentAddr string, delegator string) []byte {
 	agentAddBz := address.MustLengthPrefix([]byte(agentAddr))
 	delegatorBz := address.MustLengthPrefix([]byte(delegator))
-	prefixLen := len(MTStakingUnbondingPrefix)
+	prefixLen := len(UnbondingPrefix)
 
 	bz := make([]byte, prefixLen+len(agentAddBz)+len(delegatorBz))
 
-	copy(bz[:prefixLen], MTStakingUnbondingPrefix)
+	copy(bz[:prefixLen], UnbondingPrefix)
 	copy(bz[prefixLen:prefixLen+len(agentAddBz)], agentAddBz)
 	copy(bz[prefixLen+len(agentAddBz):], delegatorBz)
 
@@ -97,21 +97,13 @@ func GetMTStakingUnbondingKey(agentAddr string, delegator string) []byte {
 
 func GetMTStakingUnbondingDelegationTimeKey(timestamp time.Time) []byte {
 	bz := sdk.FormatTimeBytes(timestamp)
-	return append(MTStakingUnbondingQueueKey, bz...)
+	return append(UnbondingQueueKey, bz...)
 }
 
 func GetMTStakingMintedKey() []byte {
-	return MTStakingMintedKey
+	return MintedKey
 }
 
 func GetMTTokenMultiplierKey(denom string) []byte {
-	return append(MTTokenMultiplierPrefix, denom...)
-}
-
-func (ubd *MTStakingUnbonding) RemoveEntry(i int64) {
-	ubd.Entries = append(ubd.Entries[:i], ubd.Entries[i+1:]...)
-}
-
-func (e MTStakingUnbondingEntry) IsMature(currentTime time.Time) bool {
-	return !e.CompletionTime.After(currentTime)
+	return append(TokenMultiplierPrefix, denom...)
 }

@@ -9,7 +9,7 @@ import (
 
 func (k Keeper) GetAllAgentsByVal(ctx sdk.Context, valAddr sdk.ValAddress) []types.MTStakingAgent {
 	store := ctx.KVStore(k.storeKey)
-	iterator := sdk.KVStorePrefixIterator(store, types.MTStakingAgentPrefix)
+	iterator := sdk.KVStorePrefixIterator(store, types.AgentPrefix)
 	defer iterator.Close()
 
 	valAddrStr := valAddr.String()

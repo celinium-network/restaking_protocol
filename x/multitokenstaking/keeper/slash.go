@@ -10,7 +10,7 @@ import (
 // SlashDelegatingAgentsToValidator define a method to slash all agent which delegate to the slashed validator.
 func (k Keeper) SlashDelegatingAgentsToValidator(ctx sdk.Context, valAddr sdk.ValAddress, slashFactor sdk.Dec) {
 	store := ctx.KVStore(k.storeKey)
-	iterator := sdk.KVStorePrefixIterator(store, types.MTStakingAgentPrefix)
+	iterator := sdk.KVStorePrefixIterator(store, types.AgentPrefix)
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {
@@ -85,6 +85,7 @@ func (k Keeper) SlashDelegator(ctx sdk.Context, valAddr sdk.ValAddress, delegato
 	// the delegation of the agent must be slashed immediately.
 	if err := k.refreshAgentDelegation(ctx, agent); err != nil {
 		ctx.Logger().Error(fmt.Sprintf("refreshAgentDelegation failed, agentAddress %s", err))
+		return err
 	}
 
 	k.SetMTStakingAgent(ctx, agent)
