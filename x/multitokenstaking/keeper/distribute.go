@@ -8,7 +8,7 @@ import (
 
 func (k Keeper) WithdrawRestakingReward(ctx sdk.Context, agentAddress string, delegator string) (sdk.Coin, error) {
 	var reward sdk.Coin
-	shares := k.GetMTStakingShares(ctx, agentAddress, delegator)
+	shares := k.GetDelegatorAgentShares(ctx, agentAddress, delegator)
 	if shares.IsZero() {
 		return sdk.Coin{}, types.ErrNoShares
 	}

@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"strings"
 	"time"
 
 	"cosmossdk.io/math"
@@ -62,23 +61,6 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", "x/"+types.ModuleName)
 }
 
-func (k Keeper) GetMTStakingDenomWhiteList(ctx sdk.Context) (*types.MTStakingDenomWhiteList, bool) {
-	store := ctx.KVStore(k.storeKey)
-
-	bz := store.Get(types.DenomWhiteListKey)
-	if bz == nil {
-		return nil, false
-	}
-
-	whiteList := &types.MTStakingDenomWhiteList{}
-
-	if err := k.cdc.Unmarshal(bz, whiteList); err != nil {
-		return nil, false
-	}
-
-	return whiteList, true
-}
-
 func (k Keeper) SetEquivalentNativeCoinMultiplier(ctx sdk.Context, epoch int64, denom string, multiplier sdk.Dec) {
 	store := ctx.KVStore(k.storeKey)
 	record := types.EquivalentMultiplierRecord{
@@ -120,33 +102,6 @@ func (k Keeper) CalculateEquivalentNativeCoin(ctx sdk.Context, coin sdk.Coin) (t
 	return targetCoin, nil
 }
 
-func (k Keeper) SetMTStakingDenom(ctx sdk.Context, denom string) bool {
-	whiteList, found := k.GetMTStakingDenomWhiteList(ctx)
-	if !found || whiteList == nil {
-		whiteList = &types.MTStakingDenomWhiteList{
-			DenomList: []string{denom},
-		}
-	} else {
-		for _, existedDenom := range whiteList.DenomList {
-			if strings.Compare(existedDenom, denom) == 0 {
-				return false
-			}
-		}
-
-		whiteList.DenomList = append(whiteList.DenomList, denom)
-	}
-
-	bz, err := k.cdc.Marshal(whiteList)
-	if err != nil {
-		return false
-	}
-
-	store := ctx.KVStore(k.storeKey)
-	store.Set(types.DenomWhiteListKey, bz)
-
-	return true
-}
-
 func (k Keeper) GetMTStakingAgentByAddress(ctx sdk.Context, agentAddr string) (*types.MTStakingAgent, bool) {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetMTStakingAgentKey(agentAddr))
@@ -162,7 +117,7 @@ func (k Keeper) GetMTStakingAgentByAddress(ctx sdk.Context, agentAddr string) (*
 }
 
 func (k Keeper) GetMTStakingAgent(ctx sdk.Context, denom string, valAddr string) (*types.MTStakingAgent, bool) {
-	agentID, found := k.GetMTStakingAgentAressByDenomAndVal(ctx, denom, valAddr)
+	agentID, found := k.GetMTStakingAgentAddressByDenomAndVal(ctx, denom, valAddr)
 	if !found {
 		return nil, false
 	}
@@ -177,7 +132,7 @@ func (k Keeper) SetMTStakingAgent(ctx sdk.Context, agent *types.MTStakingAgent) 
 	store.Set(types.GetMTStakingAgentKey(agent.AgentAddress), bz)
 }
 
-func (k Keeper) GetMTStakingAgentAressByDenomAndVal(ctx sdk.Context, denom string, valAddr string) (string, bool) {
+func (k Keeper) GetMTStakingAgentAddressByDenomAndVal(ctx sdk.Context, denom string, valAddr string) (string, bool) {
 	store := ctx.KVStore(k.storeKey)
 
 	bz := store.Get(types.GetMTStakingAgentIDKey(denom, valAddr))
@@ -233,7 +188,7 @@ func (k Keeper) RemoveMTStakingUnbonding(ctx sdk.Context, agentAddress string, d
 	store.Delete(types.GetMTStakingUnbondingKey(agentAddress, delegatorAddr))
 }
 
-func (k Keeper) GetMTStakingShares(ctx sdk.Context, agentAddress string, delegator string) math.Int {
+func (k Keeper) GetDelegatorAgentShares(ctx sdk.Context, agentAddress string, delegator string) math.Int {
 	amount := math.ZeroInt()
 	store := ctx.KVStore(k.storeKey)
 	key := types.GetMTStakingSharesKey(agentAddress, delegator)

@@ -114,7 +114,7 @@ func NewIntegrationTestSuite() *IntegrationTestSuite {
 		ctx := consumerChian.GetContext()
 		consumerApp.RestakingConsumerKeeper.InitGenesis(ctx, nil)
 		// TODO the params of coordinator and consumer maybe in different package
-		consumerApp.MTStakingKeeper.SetMTStakingDenom(ctx, params.DefaultBondDenom)
+		consumerApp.MTStakingKeeper.AddMTStakingDenom(ctx, params.DefaultBondDenom)
 
 		return consumerChian, consumerApp
 	}
