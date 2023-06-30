@@ -261,7 +261,7 @@ func (k Keeper) instantUndelegate(ctx sdk.Context, delegatorAccAddr sdk.AccAddre
 		return nil, err
 	}
 
-	bondDenom := k.stakingKeeper.GetParams(ctx).BondDenom
+	bondDenom := k.stakingKeeper.BondDenom(ctx)
 	unbondCoin := sdk.NewCoin(bondDenom, unbondAmount)
 	unbondCoins := sdk.NewCoins(unbondCoin)
 
