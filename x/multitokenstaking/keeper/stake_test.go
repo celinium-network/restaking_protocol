@@ -160,7 +160,7 @@ func (s *KeeperTestSuite) TestMTStakingUndelegate() {
 
 		rewardAmount := mustNewIntForStr("340282366920938463463374607431753211455")
 		rewardCoins := sdk.Coins{sdk.NewCoin(defaultBondDenom, rewardAmount)}
-		delegatorRewardAmount := rewardAmount.Mul(undelegateAmount.Mul(agent.Shares).Quo(agent.Shares)).Quo(agent.Shares)
+		delegatorRewardAmount := rewardAmount.Mul(delegatorShares).Quo(agent.Shares)
 		delegatorRewardCoins := sdk.Coins{sdk.NewCoin(defaultBondDenom, delegatorRewardAmount)}
 		agentUndelegateAmount := multiplier.MulInt(undelegateAmount).TruncateInt()
 		unbondShares := validator.DelegatorShares.MulInt(agentUndelegateAmount).QuoInt(validator.Tokens)
@@ -273,6 +273,8 @@ func (s *KeeperTestSuite) TestMTStakingUndelegate() {
 			s.mtStakingKeeper.IncreaseDelegatorAgentShares(s.ctx, t.delegatorShares, t.agent.AgentAddress, delegatorAddress)
 		}
 
+		s.ctx = s.ctx.WithBlockHeight(s.ctx.BlockHeight() + 100)
+
 		expectOtherKeeperAction(
 			t.validator,
 			t.delegatorAccAddr,
@@ -288,6 +290,10 @@ func (s *KeeperTestSuite) TestMTStakingUndelegate() {
 			ValidatorAddress: t.validator.OperatorAddress,
 			Balance:          undelegateCoin,
 		})
+		if t.expectedError != nil {
+			s.Require().Equal(err, t.expectedAgent)
+			continue
+		}
 		s.Require().NoError(err, t.describe)
 
 		agent, found := s.mtStakingKeeper.GetMTStakingAgent(s.ctx, mtStakingDenom, t.validator.OperatorAddress)
@@ -296,8 +302,16 @@ func (s *KeeperTestSuite) TestMTStakingUndelegate() {
 		s.Require().Equal(agent.ValidatorAddress, t.validator.OperatorAddress, t.describe, "agent has mismatch Shares")
 		s.Require().True(agent.StakedAmount.Equal(t.expectedAgent.StakedAmount), t.describe, "agent has mismatch stakedAmount")
 		s.Require().True(agent.Shares.Equal(t.expectedAgent.Shares), t.describe, "agent has mismatch Shares")
-
 		shares := s.mtStakingKeeper.GetDelegatorAgentShares(s.ctx, agent.AgentAddress, delegatorAddress)
 		s.Require().True(shares.Equal(t.expectedDelegatorShares), t.describe, "delegator has mismatch Shares")
+
+		// check unbonding state
+		unbonding, found := s.mtStakingKeeper.GetMTStakingUnbonding(s.ctx, t.agent.AgentAddress, delegatorAddress)
+		s.Require().True(found, t.describe, "no unbonding")
+		s.Require().Equal(len(unbonding.Entries), 1, t.describe, "unbonding entries len mismatch")
+		s.Require().True(unbonding.Entries[0].CompletionTime.Equal(
+			s.ctx.BlockTime().Add(defaultUnbondTime)),
+			t.describe, "mismatch unbonding complete time")
+		s.Require().True(unbonding.Entries[0].Balance.Amount.Equal(t.undelegateAmount), t.describe, "mismatch unbonding balance")
 	}
 }

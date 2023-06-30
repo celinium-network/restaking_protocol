@@ -75,6 +75,9 @@ message MTStakingAgent{
         (gogoproto.customtype) = "Int",
         (gogoproto.nullable)   = false
     ];
+
+    // block heigt of create the agent.
+    int64 created_block_height = 8;
 }
 
 // MTStakingUnbonding represents the unbonding information for a multi-token staking agent.

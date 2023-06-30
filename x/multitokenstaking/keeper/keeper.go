@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	stdmath "math"
 	"time"
 
 	"cosmossdk.io/math"
@@ -326,4 +327,45 @@ func (k Keeper) GetAllAgent(ctx sdk.Context) []types.MTStakingAgent {
 		agents = append(agents, agent)
 	}
 	return agents
+}
+
+func (k Keeper) GetDelegatorWithdrawRewardHeight(ctx sdk.Context, delegatorAccAddr, agentAccAddr sdk.AccAddress) (int64, bool) {
+	store := ctx.KVStore(k.storeKey)
+	key := types.GetMTWithdrawRewardHeightKey(delegatorAccAddr, agentAccAddr)
+
+	bz := store.Get(key)
+	if bz == nil {
+		return 0, false
+	}
+	height := sdk.BigEndianToUint64(bz)
+	return safeUint64ToInt64(height)
+}
+
+func (k Keeper) SetDelegatorWithdrawRewardHeight(ctx sdk.Context, delegatorAccAddr, agentAccAddr sdk.AccAddress, height int64) bool {
+	h, ok := safeInt64ToUint64(height)
+	if !ok {
+		return false
+	}
+
+	bz := sdk.Uint64ToBigEndian(h)
+	store := ctx.KVStore(k.storeKey)
+	key := types.GetMTWithdrawRewardHeightKey(delegatorAccAddr, agentAccAddr)
+
+	store.Set(key, bz)
+	return true
+}
+
+// TODO BlockHeight should be always unsigned, and maxInt64 is big enough.
+func safeUint64ToInt64(value uint64) (int64, bool) {
+	if value > stdmath.MaxInt64 {
+		return 0, false
+	}
+	return int64(value), true
+}
+
+func safeInt64ToUint64(value int64) (uint64, bool) {
+	if value < 0 {
+		return 0, false
+	}
+	return uint64(value), true
 }

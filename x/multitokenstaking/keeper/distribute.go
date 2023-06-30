@@ -1,40 +1,66 @@
 package keeper
 
 import (
+	"errors"
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 )
 
-func (k Keeper) WithdrawRestakingReward(ctx sdk.Context, agentAddress string, delegator string) (sdk.Coin, error) {
-	var reward sdk.Coin
-	shares := k.GetDelegatorAgentShares(ctx, agentAddress, delegator)
-	if shares.IsZero() {
-		return sdk.Coin{}, types.ErrNoShares
+func (k Keeper) distributeDelegatorReward(
+	ctx sdk.Context,
+	delegatorAccAddr sdk.AccAddress,
+	agentAccAddr sdk.AccAddress,
+	valAddr sdk.ValAddress,
+	agent *types.MTStakingAgent,
+) error {
+	nativeCoinDenom := k.stakingKeeper.BondDenom(ctx)
+	rewards, err := k.distributionKeeper.WithdrawDelegationRewards(ctx, agentAccAddr, valAddr)
+	if err != nil {
+		k.Logger(ctx).Error(fmt.Sprintf("withdraw delegation rewards failed %s", err))
+		return err
 	}
 
-	agent, found := k.GetMTStakingAgentByAddress(ctx, agentAddress)
-	if !found {
-		return sdk.Coin{}, types.ErrNotExistedAgent
+	delegatorShares := k.GetDelegatorAgentShares(ctx, agentAccAddr.String(), delegatorAccAddr.String())
+	if delegatorShares.IsZero() {
+		return nil
 	}
 
-	if agent.RewardAmount.IsZero() {
-		return sdk.Coin{}, nil
+	// Currently only native coin rewards are considered
+	agent.RewardAmount = agent.RewardAmount.Add(rewards.AmountOf(nativeCoinDenom))
+	curBlockHeight := ctx.BlockHeight()
+	rewardDuration := curBlockHeight - agent.CreatedBlockHeight
+	// TODO rewardDuration == 0, maybe let delegator get all reward, don't care staked time?
+	if !agent.RewardAmount.IsZero() && rewardDuration == 0 {
+		return errors.New("agent has't reward")
 	}
 
-	amount := agent.RewardAmount.Mul(shares).Quo(agent.Shares)
-	if amount.IsZero() {
-		return sdk.Coin{}, nil
+	withdrawHeight, ok := k.GetDelegatorWithdrawRewardHeight(ctx, delegatorAccAddr, agentAccAddr)
+	if !ok {
+		withdrawHeight = agent.CreatedBlockHeight
 	}
-	delegatorAccAddr := sdk.MustAccAddressFromBech32(delegator)
-	agentAccAddr := sdk.MustAccAddressFromBech32(agent.AgentAddress)
 
-	reward.Denom = k.stakingKeeper.BondDenom(ctx)
-	reward.Amount = amount
-	if err := k.sendCoinsFromAccountToAccount(
-		ctx, agentAccAddr, delegatorAccAddr, sdk.Coins{reward},
-	); err != nil {
-		return sdk.Coin{}, err
+	withdrawDuration := curBlockHeight - withdrawHeight
+	if withdrawDuration <= 0 {
+		return errors.New("staking duration is too short")
 	}
-	return reward, nil
+
+	delegatorRewardAmt := agent.RewardAmount.Mul(delegatorShares).MulRaw(withdrawDuration).Quo(agent.Shares).QuoRaw(rewardDuration)
+	if delegatorRewardAmt.IsZero() {
+		return errors.New("delegator has't reward")
+	}
+
+	// delegator get staking rewards immediately.
+	rewardCoins := sdk.Coins{sdk.NewCoin(nativeCoinDenom, delegatorRewardAmt)}
+	if err := k.sendCoinsFromAccountToAccount(ctx, agentAccAddr, delegatorAccAddr, rewardCoins); err != nil {
+		return err
+	}
+
+	agent.RewardAmount.Sub(delegatorRewardAmt)
+	// only after get some reward, the withdraw height can be reset.
+	k.SetDelegatorWithdrawRewardHeight(ctx, delegatorAccAddr, agentAccAddr, curBlockHeight)
+
+	return nil
 }

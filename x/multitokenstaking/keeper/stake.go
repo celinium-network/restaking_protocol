@@ -122,34 +122,10 @@ func (k Keeper) Unbond(ctx sdk.Context, delegatorAccAddr sdk.AccAddress, valAddr
 		return types.ErrNotExistedAgent
 	}
 
-	delegatorAddr := delegatorAccAddr.String()
-	removeShares = agent.CalculateShareFromCoin(balance.Amount)
-	if err := k.DecreaseDelegatorAgentShares(ctx, removeShares, agent.AgentAddress, delegatorAddr); err != nil {
-		return err
-	}
-
-	nativeCoinDenom := k.stakingKeeper.BondDenom(ctx)
 	agentAccAddr := sdk.MustAccAddressFromBech32(agent.AgentAddress)
-	rewards, err := k.distributionKeeper.WithdrawDelegationRewards(ctx, agentAccAddr, valAddr)
-	if err != nil {
-		k.Logger(ctx).Error(fmt.Sprintf("withdraw delegation rewards failed %s", err))
-		return err
-	}
 
-	// Currently only native coin rewards are considered
-	agent.RewardAmount = agent.RewardAmount.Add(rewards.AmountOf(nativeCoinDenom))
-	if !agent.RewardAmount.IsZero() {
-		delegatorRewardAmt := agent.RewardAmount.Mul(removeShares).Quo(agent.Shares)
-		if !delegatorRewardAmt.IsZero() {
-			// delegator get staking rewards immediately.
-			rewardCoins := sdk.Coins{sdk.NewCoin(nativeCoinDenom, delegatorRewardAmt)}
-			if err := k.sendCoinsFromAccountToAccount(ctx, agentAccAddr, delegatorAccAddr, rewardCoins); err != nil {
-				return err
-			}
-
-			agent.RewardAmount.Sub(delegatorRewardAmt)
-		}
-	}
+	// delegator withdraw all staking reward by owner shares
+	k.distributeDelegatorReward(ctx, delegatorAccAddr, agentAccAddr, valAddr, agent)
 
 	eqNativeBalance, err := k.CalculateEquivalentNativeCoin(ctx, balance)
 	if err != nil {
@@ -157,6 +133,12 @@ func (k Keeper) Unbond(ctx sdk.Context, delegatorAccAddr sdk.AccAddress, valAddr
 	}
 
 	if err := k.undelegateAndBurn(ctx, agentAccAddr, valAddr, eqNativeBalance); err != nil {
+		return err
+	}
+
+	delegatorAddr := delegatorAccAddr.String()
+	removeShares = agent.CalculateShareFromCoin(balance.Amount)
+	if err := k.DecreaseDelegatorAgentShares(ctx, removeShares, agent.AgentAddress, delegatorAddr); err != nil {
 		return err
 	}
 
@@ -225,13 +207,14 @@ func (k Keeper) GetOrCreateMTStakingAgent(ctx sdk.Context, denom, valAddr string
 	newAccount := k.GenerateAccount(ctx, denom, valAddr)
 
 	agent = &types.MTStakingAgent{
-		StakeDenom:       denom,
-		AgentAddress:     newAccount.Address,
-		ValidatorAddress: valAddr,
-		RewardAddress:    newAccount.Address,
-		StakedAmount:     math.ZeroInt(),
-		Shares:           math.ZeroInt(),
-		RewardAmount:     math.ZeroInt(),
+		AgentAddress:       newAccount.Address,
+		StakeDenom:         denom,
+		ValidatorAddress:   valAddr,
+		RewardAddress:      newAccount.Address,
+		StakedAmount:       math.ZeroInt(),
+		Shares:             math.ZeroInt(),
+		RewardAmount:       math.ZeroInt(),
+		CreatedBlockHeight: ctx.BlockHeight(),
 	}
 
 	return agent

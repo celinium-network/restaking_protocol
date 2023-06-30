@@ -45,6 +45,9 @@ var (
 
 	// Prefix for key used in store EquivalentMultiplierRecord
 	TokenMultiplierPrefix = []byte{0x61}
+
+	// Prefix for key used in store blockHeight of delegator withdraw reward
+	WithdrawRewardPrefix = []byte{0x71}
 )
 
 func GetMTStakingAgentIDKey(denom, valAddr string) []byte {
@@ -106,4 +109,10 @@ func GetMTStakingMintedKey() []byte {
 
 func GetMTTokenMultiplierKey(denom string) []byte {
 	return append(TokenMultiplierPrefix, denom...)
+}
+
+func GetMTWithdrawRewardHeightKey(delegator, agent sdk.AccAddress) []byte {
+	dbz := address.MustLengthPrefix(delegator)
+	abz := address.MustLengthPrefix(agent)
+	return append(WithdrawRewardPrefix, append(dbz, abz...)...)
 }
