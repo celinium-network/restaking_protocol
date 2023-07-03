@@ -98,6 +98,18 @@ func GetMTStakingUnbondingKey(agentAddr string, delegator string) []byte {
 	return bz
 }
 
+func GetMTStakingUnbondingByAgentIndexKey(agentAddr string) []byte {
+	agentAddBz := address.MustLengthPrefix([]byte(agentAddr))
+	prefixLen := len(UnbondingPrefix)
+
+	bz := make([]byte, prefixLen+len(agentAddBz))
+
+	copy(bz[:prefixLen], UnbondingPrefix)
+	copy(bz[prefixLen:prefixLen+len(agentAddBz)], agentAddBz)
+
+	return bz
+}
+
 func GetMTStakingUnbondingDelegationTimeKey(timestamp time.Time) []byte {
 	bz := sdk.FormatTimeBytes(timestamp)
 	return append(UnbondingQueueKey, bz...)

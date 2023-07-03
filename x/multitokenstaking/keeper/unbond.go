@@ -19,10 +19,10 @@ func (k Keeper) ProcessCompletedUnbonding(ctx sdk.Context) {
 	}
 }
 
-func (k Keeper) DequeueAllMatureUBDQueue(ctx sdk.Context, currTime time.Time) (matureUnbonds []types.DAPair) {
+func (k Keeper) DequeueAllMatureUBDQueue(ctx sdk.Context, curTime time.Time) (matureUnbonds []types.DAPair) {
 	store := ctx.KVStore(k.storeKey)
 
-	unbondingTimesliceIterator := k.UBDQueueIterator(ctx, currTime)
+	unbondingTimesliceIterator := k.UBDQueueIterator(ctx, curTime)
 	defer unbondingTimesliceIterator.Close()
 
 	for ; unbondingTimesliceIterator.Valid(); unbondingTimesliceIterator.Next() {
@@ -78,7 +78,7 @@ func (k Keeper) CompleteUnbonding(ctx sdk.Context, delegator string, agentAddres
 	if len(ubd.Entries) == 0 {
 		k.RemoveMTStakingUnbonding(ctx, agentAddress, delegator)
 	} else {
-		k.SetMTStakingUnbonding(ctx, agentAddress, delegator, ubd)
+		k.SetMTStakingUnbondingDelegation(ctx, ubd)
 	}
 
 	return balances, nil

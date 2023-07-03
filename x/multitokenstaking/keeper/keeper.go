@@ -150,7 +150,7 @@ func (k Keeper) SetMTStakingDenomAndValWithAgentAddress(ctx sdk.Context, agentAd
 	store.Set(types.GetMTStakingAgentIDKey(denom, valAddr), []byte(agentAddress))
 }
 
-func (k Keeper) GetMTStakingUnbonding(ctx sdk.Context, agentAddress string, delegatorAddr string) (*types.MTStakingUnbonding, bool) {
+func (k Keeper) GetMTStakingUnbonding(ctx sdk.Context, agentAddress string, delegatorAddr string) (*types.MTStakingUnbondingDelegation, bool) {
 	store := ctx.KVStore(k.storeKey)
 
 	bz := store.Get(types.GetMTStakingUnbondingKey(agentAddress, delegatorAddr))
@@ -158,30 +158,45 @@ func (k Keeper) GetMTStakingUnbonding(ctx sdk.Context, agentAddress string, dele
 		return nil, false
 	}
 
-	unbonding := &types.MTStakingUnbonding{}
+	unbonding := &types.MTStakingUnbondingDelegation{}
 	k.cdc.MustUnmarshal(bz, unbonding)
 	return unbonding, true
 }
 
-func (k Keeper) GetOrCreateMTStakingUnbonding(ctx sdk.Context, agentAddress string, delegatorAddr string) *types.MTStakingUnbonding {
+func (k Keeper) GetUnbondingDelegationFromAgent(ctx sdk.Context, agentAddress string) (ubds []types.MTStakingUnbondingDelegation) {
+	store := ctx.KVStore(k.storeKey)
+
+	iterator := sdk.KVStorePrefixIterator(store, types.GetMTStakingUnbondingByAgentIndexKey(agentAddress))
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		unbonding := types.MTStakingUnbondingDelegation{}
+		bz := iterator.Value()
+		k.cdc.MustUnmarshal(bz, &unbonding)
+		ubds = append(ubds, unbonding)
+	}
+	return ubds
+}
+
+func (k Keeper) GetOrCreateMTStakingUnbonding(ctx sdk.Context, agentAddress string, delegatorAddr string) *types.MTStakingUnbondingDelegation {
 	unbonding, found := k.GetMTStakingUnbonding(ctx, agentAddress, delegatorAddr)
 	if found {
 		return unbonding
 	}
 
-	unbonding = &types.MTStakingUnbonding{
+	unbonding = &types.MTStakingUnbondingDelegation{
 		AgentAddress:     agentAddress,
 		DelegatorAddress: delegatorAddr,
-		Entries:          []types.MTStakingUnbondingEntry{},
+		Entries:          []types.MTStakingUnbondingDelegationEntry{},
 	}
 	return unbonding
 }
 
-func (k Keeper) SetMTStakingUnbonding(ctx sdk.Context, agentAddress string, delegatorAddr string, unbonding *types.MTStakingUnbonding) {
+func (k Keeper) SetMTStakingUnbondingDelegation(ctx sdk.Context, unbonding *types.MTStakingUnbondingDelegation) {
 	store := ctx.KVStore(k.storeKey)
 	bz := k.cdc.MustMarshal(unbonding)
 
-	store.Set(types.GetMTStakingUnbondingKey(agentAddress, delegatorAddr), bz)
+	store.Set(types.GetMTStakingUnbondingKey(unbonding.AgentAddress, unbonding.DelegatorAddress), bz)
 }
 
 func (k Keeper) RemoveMTStakingUnbonding(ctx sdk.Context, agentAddress string, delegatorAddr string) {
@@ -277,7 +292,7 @@ func (k Keeper) UBDQueueIterator(ctx sdk.Context, endTime time.Time) sdk.Iterato
 		sdk.InclusiveEndBytes(types.GetMTStakingUnbondingDelegationTimeKey(endTime)))
 }
 
-func (k Keeper) InsertUBDQueue(ctx sdk.Context, ubd *types.MTStakingUnbonding, completionTime time.Time) {
+func (k Keeper) InsertUBDQueue(ctx sdk.Context, ubd *types.MTStakingUnbondingDelegation, completionTime time.Time) {
 	daPair := types.DAPair{DelegatorAddress: ubd.DelegatorAddress, AgentAddress: ubd.AgentAddress}
 
 	timeSlice := k.GetUBDQueueTimeSlice(ctx, completionTime)

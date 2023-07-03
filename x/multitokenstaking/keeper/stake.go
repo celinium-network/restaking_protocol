@@ -102,13 +102,14 @@ func (k Keeper) MTStakingUndelegate(ctx sdk.Context, msg *types.MsgMTStakingUnde
 
 	// TODO Whether the length of the entries should be limited ?
 	undelegateCompleteTime := ctx.BlockTime().Add(unbondingTime)
-	unbonding.Entries = append(unbonding.Entries, types.MTStakingUnbondingEntry{
+	unbonding.Entries = append(unbonding.Entries, types.MTStakingUnbondingDelegationEntry{
+		CreatedHeight:  ctx.BlockHeight(),
 		CompletionTime: undelegateCompleteTime,
 		InitialBalance: msg.Balance,
 		Balance:        msg.Balance,
 	})
 
-	k.SetMTStakingUnbonding(ctx, agent.AgentAddress, msg.DelegatorAddress, unbonding)
+	k.SetMTStakingUnbondingDelegation(ctx, unbonding)
 	k.InsertUBDQueue(ctx, unbonding, undelegateCompleteTime)
 
 	return nil

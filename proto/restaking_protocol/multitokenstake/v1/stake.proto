@@ -80,25 +80,26 @@ message MTStakingAgent{
     int64 created_block_height = 8;
 }
 
-// MTStakingUnbonding represents the unbonding information for a multi-token staking agent.
-message MTStakingUnbonding{
+// MTStakingUnbondingDelegation represents the unbonding information for a multi-token staking agent.
+message MTStakingUnbondingDelegation{
     // Agent ID.
     string agent_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
     // Delegator's address.
     string delegator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; 
     // List of unbonding entries.
-    repeated MTStakingUnbondingEntry entries = 3 [(gogoproto.nullable) = false];
+    repeated MTStakingUnbondingDelegationEntry entries = 3 [(gogoproto.nullable) = false];
 }
 
-// MTStakingUnbondingEntry represents an unbonding entry for a multi-token staking agent.
-message MTStakingUnbondingEntry{
+// MTStakingUnbondingDelegationEntry represents an unbonding entry for a multi-token staking agent.
+message MTStakingUnbondingDelegationEntry{
+    int64 created_height = 1;
     // Completion time of the unbonding entry.
-    google.protobuf.Timestamp completion_time = 1 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
+    google.protobuf.Timestamp completion_time = 2 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
     // Initial balance of the unbonding entry.
-    cosmos.base.v1beta1.Coin initial_balance = 2
+    cosmos.base.v1beta1.Coin initial_balance = 3
         [(gogoproto.nullable) = false, (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coin" ];    
     // Current balance of the unbonding entry.
-    cosmos.base.v1beta1.Coin balance = 3
+    cosmos.base.v1beta1.Coin balance = 4
         [(gogoproto.nullable) = false, (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coin" ];        
 }
 

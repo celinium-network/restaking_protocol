@@ -1057,18 +1057,18 @@ func (mr *MockMTStakingKeeperMockRecorder) MTStakingDelegate(ctx, msg interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MTStakingDelegate", reflect.TypeOf((*MockMTStakingKeeper)(nil).MTStakingDelegate), ctx, msg)
 }
 
-// SlashDelegator mocks base method.
-func (m *MockMTStakingKeeper) SlashDelegator(ctx types1.Context, valAddr types1.ValAddress, delegator types1.AccAddress, slashCoin types1.Coin) error {
+// InstantSlash mocks base method.
+func (m *MockMTStakingKeeper) InstantSlash(ctx types1.Context, valAddr types1.ValAddress, delegator types1.AccAddress, slashCoin types1.Coin) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SlashDelegator", ctx, valAddr, delegator, slashCoin)
+	ret := m.ctrl.Call(m, "InstantSlash", ctx, valAddr, delegator, slashCoin)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// SlashDelegator indicates an expected call of SlashDelegator.
-func (mr *MockMTStakingKeeperMockRecorder) SlashDelegator(ctx, valAddr, delegator, slashCoin interface{}) *gomock.Call {
+// InstantSlash indicates an expected call of InstantSlash.
+func (mr *MockMTStakingKeeperMockRecorder) InstantSlash(ctx, valAddr, delegator, slashCoin interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SlashDelegator", reflect.TypeOf((*MockMTStakingKeeper)(nil).SlashDelegator), ctx, valAddr, delegator, slashCoin)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstantSlash", reflect.TypeOf((*MockMTStakingKeeper)(nil).InstantSlash), ctx, valAddr, delegator, slashCoin)
 }
 
 // Unbond mocks base method.

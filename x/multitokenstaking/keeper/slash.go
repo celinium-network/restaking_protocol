@@ -3,12 +3,14 @@ package keeper
 import (
 	"fmt"
 
-	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 )
 
-// SlashDelegatingAgentsToValidator define a method to slash all agent which delegate to the slashed validator.
-func (k Keeper) SlashDelegatingAgentsToValidator(ctx sdk.Context, valAddr sdk.ValAddress, slashFactor sdk.Dec) {
+// SlashAgentByValidator define a method to slash all agent which delegate to the slashed validator.
+func (k Keeper) SlashAgentByValidator(ctx sdk.Context, valAddr sdk.ValAddress, slashFactor sdk.Dec) {
 	store := ctx.KVStore(k.storeKey)
 	iterator := sdk.KVStorePrefixIterator(store, types.AgentPrefix)
 	defer iterator.Close()
@@ -21,13 +23,27 @@ func (k Keeper) SlashDelegatingAgentsToValidator(ctx sdk.Context, valAddr sdk.Va
 			continue
 		}
 
-		slashAmount := sdk.NewDecFromInt(agent.StakedAmount).Mul(slashFactor).TruncateInt()
-		slashCoin := sdk.NewCoin(agent.StakeDenom, slashAmount)
 		agentAccAddr, err := sdk.AccAddressFromBech32(agent.AgentAddress)
 		if err != nil {
 			k.Logger(ctx).Error(fmt.Sprintf("agent't delegator is invalid: %s", err))
 			continue
 		}
+
+		slashAmount := sdk.NewDecFromInt(agent.StakedAmount).Mul(slashFactor).TruncateInt()
+		remainingSlashAmount := slashAmount
+
+		unbondingDelegations := k.GetUnbondingDelegationFromAgent(ctx, agent.AgentAddress)
+		for _, unbondingDelegation := range unbondingDelegations {
+			amountSlashed := k.SlashUnbondingDelegation(ctx, unbondingDelegation, ctx.BlockHeight(), slashFactor)
+			if amountSlashed.IsZero() {
+				continue
+			}
+			remainingSlashAmount = remainingSlashAmount.Sub(amountSlashed)
+		}
+
+		tokensToBurn := sdk.MinInt(remainingSlashAmount, agent.StakedAmount)
+		tokensToBurn = sdk.MaxInt(tokensToBurn, math.ZeroInt())
+		slashCoin := sdk.NewCoin(agent.StakeDenom, tokensToBurn)
 
 		if err := k.bankKeeper.SendCoinsFromAccountToModule(
 			ctx, agentAccAddr, types.ModuleName, sdk.Coins{slashCoin},
@@ -41,8 +57,7 @@ func (k Keeper) SlashDelegatingAgentsToValidator(ctx sdk.Context, valAddr sdk.Va
 			continue
 		}
 
-		agent.StakedAmount = agent.StakedAmount.Sub(slashAmount)
-
+		agent.StakedAmount = agent.StakedAmount.Sub(tokensToBurn)
 		bz, err := k.cdc.Marshal(&agent)
 		if err != nil {
 			ctx.Logger().Error(fmt.Sprintf("marshal agent failed: %v", agent))
@@ -52,8 +67,45 @@ func (k Keeper) SlashDelegatingAgentsToValidator(ctx sdk.Context, valAddr sdk.Va
 	}
 }
 
-// SlashDelegator define a method for slash the delegator of an agent.
-func (k Keeper) SlashDelegator(ctx sdk.Context, valAddr sdk.ValAddress, delegator sdk.AccAddress, slashCoin sdk.Coin) error {
+// slash an unbonding delegation
+// Refer to the design of cosmos sdk
+func (k Keeper) SlashUnbondingDelegation(ctx sdk.Context, unbondingDelegation types.MTStakingUnbondingDelegation,
+	infractionHeight int64, slashFactor sdk.Dec,
+) (totalSlashAmount math.Int) {
+	now := ctx.BlockHeader().Time
+	totalSlashAmount = math.ZeroInt()
+	burnedAmount := math.ZeroInt()
+
+	for i, entry := range unbondingDelegation.Entries {
+		if entry.CreatedHeight < infractionHeight {
+			continue
+		}
+
+		if entry.IsMature(now) {
+			continue
+		}
+
+		slashAmountDec := slashFactor.MulInt(entry.InitialBalance.Amount)
+		slashAmount := slashAmountDec.TruncateInt()
+		totalSlashAmount = totalSlashAmount.Add(slashAmount)
+
+		unbondingSlashAmount := sdk.MinInt(slashAmount, entry.Balance.Amount)
+		if unbondingSlashAmount.IsZero() {
+			continue
+		}
+
+		burnedAmount = burnedAmount.Add(unbondingSlashAmount)
+		entry.Balance = entry.Balance.SubAmount(unbondingSlashAmount)
+		unbondingDelegation.Entries[i] = entry
+		k.SetMTStakingUnbondingDelegation(ctx, &unbondingDelegation)
+	}
+
+	return totalSlashAmount
+}
+
+// InstantSlash define a method for slash the delegator of an agent.
+// TODO rename such as InstantSlashAgent?
+func (k Keeper) InstantSlash(ctx sdk.Context, valAddr sdk.ValAddress, delegator sdk.AccAddress, slashCoin sdk.Coin) error {
 	agent, found := k.GetMTStakingAgent(ctx, slashCoin.Denom, valAddr.String())
 	if !found {
 		return types.ErrNotExistedAgent

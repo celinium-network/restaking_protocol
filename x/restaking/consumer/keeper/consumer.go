@@ -243,7 +243,7 @@ func (k Keeper) HandleRestakingSlashPacket(
 		return err
 	}
 
-	err = k.multiStakingKeeper.SlashDelegator(ctx, valAddress, operatorLocalAddress, slash.Balance)
+	err = k.multiStakingKeeper.InstantSlash(ctx, valAddress, operatorLocalAddress, slash.Balance)
 	if err != nil {
 		return err
 	}
