@@ -110,9 +110,9 @@ func (s *KeeperTestSuite) TestMTStakingDelegate() {
 		if t.isExistedAgent {
 			t.agent.AgentAddress = agentAccAddr.String()
 			t.agent.ValidatorAddress = t.validator.OperatorAddress
-			s.mtStakingKeeper.SetMTStakingAgent(s.ctx, &t.agent)
-			s.mtStakingKeeper.SetMTStakingDenomAndValWithAgentAddress(s.ctx, t.agent.AgentAddress, mtStakingDenom, t.validator.OperatorAddress)
-			s.mtStakingKeeper.IncreaseDelegatorAgentShares(s.ctx, t.existedDelegatorShares, t.agent.AgentAddress, delegatorAddress)
+			s.mtStakingKeeper.SetMTStakingAgent(s.ctx, agentAccAddr, &t.agent)
+			s.mtStakingKeeper.SetMTStakingDenomAndValWithAgentAddress(s.ctx, agentAccAddr, mtStakingDenom, valAddr)
+			s.mtStakingKeeper.IncreaseDelegatorAgentShares(s.ctx, t.existedDelegatorShares, agentAccAddr, t.delegatorAccAddr)
 		}
 
 		delegateCoin := sdk.NewCoin(mtStakingDenom, t.delegateAmount)
@@ -128,14 +128,14 @@ func (s *KeeperTestSuite) TestMTStakingDelegate() {
 
 		s.Require().NoError(err, t.describe)
 
-		agent, found := s.mtStakingKeeper.GetMTStakingAgent(s.ctx, mtStakingDenom, t.validator.OperatorAddress)
+		agent, found := s.mtStakingKeeper.GetMTStakingAgent(s.ctx, mtStakingDenom, valAddr)
 		s.Require().True(found, t.describe, "agent not exist after delegate successfully")
 		s.Require().Equal(agent.StakeDenom, mtStakingDenom, t.describe, "agent has mismatch stakeDenom")
 		s.Require().Equal(agent.ValidatorAddress, t.validator.OperatorAddress, t.describe, "agent has mismatch Shares")
 		s.Require().True(agent.StakedAmount.Equal(t.expectedAgent.StakedAmount), t.describe, "agent has mismatch stakedAmount")
 		s.Require().True(agent.Shares.Equal(t.expectedAgent.Shares), t.describe, "agent has mismatch Shares")
 
-		shares := s.mtStakingKeeper.GetDelegatorAgentShares(s.ctx, agent.AgentAddress, delegatorAddress)
+		shares := s.mtStakingKeeper.GetDelegatorAgentShares(s.ctx, agentAccAddr, t.delegatorAccAddr)
 		if t.isExistedAgent {
 			s.Require().True(shares.Sub(t.existedDelegatorShares).Equal(t.agent.Shares.Mul(t.delegateAmount).Quo(t.agent.StakedAmount)), t.describe, "delegator has mismatch Shares")
 		} else {
@@ -268,9 +268,9 @@ func (s *KeeperTestSuite) TestMTStakingUndelegate() {
 		s.mtStakingKeeper.SetEquivalentNativeCoinMultiplier(s.ctx, 1, mtStakingDenom, t.toDefaultDenomMultiplier)
 
 		if t.isExistedAgent {
-			s.mtStakingKeeper.SetMTStakingAgent(s.ctx, &t.agent)
-			s.mtStakingKeeper.SetMTStakingDenomAndValWithAgentAddress(s.ctx, t.agent.AgentAddress, mtStakingDenom, t.validator.OperatorAddress)
-			s.mtStakingKeeper.IncreaseDelegatorAgentShares(s.ctx, t.delegatorShares, t.agent.AgentAddress, delegatorAddress)
+			s.mtStakingKeeper.SetMTStakingAgent(s.ctx, agentAccAddr, &t.agent)
+			s.mtStakingKeeper.SetMTStakingDenomAndValWithAgentAddress(s.ctx, agentAccAddr, mtStakingDenom, valAddr)
+			s.mtStakingKeeper.IncreaseDelegatorAgentShares(s.ctx, t.delegatorShares, agentAccAddr, t.delegatorAccAddr)
 		}
 
 		s.ctx = s.ctx.WithBlockHeight(s.ctx.BlockHeight() + 100)
@@ -296,17 +296,17 @@ func (s *KeeperTestSuite) TestMTStakingUndelegate() {
 		}
 		s.Require().NoError(err, t.describe)
 
-		agent, found := s.mtStakingKeeper.GetMTStakingAgent(s.ctx, mtStakingDenom, t.validator.OperatorAddress)
+		agent, found := s.mtStakingKeeper.GetMTStakingAgent(s.ctx, mtStakingDenom, valAddr)
 		s.Require().True(found, t.describe, "agent not exist after delegate successfully")
 		s.Require().Equal(agent.StakeDenom, mtStakingDenom, t.describe, "agent has mismatch stakeDenom")
 		s.Require().Equal(agent.ValidatorAddress, t.validator.OperatorAddress, t.describe, "agent has mismatch Shares")
 		s.Require().True(agent.StakedAmount.Equal(t.expectedAgent.StakedAmount), t.describe, "agent has mismatch stakedAmount")
 		s.Require().True(agent.Shares.Equal(t.expectedAgent.Shares), t.describe, "agent has mismatch Shares")
-		shares := s.mtStakingKeeper.GetDelegatorAgentShares(s.ctx, agent.AgentAddress, delegatorAddress)
+		shares := s.mtStakingKeeper.GetDelegatorAgentShares(s.ctx, agentAccAddr, t.delegatorAccAddr)
 		s.Require().True(shares.Equal(t.expectedDelegatorShares), t.describe, "delegator has mismatch Shares")
 
 		// check unbonding state
-		unbonding, found := s.mtStakingKeeper.GetMTStakingUnbonding(s.ctx, t.agent.AgentAddress, delegatorAddress)
+		unbonding, found := s.mtStakingKeeper.GetMTStakingUnbonding(s.ctx, agentAccAddr, t.delegatorAccAddr)
 		s.Require().True(found, t.describe, "no unbonding")
 		s.Require().Equal(len(unbonding.Entries), 1, t.describe, "unbonding entries len mismatch")
 		s.Require().True(unbonding.Entries[0].CompletionTime.Equal(

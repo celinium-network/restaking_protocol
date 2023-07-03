@@ -103,7 +103,7 @@ func (k Keeper) CalculateEquivalentNativeCoin(ctx sdk.Context, coin sdk.Coin) (t
 	return targetCoin, nil
 }
 
-func (k Keeper) GetMTStakingAgentByAddress(ctx sdk.Context, agentAddr string) (*types.MTStakingAgent, bool) {
+func (k Keeper) GetMTStakingAgentByAddress(ctx sdk.Context, agentAddr sdk.AccAddress) (*types.MTStakingAgent, bool) {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.GetMTStakingAgentKey(agentAddr))
 
@@ -117,7 +117,7 @@ func (k Keeper) GetMTStakingAgentByAddress(ctx sdk.Context, agentAddr string) (*
 	return agent, true
 }
 
-func (k Keeper) GetMTStakingAgent(ctx sdk.Context, denom string, valAddr string) (*types.MTStakingAgent, bool) {
+func (k Keeper) GetMTStakingAgent(ctx sdk.Context, denom string, valAddr sdk.ValAddress) (*types.MTStakingAgent, bool) {
 	agentID, found := k.GetMTStakingAgentAddressByDenomAndVal(ctx, denom, valAddr)
 	if !found {
 		return nil, false
@@ -126,31 +126,31 @@ func (k Keeper) GetMTStakingAgent(ctx sdk.Context, denom string, valAddr string)
 	return k.GetMTStakingAgentByAddress(ctx, agentID)
 }
 
-func (k Keeper) SetMTStakingAgent(ctx sdk.Context, agent *types.MTStakingAgent) {
+func (k Keeper) SetMTStakingAgent(ctx sdk.Context, agentAccAddr sdk.AccAddress, agent *types.MTStakingAgent) {
 	bz := k.cdc.MustMarshal(agent)
 	store := ctx.KVStore(k.storeKey)
 
-	store.Set(types.GetMTStakingAgentKey(agent.AgentAddress), bz)
+	store.Set(types.GetMTStakingAgentKey(agentAccAddr), bz)
 }
 
-func (k Keeper) GetMTStakingAgentAddressByDenomAndVal(ctx sdk.Context, denom string, valAddr string) (string, bool) {
+func (k Keeper) GetMTStakingAgentAddressByDenomAndVal(ctx sdk.Context, denom string, valAddr sdk.ValAddress) ([]byte, bool) {
 	store := ctx.KVStore(k.storeKey)
 
 	bz := store.Get(types.GetMTStakingAgentAddressKey(denom, valAddr))
 	if bz == nil {
-		return "", false
+		return nil, false
 	}
 
-	return string(bz), true
+	return bz, true
 }
 
-func (k Keeper) SetMTStakingDenomAndValWithAgentAddress(ctx sdk.Context, agentAddress string, denom, valAddr string) {
+func (k Keeper) SetMTStakingDenomAndValWithAgentAddress(ctx sdk.Context, agentAddress sdk.AccAddress, denom string, valAddr sdk.ValAddress) {
 	store := ctx.KVStore(k.storeKey)
 
-	store.Set(types.GetMTStakingAgentAddressKey(denom, valAddr), []byte(agentAddress))
+	store.Set(types.GetMTStakingAgentAddressKey(denom, valAddr), agentAddress)
 }
 
-func (k Keeper) GetMTStakingUnbonding(ctx sdk.Context, agentAddress string, delegatorAddr string) (*types.MTStakingUnbondingDelegation, bool) {
+func (k Keeper) GetMTStakingUnbonding(ctx sdk.Context, agentAddress sdk.AccAddress, delegatorAddr sdk.AccAddress) (*types.MTStakingUnbondingDelegation, bool) {
 	store := ctx.KVStore(k.storeKey)
 
 	bz := store.Get(types.GetMTStakingUnbondingKey(agentAddress, delegatorAddr))
@@ -163,7 +163,7 @@ func (k Keeper) GetMTStakingUnbonding(ctx sdk.Context, agentAddress string, dele
 	return unbonding, true
 }
 
-func (k Keeper) GetUnbondingDelegationFromAgent(ctx sdk.Context, agentAddress string) (ubds []types.MTStakingUnbondingDelegation) {
+func (k Keeper) GetUnbondingDelegationFromAgent(ctx sdk.Context, agentAddress sdk.AccAddress) (ubds []types.MTStakingUnbondingDelegation) {
 	store := ctx.KVStore(k.storeKey)
 
 	iterator := sdk.KVStorePrefixIterator(store, types.GetMTStakingUnbondingByAgentIndexKey(agentAddress))
@@ -178,15 +178,15 @@ func (k Keeper) GetUnbondingDelegationFromAgent(ctx sdk.Context, agentAddress st
 	return ubds
 }
 
-func (k Keeper) GetOrCreateMTStakingUnbonding(ctx sdk.Context, agentAddress string, delegatorAddr string) *types.MTStakingUnbondingDelegation {
+func (k Keeper) GetOrCreateMTStakingUnbonding(ctx sdk.Context, agentAddress, delegatorAddr sdk.AccAddress) *types.MTStakingUnbondingDelegation {
 	unbonding, found := k.GetMTStakingUnbonding(ctx, agentAddress, delegatorAddr)
 	if found {
 		return unbonding
 	}
 
 	unbonding = &types.MTStakingUnbondingDelegation{
-		AgentAddress:     agentAddress,
-		DelegatorAddress: delegatorAddr,
+		AgentAddress:     string(agentAddress),
+		DelegatorAddress: string(delegatorAddr),
 		Entries:          []types.MTStakingUnbondingDelegationEntry{},
 	}
 	return unbonding
@@ -196,15 +196,18 @@ func (k Keeper) SetMTStakingUnbondingDelegation(ctx sdk.Context, unbonding *type
 	store := ctx.KVStore(k.storeKey)
 	bz := k.cdc.MustMarshal(unbonding)
 
-	store.Set(types.GetMTStakingUnbondingKey(unbonding.AgentAddress, unbonding.DelegatorAddress), bz)
+	agentAccAddr := sdk.AccAddress(unbonding.AgentAddress)
+	delegatorAccAddr := sdk.AccAddress(unbonding.DelegatorAddress)
+
+	store.Set(types.GetMTStakingUnbondingKey(agentAccAddr, delegatorAccAddr), bz)
 }
 
-func (k Keeper) RemoveMTStakingUnbonding(ctx sdk.Context, agentAddress string, delegatorAddr string) {
+func (k Keeper) RemoveMTStakingUnbonding(ctx sdk.Context, agentAddress, delegatorAddr sdk.AccAddress) {
 	store := ctx.KVStore(k.storeKey)
 	store.Delete(types.GetMTStakingUnbondingKey(agentAddress, delegatorAddr))
 }
 
-func (k Keeper) GetDelegatorAgentShares(ctx sdk.Context, agentAddress string, delegator string) math.Int {
+func (k Keeper) GetDelegatorAgentShares(ctx sdk.Context, agentAddress, delegator sdk.AccAddress) math.Int {
 	amount := math.ZeroInt()
 	store := ctx.KVStore(k.storeKey)
 	key := types.GetMTStakingSharesKey(agentAddress, delegator)
@@ -221,7 +224,7 @@ func (k Keeper) GetDelegatorAgentShares(ctx sdk.Context, agentAddress string, de
 	return amount
 }
 
-func (k Keeper) IncreaseDelegatorAgentShares(ctx sdk.Context, shares math.Int, agentAddress string, delegator string) error {
+func (k Keeper) IncreaseDelegatorAgentShares(ctx sdk.Context, shares math.Int, agentAddress, delegator sdk.AccAddress) error {
 	var err error
 	amount := math.ZeroInt()
 
@@ -243,7 +246,7 @@ func (k Keeper) IncreaseDelegatorAgentShares(ctx sdk.Context, shares math.Int, a
 	return nil
 }
 
-func (k Keeper) DecreaseDelegatorAgentShares(ctx sdk.Context, shares math.Int, agentAddress string, delegator string) error {
+func (k Keeper) DecreaseDelegatorAgentShares(ctx sdk.Context, shares math.Int, agentAddress, delegator sdk.AccAddress) error {
 	var err error
 	var amount math.Int
 

@@ -6,6 +6,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	mtskingtypes "github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 )
 
@@ -41,11 +44,16 @@ func TestNoPrefixOverlap(t *testing.T) {
 }
 
 func getAllFullyDefinedKeys() [][]byte {
+	pks := simtestutil.CreateTestPubKeys(5)
+	accounts := simtestutil.CreateIncrementalAccounts(2)
+
+	valAddr := sdk.ValAddress(pks[0].Address())
+
 	return [][]byte{
-		mtskingtypes.GetMTStakingAgentAddressKey("arg1", "arg2"),
-		mtskingtypes.GetMTStakingAgentKey("arg1"),
-		mtskingtypes.GetMTStakingSharesKey("arg1", "arg2"),
-		mtskingtypes.GetMTStakingUnbondingKey("arg1", "arg2"),
+		mtskingtypes.GetMTStakingAgentAddressKey("arg1", valAddr),
+		mtskingtypes.GetMTStakingAgentKey(accounts[0]),
+		mtskingtypes.GetMTStakingSharesKey(accounts[0], accounts[1]),
+		mtskingtypes.GetMTStakingUnbondingKey(accounts[0], accounts[1]),
 		mtskingtypes.GetMTStakingUnbondingDelegationTimeKey(time.Now()),
 		mtskingtypes.GetMTStakingMintedKey(),
 		mtskingtypes.GetMTTokenMultiplierKey("arg1"),

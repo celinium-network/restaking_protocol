@@ -50,7 +50,7 @@ var (
 	WithdrawRewardPrefix = []byte{0x71}
 )
 
-func GetMTStakingAgentAddressKey(denom, valAddr string) []byte {
+func GetMTStakingAgentAddressKey(denom string, valAddr sdk.ValAddress) []byte {
 	denomBz := utils.BytesLengthPrefix([]byte(denom))
 
 	prefixLen := len(MTStakingAgentIDPrefix)
@@ -60,19 +60,19 @@ func GetMTStakingAgentAddressKey(denom, valAddr string) []byte {
 	bz := make([]byte, prefixLen+denomBzLen+valAddrBzLen)
 
 	copy(bz[:prefixLen], MTStakingAgentIDPrefix)
-	copy(bz[prefixLen:prefixLen+valAddrBzLen], []byte(valAddr))
+	copy(bz[prefixLen:prefixLen+valAddrBzLen], valAddr)
 	copy(bz[prefixLen+valAddrBzLen:], denomBz)
 
 	return bz
 }
 
-func GetMTStakingAgentKey(agentAddr string) []byte {
-	return append(AgentPrefix, []byte(agentAddr)...)
+func GetMTStakingAgentKey(agentAddr sdk.AccAddress) []byte {
+	return append(AgentPrefix, agentAddr...)
 }
 
-func GetMTStakingSharesKey(agentAddr string, delegator string) []byte {
+func GetMTStakingSharesKey(agentAddr, delegator sdk.AccAddress) []byte {
 	agentAddBz := address.MustLengthPrefix([]byte(agentAddr))
-	delegatorBz := utils.BytesLengthPrefix([]byte(delegator))
+	delegatorBz := address.MustLengthPrefix(delegator)
 	prefixLen := len(SharesPrefix)
 
 	bz := make([]byte, prefixLen+len(agentAddBz)+len(delegatorBz))
@@ -83,9 +83,9 @@ func GetMTStakingSharesKey(agentAddr string, delegator string) []byte {
 	return bz
 }
 
-func GetMTStakingUnbondingKey(agentAddr string, delegator string) []byte {
-	agentAddBz := address.MustLengthPrefix([]byte(agentAddr))
-	delegatorBz := address.MustLengthPrefix([]byte(delegator))
+func GetMTStakingUnbondingKey(agentAddr, delegator sdk.AccAddress) []byte {
+	agentAddBz := address.MustLengthPrefix(agentAddr)
+	delegatorBz := address.MustLengthPrefix(delegator)
 	prefixLen := len(UnbondingPrefix)
 
 	bz := make([]byte, prefixLen+len(agentAddBz)+len(delegatorBz))
@@ -97,8 +97,8 @@ func GetMTStakingUnbondingKey(agentAddr string, delegator string) []byte {
 	return bz
 }
 
-func GetMTStakingUnbondingByAgentIndexKey(agentAddr string) []byte {
-	agentAddBz := address.MustLengthPrefix([]byte(agentAddr))
+func GetMTStakingUnbondingByAgentIndexKey(agentAddr sdk.AccAddress) []byte {
+	agentAddBz := address.MustLengthPrefix(agentAddr)
 	prefixLen := len(UnbondingPrefix)
 
 	bz := make([]byte, prefixLen+len(agentAddBz))

@@ -12,7 +12,9 @@ import (
 func (k Keeper) ProcessCompletedUnbonding(ctx sdk.Context) {
 	matureUnbonds := k.DequeueAllMatureUBDQueue(ctx, ctx.BlockHeader().Time)
 	for _, dvPair := range matureUnbonds {
-		_, err := k.CompleteUnbonding(ctx, dvPair.DelegatorAddress, dvPair.AgentAddress)
+		delegatorAccAddr := sdk.AccAddress(dvPair.DelegatorAddress)
+		agentAccAddr := sdk.AccAddress(dvPair.AgentAddress)
+		_, err := k.CompleteUnbonding(ctx, delegatorAccAddr, agentAccAddr)
 		if err != nil {
 			continue
 		}
@@ -38,7 +40,7 @@ func (k Keeper) DequeueAllMatureUBDQueue(ctx sdk.Context, curTime time.Time) (ma
 	return matureUnbonds
 }
 
-func (k Keeper) CompleteUnbonding(ctx sdk.Context, delegator string, agentAddress string) (sdk.Coins, error) {
+func (k Keeper) CompleteUnbonding(ctx sdk.Context, delegator, agentAddress sdk.AccAddress) (sdk.Coins, error) {
 	ubd, found := k.GetMTStakingUnbonding(ctx, agentAddress, delegator)
 	if !found {
 		return nil, types.ErrNoUnbondingDelegation

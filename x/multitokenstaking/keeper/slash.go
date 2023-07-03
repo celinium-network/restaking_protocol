@@ -32,7 +32,7 @@ func (k Keeper) SlashAgentFromValidator(ctx sdk.Context, valAddr sdk.ValAddress,
 		slashAmount := sdk.NewDecFromInt(agent.StakedAmount).Mul(slashFactor).TruncateInt()
 		remainingSlashAmount := slashAmount
 
-		unbondingDelegations := k.GetUnbondingDelegationFromAgent(ctx, agent.AgentAddress)
+		unbondingDelegations := k.GetUnbondingDelegationFromAgent(ctx, agentAccAddr)
 		for _, unbondingDelegation := range unbondingDelegations {
 			amountSlashed := k.SlashUnbondingDelegation(ctx, unbondingDelegation, ctx.BlockHeight(), slashFactor)
 			if amountSlashed.IsZero() {
@@ -106,23 +106,23 @@ func (k Keeper) SlashUnbondingDelegation(ctx sdk.Context, unbondingDelegation ty
 // InstantSlash define a method for slash the delegator of an agent.
 // TODO rename such as InstantSlashAgent?
 func (k Keeper) InstantSlash(ctx sdk.Context, valAddr sdk.ValAddress, delegator sdk.AccAddress, slashCoin sdk.Coin) error {
-	agent, found := k.GetMTStakingAgent(ctx, slashCoin.Denom, valAddr.String())
+	agent, found := k.GetMTStakingAgent(ctx, slashCoin.Denom, valAddr)
 	if !found {
 		return types.ErrNotExistedAgent
 	}
-
-	removedShares := agent.Shares.Mul(slashCoin.Amount).Quo(agent.StakedAmount)
-	err := k.DecreaseDelegatorAgentShares(ctx, removedShares, agent.AgentAddress, delegator.String())
-	if err != nil {
-		return err
-	}
-	agent.StakedAmount = agent.StakedAmount.Sub(slashCoin.Amount)
 
 	agentAccAddr, err := sdk.AccAddressFromBech32(agent.AgentAddress)
 	if err != nil {
 		k.Logger(ctx).Error(fmt.Sprintf("agent't delegator is invalid: %s", err))
 		return err
 	}
+
+	removedShares := agent.Shares.Mul(slashCoin.Amount).Quo(agent.StakedAmount)
+	if err = k.DecreaseDelegatorAgentShares(ctx, removedShares, agentAccAddr, delegator); err != nil {
+		return err
+	}
+
+	agent.StakedAmount = agent.StakedAmount.Sub(slashCoin.Amount)
 
 	if err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, agentAccAddr, types.ModuleName, sdk.Coins{slashCoin}); err != nil {
 		k.Logger(ctx).Error(fmt.Sprintf("send agent coins to module failed, agentID %s,error: %s", agent.AgentAddress, err))
@@ -140,7 +140,7 @@ func (k Keeper) InstantSlash(ctx sdk.Context, valAddr sdk.ValAddress, delegator 
 		return err
 	}
 
-	k.SetMTStakingAgent(ctx, agent)
+	k.SetMTStakingAgent(ctx, agentAccAddr, agent)
 
 	return nil
 }

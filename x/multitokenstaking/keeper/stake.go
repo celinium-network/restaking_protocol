@@ -25,10 +25,16 @@ func (k Keeper) MTStakingDelegate(ctx sdk.Context, msg types.MsgMTStakingDelegat
 		return sdkerrors.Wrapf(types.ErrForbidStakingDenom, "denom: %s not in white list", msg.Balance.Denom)
 	}
 
-	agent := k.GetOrCreateMTStakingAgent(ctx, msg.Balance.Denom, msg.ValidatorAddress)
+	validatorAddr, err := sdk.ValAddressFromBech32(msg.ValidatorAddress)
+	if err != nil {
+		return sdkerrors.Wrapf(stakingtypes.ErrNoValidatorFound, "address: %s not in white list", msg.ValidatorAddress)
+	}
+
+	agent := k.GetOrCreateMTStakingAgent(ctx, msg.Balance.Denom, validatorAddr)
+	agentAccAddr := sdk.MustAccAddressFromBech32(agent.AgentAddress)
 	delegatorAccAddr := sdk.MustAccAddressFromBech32(msg.DelegatorAddress)
 
-	if err := k.depositAndDelegate(ctx, delegatorAccAddr, agent.AgentAddress, agent.ValidatorAddress, msg.Balance); err != nil {
+	if err := k.depositAndDelegate(ctx, delegatorAccAddr, agentAccAddr, validatorAddr, msg.Balance); err != nil {
 		return err
 	}
 
@@ -36,16 +42,15 @@ func (k Keeper) MTStakingDelegate(ctx sdk.Context, msg types.MsgMTStakingDelegat
 	agent.Shares = agent.Shares.Add(shares)
 	agent.StakedAmount = agent.StakedAmount.Add(msg.Balance.Amount)
 
-	k.SetMTStakingAgent(ctx, agent)
-	k.SetMTStakingDenomAndValWithAgentAddress(ctx, agent.AgentAddress, agent.StakeDenom, agent.ValidatorAddress)
+	k.SetMTStakingAgent(ctx, agentAccAddr, agent)
+	k.SetMTStakingDenomAndValWithAgentAddress(ctx, agentAccAddr, agent.StakeDenom, validatorAddr)
 
-	return k.IncreaseDelegatorAgentShares(ctx, shares, agent.AgentAddress, msg.DelegatorAddress)
+	return k.IncreaseDelegatorAgentShares(ctx, shares, agentAccAddr, delegatorAccAddr)
 }
 
 // depositAndDelegate defines a method deposit coin for delegator to agent and mint shares to delegator.
-func (k Keeper) depositAndDelegate(ctx sdk.Context, delegator sdk.AccAddress, agentAddress, validatorAddress string, balance sdk.Coin) error {
-	agentAccAddr := sdk.MustAccAddressFromBech32(agentAddress)
-	validator, err := k.getValidator(ctx, validatorAddress)
+func (k Keeper) depositAndDelegate(ctx sdk.Context, delegator, agentAccAddr sdk.AccAddress, validatorAddr sdk.ValAddress, balance sdk.Coin) error {
+	validator, err := k.getValidator(ctx, validatorAddr)
 	if err != nil {
 		return err
 	}
@@ -82,22 +87,23 @@ func (k Keeper) mintAndDelegate(ctx sdk.Context, agentAccAddr sdk.AccAddress, va
 // MTStakingUndelegate defines a method for performing an undelegation from a delegate and a validator.
 // Delegator burn the shares of the agents. Then agent account begin undelegate.
 func (k Keeper) MTStakingUndelegate(ctx sdk.Context, msg *types.MsgMTStakingUndelegate) error {
-	agent, found := k.GetMTStakingAgent(ctx, msg.Balance.Denom, msg.ValidatorAddress)
-	if !found {
-		return types.ErrNotExistedAgent
-	}
-
-	delegatorAddr := sdk.MustAccAddressFromBech32(msg.DelegatorAddress)
+	delegatorAccAddr := sdk.MustAccAddressFromBech32(msg.DelegatorAddress)
 	valAddr, err := sdk.ValAddressFromBech32(msg.ValidatorAddress)
 	if err != nil {
 		return err
 	}
 
-	if k.Unbond(ctx, delegatorAddr, valAddr, msg.Balance) != nil {
+	agent, found := k.GetMTStakingAgent(ctx, msg.Balance.Denom, valAddr)
+	if !found {
+		return types.ErrNotExistedAgent
+	}
+
+	if k.Unbond(ctx, delegatorAccAddr, valAddr, msg.Balance) != nil {
 		return err
 	}
 
-	unbonding := k.GetOrCreateMTStakingUnbonding(ctx, agent.AgentAddress, msg.DelegatorAddress)
+	agentAccAddr := sdk.MustAccAddressFromBech32(agent.AgentAddress)
+	unbonding := k.GetOrCreateMTStakingUnbonding(ctx, agentAccAddr, delegatorAccAddr)
 	unbondingTime := k.stakingKeeper.GetParams(ctx).UnbondingTime
 
 	// TODO Whether the length of the entries should be limited ?
@@ -118,7 +124,7 @@ func (k Keeper) MTStakingUndelegate(ctx sdk.Context, msg *types.MsgMTStakingUnde
 // Unbond defines a method for removing shares from an agent by a delegator then agent undelegate funds from a validator.
 func (k Keeper) Unbond(ctx sdk.Context, delegatorAccAddr sdk.AccAddress, valAddr sdk.ValAddress, balance sdk.Coin) error {
 	var removeShares math.Int
-	agent, found := k.GetMTStakingAgent(ctx, balance.Denom, valAddr.String())
+	agent, found := k.GetMTStakingAgent(ctx, balance.Denom, valAddr)
 	if !found {
 		return types.ErrNotExistedAgent
 	}
@@ -137,15 +143,14 @@ func (k Keeper) Unbond(ctx sdk.Context, delegatorAccAddr sdk.AccAddress, valAddr
 		return err
 	}
 
-	delegatorAddr := delegatorAccAddr.String()
 	removeShares = agent.CalculateShareFromCoin(balance.Amount)
-	if err := k.DecreaseDelegatorAgentShares(ctx, removeShares, agent.AgentAddress, delegatorAddr); err != nil {
+	if err := k.DecreaseDelegatorAgentShares(ctx, removeShares, agentAccAddr, delegatorAccAddr); err != nil {
 		return err
 	}
 
 	agent.Shares = agent.Shares.Sub(removeShares)
 	agent.StakedAmount = agent.StakedAmount.Sub(balance.Amount)
-	k.SetMTStakingAgent(ctx, agent)
+	k.SetMTStakingAgent(ctx, agentAccAddr, agent)
 
 	return nil
 }
@@ -173,12 +178,7 @@ func (k Keeper) undelegateAndBurn(ctx sdk.Context, agentAccAddr sdk.AccAddress, 
 	return nil
 }
 
-func (k Keeper) getValidator(ctx sdk.Context, validatorAddress string) (*stakingtypes.Validator, error) {
-	valAddr, err := sdk.ValAddressFromBech32(validatorAddress)
-	if err != nil {
-		return nil, err
-	}
-
+func (k Keeper) getValidator(ctx sdk.Context, valAddr sdk.ValAddress) (*stakingtypes.Validator, error) {
 	validator, found := k.stakingKeeper.GetValidator(ctx, valAddr)
 	if !found {
 		return nil, sdkerrors.Wrapf(stakingtypes.ErrNoValidatorFound, "address %s", valAddr)
@@ -199,12 +199,13 @@ func (k Keeper) denomInWhiteList(ctx sdk.Context, denom string) bool {
 	return false
 }
 
-func (k Keeper) GetOrCreateMTStakingAgent(ctx sdk.Context, denom, valAddr string) *types.MTStakingAgent {
-	agent, found := k.GetMTStakingAgent(ctx, denom, valAddr)
+func (k Keeper) GetOrCreateMTStakingAgent(ctx sdk.Context, denom string, validatorAddr sdk.ValAddress) *types.MTStakingAgent {
+	agent, found := k.GetMTStakingAgent(ctx, denom, validatorAddr)
 	if found {
 		return agent
 	}
 
+	valAddr := validatorAddr.String()
 	newAccount := k.GenerateAccount(ctx, denom, valAddr)
 
 	agent = &types.MTStakingAgent{

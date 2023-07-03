@@ -23,7 +23,7 @@ func (k Keeper) distributeDelegatorReward(
 		return err
 	}
 
-	delegatorShares := k.GetDelegatorAgentShares(ctx, agentAccAddr.String(), delegatorAccAddr.String())
+	delegatorShares := k.GetDelegatorAgentShares(ctx, agentAccAddr, delegatorAccAddr)
 	if delegatorShares.IsZero() {
 		return nil
 	}
