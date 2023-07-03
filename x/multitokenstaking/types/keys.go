@@ -26,7 +26,7 @@ var (
 	// Key for the denom white list which allow used for multistaking
 	DenomWhiteListKey = []byte{0x11}
 
-	// Prefix for key which used in `{denom + validator_address} => MTStakingAgent's ID`
+	// Prefix for key which used in `{validator_address + denom } => MTStakingAgent's ID`
 	MTStakingAgentIDPrefix = []byte{0x21}
 
 	// Prefix for Key which used in `agent_address => MTStakingAgent`
@@ -50,19 +50,18 @@ var (
 	WithdrawRewardPrefix = []byte{0x71}
 )
 
-func GetMTStakingAgentIDKey(denom, valAddr string) []byte {
+func GetMTStakingAgentAddressKey(denom, valAddr string) []byte {
 	denomBz := utils.BytesLengthPrefix([]byte(denom))
-	valAddrBz := utils.BytesLengthPrefix([]byte(valAddr))
 
 	prefixLen := len(MTStakingAgentIDPrefix)
 	denomBzLen := len(denomBz)
-	valAddrBzLen := len(valAddrBz)
+	valAddrBzLen := len(valAddr)
 
 	bz := make([]byte, prefixLen+denomBzLen+valAddrBzLen)
 
 	copy(bz[:prefixLen], MTStakingAgentIDPrefix)
-	copy(bz[prefixLen:prefixLen+denomBzLen], denomBz)
-	copy(bz[prefixLen+denomBzLen:], valAddrBz)
+	copy(bz[prefixLen:prefixLen+valAddrBzLen], []byte(valAddr))
+	copy(bz[prefixLen+valAddrBzLen:], denomBz)
 
 	return bz
 }

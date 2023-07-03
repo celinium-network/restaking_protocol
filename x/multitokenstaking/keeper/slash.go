@@ -9,8 +9,8 @@ import (
 	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 )
 
-// SlashAgentByValidator define a method to slash all agent which delegate to the slashed validator.
-func (k Keeper) SlashAgentByValidator(ctx sdk.Context, valAddr sdk.ValAddress, slashFactor sdk.Dec) {
+// SlashAgentFromValidator define a method to slash all agent which delegate to the slashed validator.
+func (k Keeper) SlashAgentFromValidator(ctx sdk.Context, valAddr sdk.ValAddress, slashFactor sdk.Dec) {
 	store := ctx.KVStore(k.storeKey)
 	iterator := sdk.KVStorePrefixIterator(store, types.AgentPrefix)
 	defer iterator.Close()

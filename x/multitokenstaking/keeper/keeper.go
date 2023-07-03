@@ -136,7 +136,7 @@ func (k Keeper) SetMTStakingAgent(ctx sdk.Context, agent *types.MTStakingAgent) 
 func (k Keeper) GetMTStakingAgentAddressByDenomAndVal(ctx sdk.Context, denom string, valAddr string) (string, bool) {
 	store := ctx.KVStore(k.storeKey)
 
-	bz := store.Get(types.GetMTStakingAgentIDKey(denom, valAddr))
+	bz := store.Get(types.GetMTStakingAgentAddressKey(denom, valAddr))
 	if bz == nil {
 		return "", false
 	}
@@ -147,7 +147,7 @@ func (k Keeper) GetMTStakingAgentAddressByDenomAndVal(ctx sdk.Context, denom str
 func (k Keeper) SetMTStakingDenomAndValWithAgentAddress(ctx sdk.Context, agentAddress string, denom, valAddr string) {
 	store := ctx.KVStore(k.storeKey)
 
-	store.Set(types.GetMTStakingAgentIDKey(denom, valAddr), []byte(agentAddress))
+	store.Set(types.GetMTStakingAgentAddressKey(denom, valAddr), []byte(agentAddress))
 }
 
 func (k Keeper) GetMTStakingUnbonding(ctx sdk.Context, agentAddress string, delegatorAddr string) (*types.MTStakingUnbondingDelegation, bool) {

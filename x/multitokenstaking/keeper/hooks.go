@@ -75,7 +75,7 @@ func (h Hooks) BeforeValidatorSlashed(ctx sdk.Context, valAddr sdk.ValAddress, f
 		return nil
 	}
 
-	h.k.SlashAgentByValidator(ctx, valAddr, fraction)
+	h.k.SlashAgentFromValidator(ctx, valAddr, fraction)
 
 	return nil
 }

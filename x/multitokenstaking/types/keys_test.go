@@ -42,7 +42,7 @@ func TestNoPrefixOverlap(t *testing.T) {
 
 func getAllFullyDefinedKeys() [][]byte {
 	return [][]byte{
-		mtskingtypes.GetMTStakingAgentIDKey("arg1", "arg2"),
+		mtskingtypes.GetMTStakingAgentAddressKey("arg1", "arg2"),
 		mtskingtypes.GetMTStakingAgentKey("arg1"),
 		mtskingtypes.GetMTStakingSharesKey("arg1", "arg2"),
 		mtskingtypes.GetMTStakingUnbondingKey("arg1", "arg2"),
