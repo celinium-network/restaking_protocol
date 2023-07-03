@@ -83,7 +83,7 @@ func (k Keeper) SlashDelegator(ctx sdk.Context, valAddr sdk.ValAddress, delegato
 	}
 
 	// the delegation of the agent must be slashed immediately.
-	if err := k.refreshAgentDelegation(ctx, agent); err != nil {
+	if err := k.RefreshAgentDelegation(ctx, agent); err != nil {
 		ctx.Logger().Error(fmt.Sprintf("refreshAgentDelegation failed, agentAddress %s", err))
 		return err
 	}

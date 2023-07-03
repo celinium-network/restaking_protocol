@@ -286,14 +286,14 @@ func (k Keeper) RefreshAllAgentDelegation(ctx sdk.Context) {
 	agents := k.GetAllAgent(ctx)
 
 	for i := 0; i < len(agents); i++ {
-		err := k.refreshAgentDelegation(ctx, &agents[i])
+		err := k.RefreshAgentDelegation(ctx, &agents[i])
 		if err != nil {
 			ctx.Logger().Error(fmt.Sprintf("refreshAgentDelegation failed, agentAddress %s", err))
 		}
 	}
 }
 
-func (k Keeper) refreshAgentDelegation(ctx sdk.Context, agent *types.MTStakingAgent) error {
+func (k Keeper) RefreshAgentDelegation(ctx sdk.Context, agent *types.MTStakingAgent) error {
 	valAddress, err := sdk.ValAddressFromBech32(agent.ValidatorAddress)
 	if err != nil {
 		return err
@@ -330,6 +330,7 @@ func (k Keeper) refreshAgentDelegation(ctx sdk.Context, agent *types.MTStakingAg
 }
 
 // CollectAgentsReward defines a method for withdraw staking reward for all agents.
+// TODO let user call it.
 func (k Keeper) CollectAgentsReward(ctx sdk.Context) {
 	store := ctx.KVStore(k.storeKey)
 

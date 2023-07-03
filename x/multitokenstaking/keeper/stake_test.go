@@ -25,27 +25,27 @@ func mustNewIntForStr(str string) math.Int {
 	return math.LegacyMustNewDecFromStr(str).TruncateInt()
 }
 
+func (s *KeeperTestSuite) delegateExpectOtherKeeperAction(
+	delegateCoin sdk.Coin,
+	validator stakingtypes.Validator,
+	delegator sdk.AccAddress,
+	eqCoin sdk.Coin,
+	agentAccAddr sdk.AccAddress,
+) {
+	valAddr, err := sdk.ValAddressFromBech32(validator.OperatorAddress)
+	s.Require().NoError(err, validator.OperatorAddress, "is invalid validator address")
+
+	s.stakingKeeper.EXPECT().BondDenom(gomock.Any()).Return(defaultBondDenom)
+	s.stakingKeeper.EXPECT().BondDenom(gomock.Any()).Return(defaultBondDenom)
+	s.stakingKeeper.EXPECT().GetValidator(gomock.Any(), valAddr).Return(validator, true)
+	s.bankKeeper.EXPECT().SendCoinsFromAccountToModule(gomock.Any(), delegator, mtstakingtypes.ModuleName, sdk.Coins{delegateCoin}).Return(nil)
+	s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), mtstakingtypes.ModuleName, agentAccAddr, sdk.Coins{delegateCoin}).Return(nil)
+	s.bankKeeper.EXPECT().MintCoins(gomock.Any(), mtstakingtypes.ModuleName, sdk.Coins{eqCoin})
+	s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), mtstakingtypes.ModuleName, agentAccAddr, sdk.Coins{eqCoin})
+	s.stakingKeeper.EXPECT().Delegate(gomock.Any(), agentAccAddr, eqCoin.Amount, stakingtypes.Unbonded, gomock.Any(), true)
+}
+
 func (s *KeeperTestSuite) TestMTStakingDelegate() {
-	expectOtherKeeperAction := func(
-		delegateCoin sdk.Coin,
-		validator stakingtypes.Validator,
-		delegator sdk.AccAddress,
-		eqCoin sdk.Coin,
-		agentAccAddr sdk.AccAddress,
-	) {
-		valAddr, err := sdk.ValAddressFromBech32(validator.OperatorAddress)
-		s.Require().NoError(err, validator.OperatorAddress, "is invalid validator address")
-
-		s.stakingKeeper.EXPECT().BondDenom(gomock.Any()).Return(defaultBondDenom)
-		s.stakingKeeper.EXPECT().BondDenom(gomock.Any()).Return(defaultBondDenom)
-		s.stakingKeeper.EXPECT().GetValidator(gomock.Any(), valAddr).Return(validator, true)
-		s.bankKeeper.EXPECT().SendCoinsFromAccountToModule(gomock.Any(), delegator, mtstakingtypes.ModuleName, sdk.Coins{delegateCoin}).Return(nil)
-		s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), mtstakingtypes.ModuleName, agentAccAddr, sdk.Coins{delegateCoin}).Return(nil)
-		s.bankKeeper.EXPECT().MintCoins(gomock.Any(), mtstakingtypes.ModuleName, sdk.Coins{eqCoin})
-		s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), mtstakingtypes.ModuleName, agentAccAddr, sdk.Coins{eqCoin})
-		s.stakingKeeper.EXPECT().Delegate(gomock.Any(), agentAccAddr, eqCoin.Amount, stakingtypes.Unbonded, gomock.Any(), true)
-	}
-
 	valAddr := sdk.ValAddress(pks[0].Address())
 	validator := stakingtypes.Validator{
 		OperatorAddress: valAddr.String(),
@@ -118,7 +118,7 @@ func (s *KeeperTestSuite) TestMTStakingDelegate() {
 		delegateCoin := sdk.NewCoin(mtStakingDenom, t.delegateAmount)
 		eqCoin := sdk.NewCoin(defaultBondDenom, t.toDefaultDenomMultiplier.MulInt(t.delegateAmount).TruncateInt())
 
-		expectOtherKeeperAction(delegateCoin, t.validator, t.delegatorAccAddr, eqCoin, agentAccAddr)
+		s.delegateExpectOtherKeeperAction(delegateCoin, t.validator, t.delegatorAccAddr, eqCoin, agentAccAddr)
 
 		err := s.mtStakingKeeper.MTStakingDelegate(s.ctx, mtstakingtypes.MsgMTStakingDelegate{
 			DelegatorAddress: delegatorAddress,
@@ -313,5 +313,167 @@ func (s *KeeperTestSuite) TestMTStakingUndelegate() {
 			s.ctx.BlockTime().Add(defaultUnbondTime)),
 			t.describe, "mismatch unbonding complete time")
 		s.Require().True(unbonding.Entries[0].Balance.Amount.Equal(t.undelegateAmount), t.describe, "mismatch unbonding balance")
+	}
+}
+
+func (s *KeeperTestSuite) TestRefreshAgentDelegationV2() {
+	expectNothingChangedAction := func(
+		validator stakingtypes.Validator,
+		agentAccAddr sdk.AccAddress,
+	) {
+		valAddr := validator.GetOperator()
+		s.stakingKeeper.EXPECT().GetValidator(gomock.Any(), valAddr).Return(validator, true)
+		s.stakingKeeper.EXPECT().GetDelegation(gomock.Any(), agentAccAddr, valAddr).Return(stakingtypes.Delegation{
+			DelegatorAddress: agentAccAddr.String(),
+			ValidatorAddress: valAddr.String(),
+			Shares:           validator.DelegatorShares,
+		}, true)
+		s.stakingKeeper.EXPECT().BondDenom(gomock.Any()).Return(defaultBondDenom)
+	}
+
+	expectMintAction := func(
+		validator stakingtypes.Validator,
+		agentAccAddr sdk.AccAddress,
+		multiplier math.LegacyDec,
+		delegationAmount math.Int,
+	) {
+		valAddr := validator.GetOperator()
+
+		shares, err := validator.SharesFromTokens(delegationAmount)
+		s.Require().NoError(err)
+		s.stakingKeeper.EXPECT().GetValidator(gomock.Any(), valAddr).Return(validator, true)
+		s.stakingKeeper.EXPECT().GetDelegation(gomock.Any(), agentAccAddr, valAddr).Return(stakingtypes.Delegation{
+			DelegatorAddress: agentAccAddr.String(),
+			ValidatorAddress: valAddr.String(),
+			Shares:           shares,
+		}, true)
+
+		s.stakingKeeper.EXPECT().BondDenom(gomock.Any()).Return(defaultBondDenom)
+		eqCoin := sdk.NewCoin(defaultBondDenom, multiplier.Sub(math.LegacyOneDec()).MulInt(delegationAmount).TruncateInt())
+		s.bankKeeper.EXPECT().MintCoins(gomock.Any(), mtstakingtypes.ModuleName, sdk.Coins{eqCoin})
+		s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), mtstakingtypes.ModuleName, agentAccAddr, sdk.Coins{eqCoin})
+		s.stakingKeeper.EXPECT().Delegate(gomock.Any(), agentAccAddr, eqCoin.Amount, stakingtypes.Unbonded, gomock.Any(), true)
+	}
+
+	expectBurnAction := func(
+		validator stakingtypes.Validator,
+		agent mtstakingtypes.MTStakingAgent,
+		multiplier math.LegacyDec,
+		agentDelegationAmount math.Int,
+	) {
+		valAddr := validator.GetOperator()
+		agentAccAddr := sdk.MustAccAddressFromBech32(agent.AgentAddress)
+
+		unbondAmount := agentDelegationAmount.Sub(multiplier.MulInt(agentDelegationAmount).TruncateInt())
+		unbondShares, err := validator.SharesFromTokens(unbondAmount)
+		s.Require().NoError(err)
+		unbondCoins := sdk.Coins{sdk.NewCoin(defaultBondDenom, unbondShares.TruncateInt())}
+		var unbondedPoolName string
+		if validator.IsBonded() {
+			unbondedPoolName = stakingtypes.BondedPoolName
+		} else {
+			unbondedPoolName = stakingtypes.NotBondedPoolName
+		}
+
+		s.stakingKeeper.EXPECT().ValidateUnbondAmount(gomock.Any(), agentAccAddr, valAddr, unbondAmount).Return(unbondShares, nil)
+		s.stakingKeeper.EXPECT().GetValidator(gomock.Any(), valAddr).Return(validator, true)
+		s.stakingKeeper.EXPECT().GetDelegation(gomock.Any(), agentAccAddr, valAddr).Return(stakingtypes.Delegation{
+			DelegatorAddress: agentAccAddr.String(),
+			ValidatorAddress: valAddr.String(),
+			Shares:           validator.DelegatorShares,
+		}, true)
+		s.stakingKeeper.EXPECT().BondDenom(gomock.Any()).Return(defaultBondDenom)
+		s.stakingKeeper.EXPECT().BondDenom(gomock.Any()).Return(defaultBondDenom)
+		s.stakingKeeper.EXPECT().GetValidator(gomock.Any(), valAddr).Return(validator, true)
+		s.stakingKeeper.EXPECT().Unbond(gomock.Any(), agentAccAddr, valAddr, unbondShares).Return(unbondShares.TruncateInt(), nil)
+		s.bankKeeper.EXPECT().UndelegateCoinsFromModuleToAccount(gomock.Any(), unbondedPoolName, agentAccAddr, unbondCoins).Return(nil)
+		s.bankKeeper.EXPECT().SendCoinsFromAccountToModule(gomock.Any(), agentAccAddr, mtstakingtypes.ModuleName, unbondCoins).Return(nil)
+		s.bankKeeper.EXPECT().BurnCoins(gomock.Any(), mtstakingtypes.ModuleName, unbondCoins)
+	}
+
+	valAddr := sdk.ValAddress(pks[0].Address())
+
+	tests := []struct {
+		describe   string
+		agent      mtstakingtypes.MTStakingAgent
+		validator  stakingtypes.Validator
+		multiplier string
+		amount     string
+	}{
+		{
+			describe: "multiplier no change",
+			agent: mtstakingtypes.MTStakingAgent{
+				StakeDenom:       mtStakingDenom,
+				ValidatorAddress: valAddr.String(),
+				StakedAmount:     mustNewIntForStr("100000000"),
+				Shares:           mustNewIntForStr("100000000"),
+			},
+			validator: stakingtypes.Validator{
+				OperatorAddress: valAddr.String(),
+				Jailed:          false,
+				Status:          stakingtypes.Unbonded,
+				Tokens:          mustNewIntForStr("100000000"),
+				DelegatorShares: sdk.MustNewDecFromStr("100000000"),
+			},
+			multiplier: "1",
+			amount:     "100000000",
+		},
+		{
+			describe: "multiplier bigger then 1",
+			agent: mtstakingtypes.MTStakingAgent{
+				StakeDenom:       mtStakingDenom,
+				ValidatorAddress: valAddr.String(),
+				StakedAmount:     mustNewIntForStr("100000000"),
+				Shares:           mustNewIntForStr("100000000"),
+			},
+			validator: stakingtypes.Validator{
+				OperatorAddress: valAddr.String(),
+				Jailed:          false,
+				Status:          stakingtypes.Unbonded,
+				Tokens:          mustNewIntForStr("100000000"),
+				DelegatorShares: sdk.MustNewDecFromStr("100000000"),
+			},
+			multiplier: "1.5",
+			amount:     "100000000",
+		},
+		{
+			describe: "multiplier lower then 1",
+			agent: mtstakingtypes.MTStakingAgent{
+				StakeDenom:       mtStakingDenom,
+				ValidatorAddress: valAddr.String(),
+				StakedAmount:     mustNewIntForStr("100000000"),
+				Shares:           mustNewIntForStr("100000000"),
+			},
+			validator: stakingtypes.Validator{
+				OperatorAddress: valAddr.String(),
+				Jailed:          false,
+				Status:          stakingtypes.Unbonded,
+				Tokens:          mustNewIntForStr("100000000"),
+				DelegatorShares: sdk.MustNewDecFromStr("100000000"),
+			},
+			multiplier: "0.8",
+			amount:     "100000000",
+		},
+	}
+
+	for _, t := range tests {
+		s.SetupTest()
+
+		t.agent.AgentAddress = s.mtStakingKeeper.GenerateAccount(s.ctx, mtStakingDenom, t.validator.OperatorAddress).GetAddress().String()
+		multiplier := sdk.MustNewDecFromStr(t.multiplier)
+		s.mtStakingKeeper.SetEquivalentNativeCoinMultiplier(s.ctx, 1, mtStakingDenom, multiplier)
+		agentAccAddr := sdk.MustAccAddressFromBech32(t.agent.AgentAddress)
+
+		amount := mustNewIntForStr(t.amount)
+		if multiplier.Equal(sdk.OneDec()) { //nolint:gocritic
+			expectNothingChangedAction(t.validator, agentAccAddr)
+		} else if multiplier.GT(sdk.OneDec()) {
+			expectMintAction(t.validator, agentAccAddr, multiplier, amount)
+		} else {
+			expectBurnAction(t.validator, t.agent, multiplier, amount)
+		}
+
+		err := s.mtStakingKeeper.RefreshAgentDelegation(s.ctx, &t.agent)
+		s.Require().NoError(err)
 	}
 }
