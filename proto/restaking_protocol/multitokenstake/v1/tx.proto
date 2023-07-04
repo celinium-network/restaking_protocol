@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package restaking_protocol.multitokenstake.v1;
+
+import "google/protobuf/timestamp.proto";
+import "gogoproto/gogo.proto";
+import "cosmos_proto/cosmos.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+option go_package = "restaking_protocol/x/multitokenstaking/types";
+
+
+service Msg {
+    rpc AddMTStakingDenom(MsgAddMTStakingDenom) returns (MsgAddMTStakingDenomResponse);
+
+    rpc MTStakingDelegate(MsgMTStakingDelegate) returns (MsgMTStakingDelegateResponse);
+    
+    rpc MTStakingUndelegate(MsgMTStakingUndelegate) returns (MsgMTStakingDelegateResponse);
+}
+
+message MsgAddMTStakingDenom{
+    string sender = 1 [ (gogoproto.moretags) = "yaml:\"sender\"" ];
+
+    string deonm = 2;
+}   
+
+message MsgAddMTStakingDenomResponse{}
+
+message MsgMTStakingDelegate{  
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+  
+    string                   delegator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+    string                   validator_address = 2 [(cosmos_proto.scalar) = "cosmos.ValidatorAddressString"];
+    cosmos.base.v1beta1.Coin balance            = 3 [(gogoproto.nullable) = false];   
+}
+
+message MsgMTStakingDelegateResponse {}
+
+message MsgMTStakingUndelegate{
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+  
+    string                   delegator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+    string                   validator_address = 2 [(cosmos_proto.scalar) = "cosmos.ValidatorAddressString"];
+    cosmos.base.v1beta1.Coin balance            = 3 [(gogoproto.nullable) = false ];
+}
+
+message MsgMTStakingUndelegateResponse {
+    google.protobuf.Timestamp completion_time = 1
+        [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
+  
+    cosmos.base.v1beta1.Coin amount            = 2 [(gogoproto.nullable) = false ];
+}  

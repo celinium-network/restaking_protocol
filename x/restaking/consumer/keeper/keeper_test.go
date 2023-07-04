@@ -14,7 +14,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	moduletestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 
-	testutilkeeper "github.com/celinium-network/restaking_protocol/testutil/keeper"
+	testutilkeeper "github.com/celinium-network/restaking_protocol/testutil/keeper/restaking"
 	consumerkeeper "github.com/celinium-network/restaking_protocol/x/restaking/consumer/keeper"
 	"github.com/celinium-network/restaking_protocol/x/restaking/consumer/types"
 )
@@ -36,7 +36,7 @@ type KeeperTestSuite struct {
 	stakingKeeper      *testutilkeeper.MockStakingKeeper
 	slashingKeeper     *testutilkeeper.MockSlashingKeeper
 	authKeeper         *testutilkeeper.MockAccountKeeper
-	multiStakingKeeper *testutilkeeper.MockMultiStakingKeeper
+	multiStakingKeeper *testutilkeeper.MockMTStakingKeeper
 }
 
 func (s *KeeperTestSuite) SetupTest() {
@@ -56,7 +56,7 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.stakingKeeper = testutilkeeper.NewMockStakingKeeper(ctrl)
 	s.slashingKeeper = testutilkeeper.NewMockSlashingKeeper(ctrl)
 	s.authKeeper = testutilkeeper.NewMockAccountKeeper(ctrl)
-	s.multiStakingKeeper = testutilkeeper.NewMockMultiStakingKeeper(ctrl)
+	s.multiStakingKeeper = testutilkeeper.NewMockMTStakingKeeper(ctrl)
 
 	keeper := consumerkeeper.NewKeeper(
 		key,

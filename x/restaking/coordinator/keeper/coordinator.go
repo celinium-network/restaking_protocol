@@ -15,7 +15,7 @@ import (
 func (k Keeper) OnRecvConsumerPacketData(
 	ctx sdk.Context,
 	packet channeltypes.Packet,
-	consumerPacket restaking.ConsumerPacketData,
+	consumerPacket restaking.ConsumerPacket,
 ) ibcexported.Acknowledgement {
 	consumerClientID, err := k.GetConsumerClientIDByChannel(ctx, packet.DestinationPort, packet.DestinationChannel)
 	if err != nil {
@@ -130,8 +130,8 @@ func (k Keeper) NotifyConsumerSlashOperator(
 		}
 
 		bz := k.cdc.MustMarshal(&slashPacket)
-		restakingPacket := restaking.RestakingPacket{
-			Type: restaking.RestakingPacket_Slash,
+		restakingPacket := restaking.CoordinatorPacket{
+			Type: restaking.CoordinatorPacket_Slash,
 			Data: string(bz),
 		}
 

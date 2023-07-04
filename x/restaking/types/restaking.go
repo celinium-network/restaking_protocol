@@ -4,10 +4,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 )
 
-func BuildRestakingProtocolPacket(cdc codec.Codec, packet interface{}) (*RestakingPacket, error) {
+func BuildRestakingProtocolPacket(cdc codec.Codec, packet interface{}) (*CoordinatorPacket, error) {
 	var (
 		bz         []byte
-		packetType RestakingPacket_PacketType
+		packetType CoordinatorPacket_PacketType
 		err        error
 	)
 
@@ -23,7 +23,7 @@ func BuildRestakingProtocolPacket(cdc codec.Codec, packet interface{}) (*Restaki
 		return nil, err
 	}
 
-	return &RestakingPacket{
+	return &CoordinatorPacket{
 		Type: packetType,
 		Data: string(bz),
 	}, nil

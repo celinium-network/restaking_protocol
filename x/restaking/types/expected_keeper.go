@@ -19,7 +19,7 @@ import (
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 
-	multistakingtypes "github.com/celinium-network/restaking_protocol/x/multistaking/types"
+	multistakingtypes "github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 )
 
 // ChannelKeeper defines the expected IBC channel keeper
@@ -120,10 +120,10 @@ type IBCTransferKeeper interface {
 	) (*transfertype.MsgTransferResponse, error)
 }
 
-type MultiStakingKeeper interface {
-	MultiStakingDelegate(ctx sdk.Context, msg multistakingtypes.MsgMultiStakingDelegate) error
+type MTStakingKeeper interface {
+	MTStakingDelegate(ctx sdk.Context, msg multistakingtypes.MsgMTStakingDelegate) error
 
-	Unbond(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, token sdk.Coin) (math.Int, error)
+	Unbond(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, token sdk.Coin) error
 
-	SlashDelegator(ctx sdk.Context, valAddr sdk.ValAddress, delegator sdk.AccAddress, slashCoin sdk.Coin) error
+	InstantSlash(ctx sdk.Context, valAddr sdk.ValAddress, delegator sdk.AccAddress, slashCoin sdk.Coin) error
 }

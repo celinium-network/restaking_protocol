@@ -1,0 +1,7 @@
+# MultiTokenStaking
+## Introduction
+In traditional Proof-of-Stake (POS) systems, only the native token can be used for staking. However, with the development and progress of AppChains, it becomes challenging for nascent AppChains to ensure the security of POS solely relying on the native token. To increase the total staked value in the POS system, introducing non-native tokens as staking assets is an optional approach.
+MultiTokenStaking is a module built on this concept. It extends the classic Cosmos SDK staking module, enabling AppChains to support staking with multiple tokens.
+
+In the Cosmos SDK, the native token total supply and the boned amount will affect inflation. Since **MultiTokenStaking** affects the supply and bonded amount of the native token, it means that if an AppChain directly uses the Cosmos SDK's bank and mint modules to control token inflation, the token inflation will become unpredictable.
+However, typically, Cosmos SDK-based chains customize their inflation (economic) models based on the bank and mint modules. In a custom inflation module, mitigating the impact of **MultiTokenStaking** would be straightforward. It simply involves excluding the portion contributed by MultiTokenStaking from the total supply and total bonded amount.

@@ -13,7 +13,7 @@ import (
 	"github.com/golang/mock/gomock"
 
 	cryptoutil "github.com/celinium-network/restaking_protocol/testutil/crypto"
-	multistakingtypes "github.com/celinium-network/restaking_protocol/x/multistaking/types"
+	multistakingtypes "github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 	"github.com/celinium-network/restaking_protocol/x/restaking/consumer/types"
 	restaking "github.com/celinium-network/restaking_protocol/x/restaking/types"
 )
@@ -67,10 +67,10 @@ func (s *KeeperTestSuite) TestHandleRestakingDelegationPacket() {
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(
 		gomock.Any(), types.ModuleName, localOperator, sdk.Coins{restakingDelegation.Balance})
 
-	s.multiStakingKeeper.EXPECT().MultiStakingDelegate(gomock.Any(), multistakingtypes.MsgMultiStakingDelegate{
+	s.multiStakingKeeper.EXPECT().MTStakingDelegate(gomock.Any(), multistakingtypes.MsgMTStakingDelegate{
 		DelegatorAddress: localOperator.String(),
 		ValidatorAddress: valAddress.String(),
-		Amount:           restakingDelegation.Balance,
+		Balance:          restakingDelegation.Balance,
 	})
 
 	s.keeper.HandleRestakingDelegationPacket(s.ctx, packet, &restakingDelegation)

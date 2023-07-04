@@ -1,0 +1,118 @@
+syntax = "proto3";
+
+package restaking_protocol.multitokenstake.v1;
+
+import "google/protobuf/timestamp.proto";
+import "gogoproto/gogo.proto";
+import "cosmos_proto/cosmos.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+option go_package = "restaking_protocol/x/multitokenstaking/types";
+
+// MTStakingDenomWhiteList represents the whitelist of denominations for multi-token staking.
+message MTStakingDenomWhiteList{
+    // List of allowed denominations.
+    repeated string denom_list = 1;
+}
+
+// EquivalentMultiplierRecord represents the exchange rate between a specific token 
+// and the native token during a particular epoch
+message EquivalentMultiplierRecord {
+    // Epoch number.
+    int64 epoch_number = 1;
+    // The denom of token.
+    string denom = 2;
+    // multiplier represents the exchange rate from the token to the native token and is expressed as a decimal value.
+    string multiplier = 3 [
+        (cosmos_proto.scalar)  = "cosmos.Dec",
+        (gogoproto.customtype) = "Dec",
+        (gogoproto.nullable)   = false
+    ];
+}
+
+// MTStakingDelegation represents a multi-token staking delegation.
+message MTStakingDelegation {
+    // Delegator's address.
+    string delegator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];  
+    // Validator's address.
+    string validator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+    // Amount being delegated.
+    cosmos.base.v1beta1.Coin delegation_amount = 3 [
+      (gogoproto.nullable) = false,
+      (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coin"
+    ];
+    // Equivalent staked amount.
+    cosmos.base.v1beta1.Coin equivalent_staked_amount = 4
+        [ (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coin" ];
+}
+
+// MTStakingAgent represents a multi-token staking agent.
+message MTStakingAgent{
+    // Address represent this agent, used for delegate/undelegate/slash.
+    string agent_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+    // The denom of staking token.
+    string stake_denom = 2;
+    // Validator's address.
+    string validator_address = 3 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    // Address is used for receive staking reward
+    string reward_address = 4 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+    // Amount being staked.
+    string staked_amount = 5 [
+        (cosmos_proto.scalar)  = "cosmos.Int",
+        (gogoproto.customtype) = "Int",
+        (gogoproto.nullable)   = false
+    ];
+    // Total shares of all delegtor of this agent.
+    string shares = 6 [
+        (cosmos_proto.scalar)  = "cosmos.Int",
+        (gogoproto.customtype) = "Int",
+        (gogoproto.nullable)   = false
+    ];   
+    // Reward amount earned by the agent.
+    string reward_amount = 7 [
+        (cosmos_proto.scalar)  = "cosmos.Int",
+        (gogoproto.customtype) = "Int",
+        (gogoproto.nullable)   = false
+    ];
+
+    // block heigt of create the agent.
+    int64 created_block_height = 8;
+}
+
+// MTStakingUnbondingDelegation represents the unbonding information for a multi-token staking agent.
+message MTStakingUnbondingDelegation{
+    // Agent ID.
+    string agent_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+    // Delegator's address.
+    string delegator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; 
+    // List of unbonding entries.
+    repeated MTStakingUnbondingDelegationEntry entries = 3 [(gogoproto.nullable) = false];
+}
+
+// MTStakingUnbondingDelegationEntry represents an unbonding entry for a multi-token staking agent.
+message MTStakingUnbondingDelegationEntry{
+    int64 created_height = 1;
+    // Completion time of the unbonding entry.
+    google.protobuf.Timestamp completion_time = 2 [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
+    // Initial balance of the unbonding entry.
+    cosmos.base.v1beta1.Coin initial_balance = 3
+        [(gogoproto.nullable) = false, (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coin" ];    
+    // Current balance of the unbonding entry.
+    cosmos.base.v1beta1.Coin balance = 4
+        [(gogoproto.nullable) = false, (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coin" ];        
+}
+
+// DAPair represents a delegation-agent pair.
+message DAPair{
+    // Delegator's address.
+    string delegator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; 
+    // Agent ID.
+    string agent_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}
+
+// DAPairs represents a collection of delegation-agent pairs.
+message DAPairs{
+    // List of delegation-agent pairs.
+    repeated DAPair pairs = 1 [(gogoproto.nullable) = false];
+}
