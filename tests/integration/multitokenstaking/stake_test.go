@@ -45,10 +45,11 @@ func (suite *KeeperTestSuite) TestDelegate() {
 	agents := suite.app.MTStakingKeeper.GetAllAgent(suite.ctx)
 	suite.Require().Equal(len(agents), 1)
 
-	delegatorShares := suite.app.MTStakingKeeper.GetDelegatorAgentShares(suite.ctx, agents[0].AgentAddress, msg.DelegatorAddress)
+	agentAccAddr := sdk.MustAccAddressFromBech32(agents[0].AgentAddress)
+	delegatorShares := suite.app.MTStakingKeeper.GetDelegatorAgentShares(suite.ctx, agentAccAddr, delegatorAddrs[0])
 	suite.Require().True(delegatorShares.Equal(multiRestakingCoin.Amount))
 
-	agent, found := suite.app.MTStakingKeeper.GetMTStakingAgentByAddress(suite.ctx, agents[0].AgentAddress)
+	agent, found := suite.app.MTStakingKeeper.GetMTStakingAgentByAddress(suite.ctx, agentAccAddr)
 	suite.Require().True(found)
 	suite.Require().True(agent.StakedAmount.Equal(multiRestakingCoin.Amount))
 	suite.Require().True(agent.Shares.Equal(delegatorShares))
@@ -62,9 +63,9 @@ func (suite *KeeperTestSuite) TestDelegate() {
 	err = suite.app.MTStakingKeeper.MTStakingDelegate(suite.ctx, msg2)
 	suite.NoError(err)
 
-	delegator2Shares := suite.app.MTStakingKeeper.GetDelegatorAgentShares(suite.ctx, agents[0].AgentAddress, msg2.DelegatorAddress)
+	delegator2Shares := suite.app.MTStakingKeeper.GetDelegatorAgentShares(suite.ctx, agentAccAddr, delegatorAddrs[1])
 	suite.Require().True(delegator2Shares.Equal(multiRestakingCoin.Amount))
-	agent, found = suite.app.MTStakingKeeper.GetMTStakingAgentByAddress(suite.ctx, agents[0].AgentAddress)
+	agent, found = suite.app.MTStakingKeeper.GetMTStakingAgentByAddress(suite.ctx, agentAccAddr)
 	suite.Require().True(found)
 	suite.Require().True(agent.StakedAmount.Equal(multiRestakingCoin.Amount.MulRaw(2)))
 	suite.Require().True(agent.Shares.Equal(delegatorShares.MulRaw(2)))
@@ -94,16 +95,17 @@ func (suite *KeeperTestSuite) TestUndelegate() {
 
 	agents := suite.app.MTStakingKeeper.GetAllAgent(suite.ctx)
 	suite.Require().Equal(len(agents), 1)
+	agentAccAddr := sdk.MustAccAddressFromBech32(agents[0].AgentAddress)
 
-	delegator2Shares := suite.app.MTStakingKeeper.GetDelegatorAgentShares(suite.ctx, agents[0].AgentAddress, delegatorAddrs[0].String())
+	delegator2Shares := suite.app.MTStakingKeeper.GetDelegatorAgentShares(suite.ctx, agentAccAddr, delegatorAddrs[0])
 	suite.Require().True(delegator2Shares.Equal(math.ZeroInt()))
-	agent, found := suite.app.MTStakingKeeper.GetMTStakingAgentByAddress(suite.ctx, agents[0].AgentAddress)
+	agent, found := suite.app.MTStakingKeeper.GetMTStakingAgentByAddress(suite.ctx, agentAccAddr)
 	suite.Require().True(found)
 	suite.Require().True(agent.StakedAmount.Equal(math.ZeroInt()))
 	suite.Require().True(agent.Shares.Equal(math.ZeroInt()))
 
 	// check unbonding records
-	unbonding, found := suite.app.MTStakingKeeper.GetMTStakingUnbonding(suite.ctx, agents[0].AgentAddress, delegatorAddrs[0].String())
+	unbonding, found := suite.app.MTStakingKeeper.GetMTStakingUnbonding(suite.ctx, agentAccAddr, delegatorAddrs[0])
 	suite.Require().True(found)
 	suite.Require().Equal(len(unbonding.Entries), 1)
 
@@ -148,8 +150,9 @@ func (suite *KeeperTestSuite) TestUndelegateReward() {
 
 	agents := suite.app.MTStakingKeeper.GetAllAgent(suite.ctx)
 	suite.Require().Equal(len(agents), 1)
+	agentAccAddr := sdk.MustAccAddressFromBech32(agents[0].AgentAddress)
 
-	agent, _ := suite.app.MTStakingKeeper.GetMTStakingAgentByAddress(suite.ctx, agents[0].AgentAddress)
+	agent, _ := suite.app.MTStakingKeeper.GetMTStakingAgentByAddress(suite.ctx, agentAccAddr)
 	valAddr, _ := sdk.ValAddressFromBech32(agent.ValidatorAddress)
 	validator := suite.app.StakingKeeper.Validator(suite.ctx, valAddr)
 

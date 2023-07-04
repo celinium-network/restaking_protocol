@@ -103,9 +103,9 @@ func (k Keeper) CalculateEquivalentNativeCoin(ctx sdk.Context, coin sdk.Coin) (t
 	return targetCoin, nil
 }
 
-func (k Keeper) GetMTStakingAgentByAddress(ctx sdk.Context, agentAddr sdk.AccAddress) (*types.MTStakingAgent, bool) {
+func (k Keeper) GetMTStakingAgentByAddress(ctx sdk.Context, agentAccAddr sdk.AccAddress) (*types.MTStakingAgent, bool) {
 	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.GetMTStakingAgentKey(agentAddr))
+	bz := store.Get(types.GetMTStakingAgentKey(agentAccAddr))
 
 	if bz == nil {
 		return nil, false

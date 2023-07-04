@@ -62,7 +62,7 @@ func (s *IntegrationTestSuite) TestDelegation() {
 
 	delegations := consumerApp.StakingKeeper.GetDelegatorDelegations(consumerCtx, agentAccAddr, 10)
 	s.Require().Equal(len(delegations), 1)
-	shares := consumerApp.MTStakingKeeper.GetDelegatorAgentShares(consumerCtx, agents[0].AgentAddress, localOperatorAccAddr.String())
+	shares := consumerApp.MTStakingKeeper.GetDelegatorAgentShares(consumerCtx, agentAccAddr, localOperatorAccAddr)
 	s.Require().True(shares.Equal(amount))
 }
 

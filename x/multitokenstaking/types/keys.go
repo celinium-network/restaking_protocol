@@ -27,7 +27,7 @@ var (
 	DenomWhiteListKey = []byte{0x11}
 
 	// Prefix for key which used in `{validator_address + denom } => MTStakingAgent's ID`
-	MTStakingAgentIDPrefix = []byte{0x21}
+	MTStakingAgentAddressPrefix = []byte{0x21}
 
 	// Prefix for Key which used in `agent_address => MTStakingAgent`
 	AgentPrefix = []byte{0x22}
@@ -53,13 +53,13 @@ var (
 func GetMTStakingAgentAddressKey(denom string, valAddr sdk.ValAddress) []byte {
 	denomBz := utils.BytesLengthPrefix([]byte(denom))
 
-	prefixLen := len(MTStakingAgentIDPrefix)
+	prefixLen := len(MTStakingAgentAddressPrefix)
 	denomBzLen := len(denomBz)
 	valAddrBzLen := len(valAddr)
 
 	bz := make([]byte, prefixLen+denomBzLen+valAddrBzLen)
 
-	copy(bz[:prefixLen], MTStakingAgentIDPrefix)
+	copy(bz[:prefixLen], MTStakingAgentAddressPrefix)
 	copy(bz[prefixLen:prefixLen+valAddrBzLen], valAddr)
 	copy(bz[prefixLen+valAddrBzLen:], denomBz)
 

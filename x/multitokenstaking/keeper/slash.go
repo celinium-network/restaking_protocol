@@ -12,42 +12,29 @@ import (
 // SlashAgentFromValidator define a method to slash all agent which delegate to the slashed validator.
 func (k Keeper) SlashAgentFromValidator(ctx sdk.Context, valAddr sdk.ValAddress, slashFactor sdk.Dec) {
 	store := ctx.KVStore(k.storeKey)
-	iterator := sdk.KVStorePrefixIterator(store, types.AgentPrefix)
+
+	prefix := types.MTStakingAgentAddressPrefix
+	prefix = append(prefix, valAddr...)
+	iterator := sdk.KVStorePrefixIterator(store, prefix)
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {
-		var agent types.MTStakingAgent
-		err := k.cdc.Unmarshal(iterator.Value(), &agent)
-		if err != nil {
-			ctx.Logger().Error(fmt.Sprintf("unmarshal has err %s", err))
-			continue
-		}
-
-		agentAccAddr, err := sdk.AccAddressFromBech32(agent.AgentAddress)
-		if err != nil {
-			k.Logger(ctx).Error(fmt.Sprintf("agent't delegator is invalid: %s", err))
+		agentAccAddr := sdk.AccAddress(iterator.Value())
+		agent, found := k.GetMTStakingAgentByAddress(ctx, agentAccAddr)
+		if !found {
+			k.Logger(ctx).Error(fmt.Sprintf("not found agent by address %s", agentAccAddr.String()))
 			continue
 		}
 
 		slashAmount := sdk.NewDecFromInt(agent.StakedAmount).Mul(slashFactor).TruncateInt()
-		remainingSlashAmount := slashAmount
-
 		unbondingDelegations := k.GetUnbondingDelegationFromAgent(ctx, agentAccAddr)
+		slashCoin := sdk.NewCoin(agent.StakeDenom, slashAmount)
+
 		for _, unbondingDelegation := range unbondingDelegations {
-			amountSlashed := k.SlashUnbondingDelegation(ctx, unbondingDelegation, ctx.BlockHeight(), slashFactor)
-			if amountSlashed.IsZero() {
-				continue
-			}
-			remainingSlashAmount = remainingSlashAmount.Sub(amountSlashed)
+			k.SlashUnbondingDelegation(ctx, unbondingDelegation, ctx.BlockHeight(), slashFactor)
 		}
 
-		tokensToBurn := sdk.MinInt(remainingSlashAmount, agent.StakedAmount)
-		tokensToBurn = sdk.MaxInt(tokensToBurn, math.ZeroInt())
-		slashCoin := sdk.NewCoin(agent.StakeDenom, tokensToBurn)
-
-		if err := k.bankKeeper.SendCoinsFromAccountToModule(
-			ctx, agentAccAddr, types.ModuleName, sdk.Coins{slashCoin},
-		); err != nil {
+		if err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, agentAccAddr, types.ModuleName, sdk.Coins{slashCoin}); err != nil {
 			k.Logger(ctx).Error(fmt.Sprintf("send agent coins to module failed, agentID %s,error: %s", agent.AgentAddress, err))
 			continue
 		}
@@ -57,13 +44,8 @@ func (k Keeper) SlashAgentFromValidator(ctx sdk.Context, valAddr sdk.ValAddress,
 			continue
 		}
 
-		agent.StakedAmount = agent.StakedAmount.Sub(tokensToBurn)
-		bz, err := k.cdc.Marshal(&agent)
-		if err != nil {
-			ctx.Logger().Error(fmt.Sprintf("marshal agent failed: %v", agent))
-			continue
-		}
-		store.Set(iterator.Key(), bz)
+		agent.StakedAmount = agent.StakedAmount.Sub(slashAmount)
+		k.SetMTStakingAgent(ctx, agentAccAddr, agent)
 	}
 }
 
