@@ -40,26 +40,14 @@ func (k Keeper) DequeueAllMatureUBDQueue(ctx sdk.Context, curTime time.Time) (ma
 	return matureUnbonds
 }
 
-func (k Keeper) CompleteUnbonding(ctx sdk.Context, delegator, agentAddress sdk.AccAddress) (sdk.Coins, error) {
-	ubd, found := k.GetMTStakingUnbonding(ctx, agentAddress, delegator)
+func (k Keeper) CompleteUnbonding(ctx sdk.Context, delegatorAccAddr, agentAccAddr sdk.AccAddress) (sdk.Coins, error) {
+	ubd, found := k.GetMTStakingUnbonding(ctx, agentAccAddr, delegatorAccAddr)
 	if !found {
 		return nil, types.ErrNoUnbondingDelegation
 	}
-
-	agent, found := k.GetMTStakingAgentByAddress(ctx, agentAddress)
-	if !found {
-		return nil, types.ErrNoUnbondingDelegation
-	}
-
-	agentDelegateAddress := sdk.MustAccAddressFromBech32(agent.AgentAddress)
 
 	balances := sdk.NewCoins()
 	ctxTime := ctx.BlockHeader().Time
-
-	delegatorAddress, err := sdk.AccAddressFromBech32(ubd.DelegatorAddress)
-	if err != nil {
-		return nil, err
-	}
 
 	for i := 0; i < len(ubd.Entries); i++ {
 		entry := ubd.Entries[i]
@@ -68,7 +56,7 @@ func (k Keeper) CompleteUnbonding(ctx sdk.Context, delegator, agentAddress sdk.A
 			i--
 
 			if !entry.Balance.IsZero() {
-				err = k.sendCoinsFromAccountToAccount(ctx, agentDelegateAddress, delegatorAddress, sdk.Coins{entry.Balance})
+				err := k.sendCoinsFromAccountToAccount(ctx, agentAccAddr, delegatorAccAddr, sdk.Coins{entry.Balance})
 				if err != nil {
 					ctx.Logger().Error(fmt.Sprintf("sendCoinsFromAccountToAccount has err %s", err))
 				}
@@ -78,7 +66,7 @@ func (k Keeper) CompleteUnbonding(ctx sdk.Context, delegator, agentAddress sdk.A
 	}
 
 	if len(ubd.Entries) == 0 {
-		k.RemoveMTStakingUnbonding(ctx, agentAddress, delegator)
+		k.RemoveMTStakingUnbonding(ctx, agentAccAddr, delegatorAccAddr)
 	} else {
 		k.SetMTStakingUnbondingDelegation(ctx, ubd)
 	}

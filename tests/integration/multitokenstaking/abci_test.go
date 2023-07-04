@@ -1,8 +1,9 @@
 package mtstaking_test
 
 import (
-	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 )
 
 func (suite *KeeperTestSuite) bootstrapABCITest() (delegator, validator string, unbondingCoin sdk.Coin) {
@@ -12,6 +13,7 @@ func (suite *KeeperTestSuite) bootstrapABCITest() (delegator, validator string, 
 	multiRestakingCoin := sdk.NewCoin(mockMultiRestakingDenom, sdk.NewInt(10000000))
 	suite.mintCoin(multiRestakingCoin, delegatorAddrs[0])
 	suite.app.MTStakingKeeper.AddMTStakingDenom(suite.ctx, mockMultiRestakingDenom)
+	suite.app.MTStakingKeeper.SetEquivalentNativeCoinMultiplier(suite.ctx, 1, mockMultiRestakingDenom, sdk.MustNewDecFromStr("1"))
 
 	err := suite.app.MTStakingKeeper.MTStakingDelegate(suite.ctx, types.MsgMTStakingDelegate{
 		DelegatorAddress: delegatorAddrs[0].String(),

@@ -32,6 +32,7 @@ func (suite *KeeperTestSuite) TestDelegate() {
 	multiRestakingCoin := sdk.NewCoin(mockMultiRestakingDenom, sdk.NewInt(10000000))
 
 	suite.app.MTStakingKeeper.AddMTStakingDenom(suite.ctx, mockMultiRestakingDenom)
+	suite.app.MTStakingKeeper.SetEquivalentNativeCoinMultiplier(suite.ctx, 1, mockMultiRestakingDenom, sdk.MustNewDecFromStr("1"))
 	suite.mintCoin(multiRestakingCoin, delegatorAddrs[0])
 
 	msg := types.MsgMTStakingDelegate{
@@ -78,6 +79,7 @@ func (suite *KeeperTestSuite) TestUndelegate() {
 	multiRestakingCoin := sdk.NewCoin(mockMultiRestakingDenom, sdk.NewInt(10000000))
 	suite.mintCoin(multiRestakingCoin, delegatorAddrs[0])
 	suite.app.MTStakingKeeper.AddMTStakingDenom(suite.ctx, mockMultiRestakingDenom)
+	suite.app.MTStakingKeeper.SetEquivalentNativeCoinMultiplier(suite.ctx, 1, mockMultiRestakingDenom, sdk.MustNewDecFromStr("1"))
 
 	err := suite.app.MTStakingKeeper.MTStakingDelegate(suite.ctx, types.MsgMTStakingDelegate{
 		DelegatorAddress: delegatorAddrs[0].String(),
@@ -119,8 +121,8 @@ func (suite *KeeperTestSuite) TestUndelegate() {
 	unbondingQueue := suite.app.MTStakingKeeper.GetUBDQueueTimeSlice(suite.ctx, entry.CompletionTime)
 	suite.Require().Equal(len(unbondingQueue), 1)
 	unbondingDAPair := unbondingQueue[0]
-	suite.Require().Equal(unbondingDAPair.AgentAddress, agents[0].AgentAddress)
-	suite.Require().Equal(unbondingDAPair.DelegatorAddress, delegatorAddrs[0].String())
+	suite.Require().Equal(unbondingDAPair.AgentAddress, string(agentAccAddr))
+	suite.Require().Equal(unbondingDAPair.DelegatorAddress, string(delegatorAddrs[0]))
 }
 
 func (suite *KeeperTestSuite) TestUndelegateReward() {
@@ -130,6 +132,7 @@ func (suite *KeeperTestSuite) TestUndelegateReward() {
 	multiRestakingCoin := sdk.NewCoin(mockMultiRestakingDenom, sdk.NewInt(10000000))
 	suite.mintCoin(multiRestakingCoin, delegatorAddrs[0])
 	suite.app.MTStakingKeeper.AddMTStakingDenom(suite.ctx, mockMultiRestakingDenom)
+	suite.app.MTStakingKeeper.SetEquivalentNativeCoinMultiplier(suite.ctx, 1, mockMultiRestakingDenom, sdk.MustNewDecFromStr("1"))
 
 	err := suite.app.MTStakingKeeper.MTStakingDelegate(suite.ctx, types.MsgMTStakingDelegate{
 		DelegatorAddress: delegatorAddrs[0].String(),

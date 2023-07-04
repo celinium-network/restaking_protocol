@@ -12,6 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/server"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 	ibctesting "github.com/cosmos/ibc-go/v7/testing"
@@ -21,7 +22,6 @@ import (
 	"github.com/celinium-network/restaking_protocol/app/params"
 
 	restakingtypes "github.com/celinium-network/restaking_protocol/x/restaking/types"
-	//
 )
 
 type SetupRestakingCoordinator func(t *testing.T) (
@@ -115,6 +115,7 @@ func NewIntegrationTestSuite() *IntegrationTestSuite {
 		consumerApp.RestakingConsumerKeeper.InitGenesis(ctx, nil)
 		// TODO the params of coordinator and consumer maybe in different package
 		consumerApp.MTStakingKeeper.AddMTStakingDenom(ctx, params.DefaultBondDenom)
+		consumerApp.MTStakingKeeper.SetEquivalentNativeCoinMultiplier(ctx, 1, params.DefaultBondDenom, sdk.MustNewDecFromStr("1"))
 
 		return consumerChian, consumerApp
 	}
