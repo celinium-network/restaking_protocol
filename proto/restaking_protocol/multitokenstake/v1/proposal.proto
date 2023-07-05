@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package restaking_protocol.multitokenstake.v1;
+
+import "gogoproto/gogo.proto";
+import "cosmos_proto/cosmos.proto";
+
+option go_package = "restaking_protocol/x/multitokenstaking/types";
+
+// AddNonNativeTokenToStakingProposal defines a proposal to add a non-native
+// token to participate in Proof-of-Stake (POS) staking.
+message AddNonNativeTokenToStakingProposal{
+    option (gogoproto.goproto_getters)         = false;
+    option (cosmos_proto.implements_interface) = "cosmos.gov.v1beta1.Content";
+   
+
+    string  title       = 1;
+    string  description = 2;
+    
+    //A list of denoms representing the denom of the non-native token to be added to staking
+    repeated string denoms = 3;
+}
+
+// RemoveNonNativeTokenToStakingProposal defines a proposal to remove a non-native
+// token from participating in Proof-of-Stake (POS) staking.
+message RemoveNonNativeTokenToStakingProposal{
+    option (gogoproto.goproto_getters)         = false;
+    option (cosmos_proto.implements_interface) = "cosmos.gov.v1beta1.Content";
+
+    string  title       = 1;
+    string  description = 2;
+    
+    // A list of denoms representing the denom of the non-native token to be removed from staking
+    repeated string denoms = 3;
+}

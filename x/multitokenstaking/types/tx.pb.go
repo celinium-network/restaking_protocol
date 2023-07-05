@@ -34,94 +34,7 @@ var _ = time.Kitchen
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-type MsgAddMTStakingDenom struct {
-	Sender string `protobuf:"bytes,1,opt,name=sender,proto3" json:"sender,omitempty" yaml:"sender"`
-	Deonm  string `protobuf:"bytes,2,opt,name=deonm,proto3" json:"deonm,omitempty"`
-}
-
-func (m *MsgAddMTStakingDenom) Reset()         { *m = MsgAddMTStakingDenom{} }
-func (m *MsgAddMTStakingDenom) String() string { return proto.CompactTextString(m) }
-func (*MsgAddMTStakingDenom) ProtoMessage()    {}
-func (*MsgAddMTStakingDenom) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dd156b4338e7dfdc, []int{0}
-}
-func (m *MsgAddMTStakingDenom) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *MsgAddMTStakingDenom) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_MsgAddMTStakingDenom.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *MsgAddMTStakingDenom) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgAddMTStakingDenom.Merge(m, src)
-}
-func (m *MsgAddMTStakingDenom) XXX_Size() int {
-	return m.Size()
-}
-func (m *MsgAddMTStakingDenom) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgAddMTStakingDenom.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MsgAddMTStakingDenom proto.InternalMessageInfo
-
-func (m *MsgAddMTStakingDenom) GetSender() string {
-	if m != nil {
-		return m.Sender
-	}
-	return ""
-}
-
-func (m *MsgAddMTStakingDenom) GetDeonm() string {
-	if m != nil {
-		return m.Deonm
-	}
-	return ""
-}
-
-type MsgAddMTStakingDenomResponse struct {
-}
-
-func (m *MsgAddMTStakingDenomResponse) Reset()         { *m = MsgAddMTStakingDenomResponse{} }
-func (m *MsgAddMTStakingDenomResponse) String() string { return proto.CompactTextString(m) }
-func (*MsgAddMTStakingDenomResponse) ProtoMessage()    {}
-func (*MsgAddMTStakingDenomResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dd156b4338e7dfdc, []int{1}
-}
-func (m *MsgAddMTStakingDenomResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *MsgAddMTStakingDenomResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_MsgAddMTStakingDenomResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *MsgAddMTStakingDenomResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MsgAddMTStakingDenomResponse.Merge(m, src)
-}
-func (m *MsgAddMTStakingDenomResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *MsgAddMTStakingDenomResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_MsgAddMTStakingDenomResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_MsgAddMTStakingDenomResponse proto.InternalMessageInfo
-
+// MsgMTStakingDelegate define the msg delegate to a agent request type.
 type MsgMTStakingDelegate struct {
 	DelegatorAddress string     `protobuf:"bytes,1,opt,name=delegator_address,json=delegatorAddress,proto3" json:"delegator_address,omitempty"`
 	ValidatorAddress string     `protobuf:"bytes,2,opt,name=validator_address,json=validatorAddress,proto3" json:"validator_address,omitempty"`
@@ -132,7 +45,7 @@ func (m *MsgMTStakingDelegate) Reset()         { *m = MsgMTStakingDelegate{} }
 func (m *MsgMTStakingDelegate) String() string { return proto.CompactTextString(m) }
 func (*MsgMTStakingDelegate) ProtoMessage()    {}
 func (*MsgMTStakingDelegate) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dd156b4338e7dfdc, []int{2}
+	return fileDescriptor_dd156b4338e7dfdc, []int{0}
 }
 func (m *MsgMTStakingDelegate) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -161,6 +74,7 @@ func (m *MsgMTStakingDelegate) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgMTStakingDelegate proto.InternalMessageInfo
 
+// MsgMTStakingDelegateResponse define the msg delegate to a agent response type.
 type MsgMTStakingDelegateResponse struct {
 }
 
@@ -168,7 +82,7 @@ func (m *MsgMTStakingDelegateResponse) Reset()         { *m = MsgMTStakingDelega
 func (m *MsgMTStakingDelegateResponse) String() string { return proto.CompactTextString(m) }
 func (*MsgMTStakingDelegateResponse) ProtoMessage()    {}
 func (*MsgMTStakingDelegateResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dd156b4338e7dfdc, []int{3}
+	return fileDescriptor_dd156b4338e7dfdc, []int{1}
 }
 func (m *MsgMTStakingDelegateResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -197,6 +111,7 @@ func (m *MsgMTStakingDelegateResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgMTStakingDelegateResponse proto.InternalMessageInfo
 
+// MsgMTStakingUndelegate define the msg undelegate to a agent request type.
 type MsgMTStakingUndelegate struct {
 	DelegatorAddress string     `protobuf:"bytes,1,opt,name=delegator_address,json=delegatorAddress,proto3" json:"delegator_address,omitempty"`
 	ValidatorAddress string     `protobuf:"bytes,2,opt,name=validator_address,json=validatorAddress,proto3" json:"validator_address,omitempty"`
@@ -207,7 +122,7 @@ func (m *MsgMTStakingUndelegate) Reset()         { *m = MsgMTStakingUndelegate{}
 func (m *MsgMTStakingUndelegate) String() string { return proto.CompactTextString(m) }
 func (*MsgMTStakingUndelegate) ProtoMessage()    {}
 func (*MsgMTStakingUndelegate) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dd156b4338e7dfdc, []int{4}
+	return fileDescriptor_dd156b4338e7dfdc, []int{2}
 }
 func (m *MsgMTStakingUndelegate) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -236,6 +151,7 @@ func (m *MsgMTStakingUndelegate) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgMTStakingUndelegate proto.InternalMessageInfo
 
+// MsgMTStakingUndelegateResponse define the msg undelegate to a agent response type.
 type MsgMTStakingUndelegateResponse struct {
 	CompletionTime time.Time  `protobuf:"bytes,1,opt,name=completion_time,json=completionTime,proto3,stdtime" json:"completion_time"`
 	Amount         types.Coin `protobuf:"bytes,2,opt,name=amount,proto3" json:"amount"`
@@ -245,7 +161,7 @@ func (m *MsgMTStakingUndelegateResponse) Reset()         { *m = MsgMTStakingUnde
 func (m *MsgMTStakingUndelegateResponse) String() string { return proto.CompactTextString(m) }
 func (*MsgMTStakingUndelegateResponse) ProtoMessage()    {}
 func (*MsgMTStakingUndelegateResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dd156b4338e7dfdc, []int{5}
+	return fileDescriptor_dd156b4338e7dfdc, []int{3}
 }
 func (m *MsgMTStakingUndelegateResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -274,27 +190,89 @@ func (m *MsgMTStakingUndelegateResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgMTStakingUndelegateResponse proto.InternalMessageInfo
 
-func (m *MsgMTStakingUndelegateResponse) GetCompletionTime() time.Time {
-	if m != nil {
-		return m.CompletionTime
-	}
-	return time.Time{}
+// MsgMTStakingUndelegateResponse define the msg withdraw reward from agent request type.
+type MsgMTStakingWithdrawReward struct {
+	DelegatorAddress string `protobuf:"bytes,1,opt,name=delegator_address,json=delegatorAddress,proto3" json:"delegator_address,omitempty"`
+	AgentAddress     string `protobuf:"bytes,2,opt,name=agent_address,json=agentAddress,proto3" json:"agent_address,omitempty"`
 }
 
-func (m *MsgMTStakingUndelegateResponse) GetAmount() types.Coin {
-	if m != nil {
-		return m.Amount
-	}
-	return types.Coin{}
+func (m *MsgMTStakingWithdrawReward) Reset()         { *m = MsgMTStakingWithdrawReward{} }
+func (m *MsgMTStakingWithdrawReward) String() string { return proto.CompactTextString(m) }
+func (*MsgMTStakingWithdrawReward) ProtoMessage()    {}
+func (*MsgMTStakingWithdrawReward) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dd156b4338e7dfdc, []int{4}
 }
+func (m *MsgMTStakingWithdrawReward) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgMTStakingWithdrawReward) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgMTStakingWithdrawReward.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgMTStakingWithdrawReward) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgMTStakingWithdrawReward.Merge(m, src)
+}
+func (m *MsgMTStakingWithdrawReward) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgMTStakingWithdrawReward) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgMTStakingWithdrawReward.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgMTStakingWithdrawReward proto.InternalMessageInfo
+
+// MsgMTStakingUndelegateResponse define the msg withdraw reward from agent response type.
+type MsgMTStakingWithdrawRewardResponse struct {
+}
+
+func (m *MsgMTStakingWithdrawRewardResponse) Reset()         { *m = MsgMTStakingWithdrawRewardResponse{} }
+func (m *MsgMTStakingWithdrawRewardResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgMTStakingWithdrawRewardResponse) ProtoMessage()    {}
+func (*MsgMTStakingWithdrawRewardResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dd156b4338e7dfdc, []int{5}
+}
+func (m *MsgMTStakingWithdrawRewardResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgMTStakingWithdrawRewardResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgMTStakingWithdrawRewardResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgMTStakingWithdrawRewardResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgMTStakingWithdrawRewardResponse.Merge(m, src)
+}
+func (m *MsgMTStakingWithdrawRewardResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgMTStakingWithdrawRewardResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgMTStakingWithdrawRewardResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgMTStakingWithdrawRewardResponse proto.InternalMessageInfo
 
 func init() {
-	proto.RegisterType((*MsgAddMTStakingDenom)(nil), "restaking_protocol.multitokenstake.v1.MsgAddMTStakingDenom")
-	proto.RegisterType((*MsgAddMTStakingDenomResponse)(nil), "restaking_protocol.multitokenstake.v1.MsgAddMTStakingDenomResponse")
 	proto.RegisterType((*MsgMTStakingDelegate)(nil), "restaking_protocol.multitokenstake.v1.MsgMTStakingDelegate")
 	proto.RegisterType((*MsgMTStakingDelegateResponse)(nil), "restaking_protocol.multitokenstake.v1.MsgMTStakingDelegateResponse")
 	proto.RegisterType((*MsgMTStakingUndelegate)(nil), "restaking_protocol.multitokenstake.v1.MsgMTStakingUndelegate")
 	proto.RegisterType((*MsgMTStakingUndelegateResponse)(nil), "restaking_protocol.multitokenstake.v1.MsgMTStakingUndelegateResponse")
+	proto.RegisterType((*MsgMTStakingWithdrawReward)(nil), "restaking_protocol.multitokenstake.v1.MsgMTStakingWithdrawReward")
+	proto.RegisterType((*MsgMTStakingWithdrawRewardResponse)(nil), "restaking_protocol.multitokenstake.v1.MsgMTStakingWithdrawRewardResponse")
 }
 
 func init() {
@@ -302,43 +280,43 @@ func init() {
 }
 
 var fileDescriptor_dd156b4338e7dfdc = []byte{
-	// 562 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe4, 0x54, 0x3f, 0x6f, 0x13, 0x31,
-	0x1c, 0x3d, 0x13, 0x08, 0xc5, 0x15, 0x7f, 0x72, 0x44, 0x28, 0x8d, 0xe0, 0xae, 0x44, 0x42, 0x2a,
-	0x12, 0xb5, 0x95, 0x30, 0x20, 0x8a, 0x18, 0x9a, 0x02, 0x5b, 0x18, 0xae, 0x05, 0x24, 0x96, 0xc8,
-	0xc9, 0x19, 0xeb, 0xd4, 0x3b, 0x3b, 0x3a, 0x3b, 0x51, 0xfb, 0x0d, 0x18, 0xbb, 0x30, 0xb0, 0x75,
-	0xe4, 0x03, 0xf4, 0x43, 0x74, 0x2c, 0x9d, 0x98, 0x0a, 0x4a, 0x16, 0xe6, 0x8a, 0x0f, 0x80, 0x7c,
-	0x76, 0xd2, 0x92, 0x1c, 0x52, 0x0b, 0x6c, 0x6c, 0xf6, 0xef, 0xf7, 0x7e, 0xef, 0xde, 0xef, 0xe9,
-	0x9e, 0x21, 0x4a, 0xa9, 0x54, 0x64, 0x33, 0xe2, 0xac, 0xdd, 0x4b, 0x85, 0x12, 0x5d, 0x11, 0xe3,
-	0xa4, 0x1f, 0xab, 0x48, 0x89, 0x4d, 0xca, 0x75, 0x8b, 0xe2, 0x41, 0x1d, 0xab, 0x2d, 0x94, 0xb5,
-	0xdd, 0x7b, 0xb3, 0x78, 0x34, 0x85, 0x47, 0x83, 0x7a, 0xd5, 0x67, 0x42, 0xb0, 0x98, 0xe2, 0x0c,
-	0xd3, 0xe9, 0xbf, 0xc3, 0x2a, 0x4a, 0xf4, 0x60, 0xd2, 0x33, 0x3c, 0xd5, 0x32, 0x13, 0x4c, 0x64,
-	0x47, 0xac, 0x4f, 0xb6, 0xba, 0xd0, 0x15, 0x32, 0x11, 0xd2, 0x50, 0x63, 0x73, 0xb1, 0x2d, 0xcf,
-	0xdc, 0x70, 0x87, 0x48, 0xad, 0xa8, 0x43, 0x15, 0xa9, 0xe3, 0xae, 0x88, 0xb8, 0xe9, 0xd7, 0xde,
-	0xc0, 0x72, 0x4b, 0xb2, 0xd5, 0x30, 0x6c, 0x6d, 0xac, 0x1b, 0x81, 0xcf, 0x28, 0x17, 0x89, 0x7b,
-	0x1f, 0x16, 0x25, 0xe5, 0x21, 0x4d, 0x2b, 0x60, 0x11, 0x2c, 0x5d, 0x69, 0x96, 0x8e, 0x8f, 0xfc,
-	0xab, 0xdb, 0x24, 0x89, 0x57, 0x6a, 0xa6, 0x5e, 0x0b, 0x2c, 0xc0, 0x2d, 0xc3, 0x4b, 0x21, 0x15,
-	0x3c, 0xa9, 0x5c, 0xd0, 0xc8, 0xc0, 0x5c, 0x6a, 0x1e, 0xbc, 0x9d, 0x47, 0x1c, 0x50, 0xd9, 0x13,
-	0x5c, 0xd2, 0xda, 0x31, 0xc8, 0xbe, 0x7c, 0xaa, 0x1b, 0x53, 0x46, 0x14, 0x75, 0x9f, 0xc3, 0x52,
-	0x68, 0xce, 0x22, 0x6d, 0x93, 0x30, 0x4c, 0xa9, 0x94, 0x56, 0x44, 0xe5, 0x70, 0x6f, 0xb9, 0x6c,
-	0xd7, 0x5b, 0x35, 0x9d, 0x75, 0x95, 0x46, 0x9c, 0x05, 0x37, 0x26, 0x23, 0xb6, 0xee, 0xbe, 0x84,
-	0xa5, 0x01, 0x89, 0xa3, 0xf0, 0x17, 0x9a, 0x4c, 0x61, 0xf3, 0xee, 0xe1, 0xde, 0xf2, 0x1d, 0x4b,
-	0xf3, 0x7a, 0x8c, 0x99, 0xe2, 0x1b, 0x4c, 0xd5, 0xdd, 0xc7, 0xf0, 0x72, 0x87, 0xc4, 0x84, 0x77,
-	0x69, 0xa5, 0xb0, 0x08, 0x96, 0xe6, 0x1b, 0x0b, 0xc8, 0x52, 0x68, 0x6b, 0x91, 0xb5, 0x16, 0xad,
-	0x89, 0x88, 0x37, 0x2f, 0xee, 0x1f, 0xf9, 0x4e, 0x30, 0xc6, 0xaf, 0xcc, 0xbd, 0xdf, 0xf5, 0x9d,
-	0xef, 0xbb, 0xbe, 0x63, 0x4d, 0x99, 0xd9, 0x79, 0x62, 0xca, 0x0f, 0x00, 0x6f, 0x9d, 0x06, 0xbc,
-	0xe2, 0xe1, 0xff, 0x60, 0xcb, 0x27, 0x00, 0xbd, 0xfc, 0xb5, 0xc7, 0xce, 0xb8, 0x2d, 0x78, 0xbd,
-	0x2b, 0x92, 0x5e, 0x4c, 0x55, 0x24, 0x78, 0x5b, 0xc7, 0x22, 0x5b, 0x7e, 0xbe, 0x51, 0x45, 0x26,
-	0x33, 0x68, 0x9c, 0x19, 0xb4, 0x31, 0xce, 0x4c, 0x73, 0x4e, 0x7f, 0x70, 0xe7, 0xab, 0x0f, 0x82,
-	0x6b, 0x27, 0xc3, 0xba, 0xed, 0x3e, 0x82, 0x45, 0x92, 0x88, 0x3e, 0x57, 0xd9, 0xee, 0x67, 0x50,
-	0x6d, 0xe1, 0x8d, 0xcf, 0x05, 0x58, 0x68, 0x49, 0xe6, 0x7e, 0x00, 0xb0, 0x34, 0x9b, 0x9a, 0x27,
-	0xe8, 0x4c, 0x39, 0x47, 0x79, 0xc9, 0xa8, 0xae, 0xfd, 0xc5, 0xf0, 0xc4, 0x27, 0xad, 0x6b, 0x36,
-	0x53, 0xe7, 0xd0, 0x35, 0x33, 0x7c, 0x1e, 0x5d, 0xbf, 0xfd, 0xb3, 0xdd, 0x8f, 0x00, 0xde, 0xcc,
-	0xfb, 0xad, 0x9f, 0xfe, 0x01, 0xf9, 0xc9, 0xf8, 0x3f, 0xd1, 0xd6, 0x7c, 0xb1, 0x3f, 0xf4, 0xc0,
-	0xc1, 0xd0, 0x03, 0xdf, 0x86, 0x1e, 0xd8, 0x19, 0x79, 0xce, 0xc1, 0xc8, 0x73, 0xbe, 0x8c, 0x3c,
-	0xe7, 0xed, 0x83, 0x9c, 0x67, 0x7e, 0x6b, 0xea, 0xa1, 0x8f, 0x38, 0xc3, 0x6a, 0xbb, 0x47, 0x65,
-	0xa7, 0x98, 0x61, 0x1e, 0xfe, 0x0c, 0x00, 0x00, 0xff, 0xff, 0xe4, 0xf4, 0xdc, 0x3e, 0x1d, 0x06,
-	0x00, 0x00,
+	// 568 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe4, 0x55, 0x3f, 0x6f, 0x13, 0x3f,
+	0x18, 0x3e, 0xff, 0xf2, 0x53, 0x29, 0x2e, 0xff, 0x72, 0x44, 0x90, 0x9e, 0xe0, 0x52, 0x22, 0x90,
+	0x3a, 0x50, 0x5b, 0x09, 0x03, 0x02, 0xd4, 0xa1, 0x29, 0x45, 0x62, 0x08, 0x43, 0x5a, 0x40, 0x62,
+	0x89, 0x9c, 0x9c, 0x31, 0x56, 0xef, 0xec, 0xd3, 0xd9, 0x49, 0xcb, 0x37, 0x60, 0xec, 0xc2, 0xc4,
+	0xd2, 0x8d, 0x85, 0x09, 0xf5, 0x43, 0x74, 0xac, 0x3a, 0x31, 0x01, 0x4a, 0x84, 0xc4, 0x8c, 0xf8,
+	0x00, 0xe8, 0xfe, 0xa5, 0xe9, 0xf5, 0x22, 0x55, 0x0d, 0x1b, 0x9b, 0xef, 0x7d, 0x9f, 0xf7, 0xf1,
+	0xf3, 0xbe, 0x7e, 0x7c, 0x86, 0x28, 0xa0, 0x4a, 0x93, 0x4d, 0x2e, 0x58, 0xdb, 0x0f, 0xa4, 0x96,
+	0x5d, 0xe9, 0x62, 0xaf, 0xe7, 0x6a, 0xae, 0xe5, 0x26, 0x15, 0x61, 0x8a, 0xe2, 0x7e, 0x0d, 0xeb,
+	0x6d, 0x14, 0xa5, 0xcd, 0x3b, 0x27, 0xf1, 0x28, 0x83, 0x47, 0xfd, 0x9a, 0x55, 0x61, 0x52, 0x32,
+	0x97, 0xe2, 0x08, 0xd3, 0xe9, 0xbd, 0xc6, 0x9a, 0x7b, 0x61, 0xa1, 0xe7, 0xc7, 0x3c, 0x56, 0x89,
+	0x49, 0x26, 0xa3, 0x25, 0x0e, 0x57, 0x49, 0x74, 0xbe, 0x2b, 0x95, 0x27, 0x55, 0x4c, 0x8d, 0xe3,
+	0x8f, 0x24, 0x65, 0xc7, 0x5f, 0xb8, 0x43, 0x54, 0xa8, 0xa8, 0x43, 0x35, 0xa9, 0xe1, 0xae, 0xe4,
+	0x22, 0xce, 0x57, 0x7f, 0x01, 0x58, 0x6a, 0x2a, 0xd6, 0xdc, 0x58, 0x8f, 0xe5, 0x3d, 0xa6, 0x2e,
+	0x65, 0x44, 0x53, 0x73, 0x0d, 0x16, 0x9d, 0x78, 0x2d, 0x83, 0x36, 0x71, 0x9c, 0x80, 0x2a, 0x55,
+	0x06, 0x0b, 0x60, 0xf1, 0x7c, 0xa3, 0x7c, 0xb8, 0xb7, 0x54, 0x4a, 0x76, 0x59, 0x89, 0x33, 0xeb,
+	0x3a, 0xe0, 0x82, 0xb5, 0xae, 0x8c, 0x4a, 0x92, 0xb8, 0xf9, 0x0c, 0x16, 0xfb, 0xc4, 0xe5, 0xce,
+	0x31, 0x9a, 0xff, 0x22, 0x9a, 0x5b, 0x87, 0x7b, 0x4b, 0x37, 0x13, 0x9a, 0x17, 0x29, 0x26, 0xc3,
+	0xd7, 0xcf, 0xc4, 0xcd, 0x07, 0xf0, 0x5c, 0x87, 0xb8, 0x44, 0x74, 0x69, 0xb9, 0xb0, 0x00, 0x16,
+	0xe7, 0xea, 0xf3, 0x28, 0xa1, 0x08, 0x3b, 0x44, 0x49, 0x87, 0x68, 0x55, 0x72, 0xd1, 0xf8, 0x7f,
+	0xff, 0x6b, 0xc5, 0x68, 0xa5, 0xf8, 0x87, 0xb3, 0xef, 0x76, 0x2b, 0xc6, 0xcf, 0xdd, 0x8a, 0x51,
+	0xb5, 0xe1, 0x8d, 0xbc, 0x9e, 0x5b, 0x54, 0xf9, 0x52, 0x28, 0x5a, 0xfd, 0x0d, 0xe0, 0xb5, 0x71,
+	0xc0, 0x73, 0xe1, 0xfc, 0x0b, 0x63, 0xf9, 0x0c, 0xa0, 0x9d, 0xdf, 0x76, 0x3a, 0x19, 0xb3, 0x09,
+	0x2f, 0x77, 0xa5, 0xe7, 0xbb, 0x54, 0x73, 0x29, 0xda, 0xa1, 0x3b, 0xa3, 0xe6, 0xe7, 0xea, 0x16,
+	0x8a, 0xad, 0x8b, 0x52, 0xeb, 0xa2, 0x8d, 0xd4, 0xba, 0x8d, 0xd9, 0x70, 0xc3, 0x9d, 0x6f, 0x15,
+	0xd0, 0xba, 0x74, 0x54, 0x1c, 0xa6, 0xcd, 0xfb, 0x70, 0x86, 0x78, 0xb2, 0x27, 0x74, 0xd4, 0xfb,
+	0x29, 0x54, 0x27, 0xf0, 0x31, 0xd1, 0x9f, 0x00, 0xb4, 0xc6, 0x45, 0xbf, 0xe4, 0xfa, 0x8d, 0x13,
+	0x90, 0xad, 0x16, 0xdd, 0x22, 0x81, 0xf3, 0xb7, 0xce, 0x6b, 0x19, 0x5e, 0x24, 0x8c, 0x0a, 0x9d,
+	0x39, 0xab, 0xc9, 0x14, 0x17, 0x22, 0x78, 0x12, 0x1b, 0x93, 0x7b, 0x1b, 0x56, 0x27, 0xab, 0x4d,
+	0xc7, 0x5c, 0xff, 0x51, 0x80, 0x85, 0xa6, 0x62, 0xe6, 0x7b, 0x00, 0x8b, 0x27, 0xaf, 0xe6, 0x23,
+	0x74, 0xaa, 0xbf, 0x09, 0xca, 0xf3, 0xb8, 0xb5, 0x3a, 0x45, 0xf1, 0xc8, 0x06, 0x1f, 0x00, 0xbc,
+	0x9a, 0x77, 0x3b, 0x96, 0xcf, 0x40, 0x7e, 0x54, 0x6e, 0xad, 0x4d, 0x55, 0x3e, 0x52, 0xf7, 0x11,
+	0xc0, 0xeb, 0x93, 0xfc, 0xb0, 0x72, 0x86, 0x2d, 0x8e, 0x53, 0x58, 0x4f, 0xa7, 0xa6, 0x48, 0x95,
+	0x36, 0x9e, 0xec, 0x0f, 0x6c, 0x70, 0x30, 0xb0, 0xc1, 0xf7, 0x81, 0x0d, 0x76, 0x86, 0xb6, 0x71,
+	0x30, 0xb4, 0x8d, 0x2f, 0x43, 0xdb, 0x78, 0x75, 0x37, 0xe7, 0x81, 0xd9, 0xce, 0x3c, 0x31, 0x5c,
+	0x30, 0xac, 0xdf, 0xfa, 0x54, 0x75, 0x66, 0x22, 0xcc, 0xbd, 0x3f, 0x01, 0x00, 0x00, 0xff, 0xff,
+	0x9a, 0x72, 0xa1, 0x36, 0x97, 0x06, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -353,9 +331,13 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type MsgClient interface {
-	AddMTStakingDenom(ctx context.Context, in *MsgAddMTStakingDenom, opts ...grpc.CallOption) (*MsgAddMTStakingDenomResponse, error)
+	// MTStakingDelegate define a method for delegate token to a agent.
+	// The agent will delegate it to a validator.
 	MTStakingDelegate(ctx context.Context, in *MsgMTStakingDelegate, opts ...grpc.CallOption) (*MsgMTStakingDelegateResponse, error)
-	MTStakingUndelegate(ctx context.Context, in *MsgMTStakingUndelegate, opts ...grpc.CallOption) (*MsgMTStakingDelegateResponse, error)
+	// MTStakingUndelegate define a mathod for undelegate shares from a agent.
+	MTStakingUndelegate(ctx context.Context, in *MsgMTStakingUndelegate, opts ...grpc.CallOption) (*MsgMTStakingUndelegateResponse, error)
+	// MTStakingUndelegate define a mathod for delegator withdraw staking reward from agent.
+	MTStakingWithdrawReward(ctx context.Context, in *MsgMTStakingWithdrawReward, opts ...grpc.CallOption) (*MsgMTStakingWithdrawRewardResponse, error)
 }
 
 type msgClient struct {
@@ -364,15 +346,6 @@ type msgClient struct {
 
 func NewMsgClient(cc grpc1.ClientConn) MsgClient {
 	return &msgClient{cc}
-}
-
-func (c *msgClient) AddMTStakingDenom(ctx context.Context, in *MsgAddMTStakingDenom, opts ...grpc.CallOption) (*MsgAddMTStakingDenomResponse, error) {
-	out := new(MsgAddMTStakingDenomResponse)
-	err := c.cc.Invoke(ctx, "/restaking_protocol.multitokenstake.v1.Msg/AddMTStakingDenom", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *msgClient) MTStakingDelegate(ctx context.Context, in *MsgMTStakingDelegate, opts ...grpc.CallOption) (*MsgMTStakingDelegateResponse, error) {
@@ -384,9 +357,18 @@ func (c *msgClient) MTStakingDelegate(ctx context.Context, in *MsgMTStakingDeleg
 	return out, nil
 }
 
-func (c *msgClient) MTStakingUndelegate(ctx context.Context, in *MsgMTStakingUndelegate, opts ...grpc.CallOption) (*MsgMTStakingDelegateResponse, error) {
-	out := new(MsgMTStakingDelegateResponse)
+func (c *msgClient) MTStakingUndelegate(ctx context.Context, in *MsgMTStakingUndelegate, opts ...grpc.CallOption) (*MsgMTStakingUndelegateResponse, error) {
+	out := new(MsgMTStakingUndelegateResponse)
 	err := c.cc.Invoke(ctx, "/restaking_protocol.multitokenstake.v1.Msg/MTStakingUndelegate", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) MTStakingWithdrawReward(ctx context.Context, in *MsgMTStakingWithdrawReward, opts ...grpc.CallOption) (*MsgMTStakingWithdrawRewardResponse, error) {
+	out := new(MsgMTStakingWithdrawRewardResponse)
+	err := c.cc.Invoke(ctx, "/restaking_protocol.multitokenstake.v1.Msg/MTStakingWithdrawReward", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -395,45 +377,31 @@ func (c *msgClient) MTStakingUndelegate(ctx context.Context, in *MsgMTStakingUnd
 
 // MsgServer is the server API for Msg service.
 type MsgServer interface {
-	AddMTStakingDenom(context.Context, *MsgAddMTStakingDenom) (*MsgAddMTStakingDenomResponse, error)
+	// MTStakingDelegate define a method for delegate token to a agent.
+	// The agent will delegate it to a validator.
 	MTStakingDelegate(context.Context, *MsgMTStakingDelegate) (*MsgMTStakingDelegateResponse, error)
-	MTStakingUndelegate(context.Context, *MsgMTStakingUndelegate) (*MsgMTStakingDelegateResponse, error)
+	// MTStakingUndelegate define a mathod for undelegate shares from a agent.
+	MTStakingUndelegate(context.Context, *MsgMTStakingUndelegate) (*MsgMTStakingUndelegateResponse, error)
+	// MTStakingUndelegate define a mathod for delegator withdraw staking reward from agent.
+	MTStakingWithdrawReward(context.Context, *MsgMTStakingWithdrawReward) (*MsgMTStakingWithdrawRewardResponse, error)
 }
 
 // UnimplementedMsgServer can be embedded to have forward compatible implementations.
 type UnimplementedMsgServer struct {
 }
 
-func (*UnimplementedMsgServer) AddMTStakingDenom(ctx context.Context, req *MsgAddMTStakingDenom) (*MsgAddMTStakingDenomResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddMTStakingDenom not implemented")
-}
 func (*UnimplementedMsgServer) MTStakingDelegate(ctx context.Context, req *MsgMTStakingDelegate) (*MsgMTStakingDelegateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MTStakingDelegate not implemented")
 }
-func (*UnimplementedMsgServer) MTStakingUndelegate(ctx context.Context, req *MsgMTStakingUndelegate) (*MsgMTStakingDelegateResponse, error) {
+func (*UnimplementedMsgServer) MTStakingUndelegate(ctx context.Context, req *MsgMTStakingUndelegate) (*MsgMTStakingUndelegateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MTStakingUndelegate not implemented")
+}
+func (*UnimplementedMsgServer) MTStakingWithdrawReward(ctx context.Context, req *MsgMTStakingWithdrawReward) (*MsgMTStakingWithdrawRewardResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MTStakingWithdrawReward not implemented")
 }
 
 func RegisterMsgServer(s grpc1.Server, srv MsgServer) {
 	s.RegisterService(&_Msg_serviceDesc, srv)
-}
-
-func _Msg_AddMTStakingDenom_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MsgAddMTStakingDenom)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MsgServer).AddMTStakingDenom(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/restaking_protocol.multitokenstake.v1.Msg/AddMTStakingDenom",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MsgServer).AddMTStakingDenom(ctx, req.(*MsgAddMTStakingDenom))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _Msg_MTStakingDelegate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -472,14 +440,28 @@ func _Msg_MTStakingUndelegate_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_MTStakingWithdrawReward_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgMTStakingWithdrawReward)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).MTStakingWithdrawReward(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/restaking_protocol.multitokenstake.v1.Msg/MTStakingWithdrawReward",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).MTStakingWithdrawReward(ctx, req.(*MsgMTStakingWithdrawReward))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Msg_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "restaking_protocol.multitokenstake.v1.Msg",
 	HandlerType: (*MsgServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "AddMTStakingDenom",
-			Handler:    _Msg_AddMTStakingDenom_Handler,
-		},
 		{
 			MethodName: "MTStakingDelegate",
 			Handler:    _Msg_MTStakingDelegate_Handler,
@@ -488,69 +470,13 @@ var _Msg_serviceDesc = grpc.ServiceDesc{
 			MethodName: "MTStakingUndelegate",
 			Handler:    _Msg_MTStakingUndelegate_Handler,
 		},
+		{
+			MethodName: "MTStakingWithdrawReward",
+			Handler:    _Msg_MTStakingWithdrawReward_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "restaking_protocol/multitokenstake/v1/tx.proto",
-}
-
-func (m *MsgAddMTStakingDenom) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *MsgAddMTStakingDenom) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *MsgAddMTStakingDenom) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.Deonm) > 0 {
-		i -= len(m.Deonm)
-		copy(dAtA[i:], m.Deonm)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Deonm)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Sender) > 0 {
-		i -= len(m.Sender)
-		copy(dAtA[i:], m.Sender)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Sender)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *MsgAddMTStakingDenomResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *MsgAddMTStakingDenomResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *MsgAddMTStakingDenomResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	return len(dAtA) - i, nil
 }
 
 func (m *MsgMTStakingDelegate) Marshal() (dAtA []byte, err error) {
@@ -711,6 +637,66 @@ func (m *MsgMTStakingUndelegateResponse) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
+func (m *MsgMTStakingWithdrawReward) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgMTStakingWithdrawReward) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgMTStakingWithdrawReward) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.AgentAddress) > 0 {
+		i -= len(m.AgentAddress)
+		copy(dAtA[i:], m.AgentAddress)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.AgentAddress)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.DelegatorAddress) > 0 {
+		i -= len(m.DelegatorAddress)
+		copy(dAtA[i:], m.DelegatorAddress)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.DelegatorAddress)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgMTStakingWithdrawRewardResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgMTStakingWithdrawRewardResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgMTStakingWithdrawRewardResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTx(v)
 	base := offset
@@ -722,32 +708,6 @@ func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *MsgAddMTStakingDenom) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Sender)
-	if l > 0 {
-		n += 1 + l + sovTx(uint64(l))
-	}
-	l = len(m.Deonm)
-	if l > 0 {
-		n += 1 + l + sovTx(uint64(l))
-	}
-	return n
-}
-
-func (m *MsgAddMTStakingDenomResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	return n
-}
-
 func (m *MsgMTStakingDelegate) Size() (n int) {
 	if m == nil {
 		return 0
@@ -808,175 +768,37 @@ func (m *MsgMTStakingUndelegateResponse) Size() (n int) {
 	return n
 }
 
+func (m *MsgMTStakingWithdrawReward) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.DelegatorAddress)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.AgentAddress)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *MsgMTStakingWithdrawRewardResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
 func sovTx(x uint64) (n int) {
 	return (math_bits.Len64(x|1) + 6) / 7
 }
 func sozTx(x uint64) (n int) {
 	return sovTx(uint64((x << 1) ^ uint64((int64(x) >> 63))))
-}
-func (m *MsgAddMTStakingDenom) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MsgAddMTStakingDenom: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgAddMTStakingDenom: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Sender", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Sender = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Deonm", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Deonm = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *MsgAddMTStakingDenomResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MsgAddMTStakingDenomResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgAddMTStakingDenomResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
 }
 func (m *MsgMTStakingDelegate) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -1417,6 +1239,170 @@ func (m *MsgMTStakingUndelegateResponse) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgMTStakingWithdrawReward) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgMTStakingWithdrawReward: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgMTStakingWithdrawReward: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DelegatorAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DelegatorAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AgentAddress", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AgentAddress = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgMTStakingWithdrawRewardResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgMTStakingWithdrawRewardResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgMTStakingWithdrawRewardResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTx(dAtA[iNdEx:])

@@ -1,0 +1,255 @@
+syntax = "proto3";
+
+package restaking_protocol.multitokenstake.v1;
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "cosmos_proto/cosmos.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "cosmos/base/v1beta1/coin.proto";
+
+import "restaking_protocol/multitokenstake/v1/stake.proto";
+
+option go_package = "restaking_protocol/x/multitokenstaking/types";
+
+// Query provides defines the gRPC querier service
+service Query{
+    // Agents queries all Agents.
+    rpc Agents(QueryAgentsRequest) returns (QueryAgentsResponse){
+        option (google.api.http).get = "/multi_token_staking/v1/agents";
+    };
+
+    // Agents queries the  agent by the address.
+    rpc Agent(QueryAgentRequest) returns (QueryAgentResponse){
+        option (google.api.http).get = "/multi_token_staking/v1/agents/{agent_addr}";        
+    }
+
+    // DenomAgents queries agents by the staking denom.
+    rpc DenomAgents(QueryDenomAgentsRequest) returns(QueryDenomAgentsResponse){
+        option (google.api.http).get = "/multi_token_staking/v1/agents/{denom}";
+    };
+
+    // AgentDelegations queries delegate info for given agent.
+    rpc AgentDelegations(QueryAgentDelegationsResquest)returns(QueryAgentDelegationsResponse){
+        option (google.api.http).get = "/multi_token_staking/v1/agents/{agent_addr}/delegations";  
+    };
+
+    // AgentUnbondingDelegations queries unbonding delegations of a agent.
+    rpc AgentUnbondingDelegations(AgentUnbondingDelegationsRequest) returns(AgentUnbondingDelegationsResponse){
+        option (google.api.http).get = "/multi_token_staking/v1/agents/{agent_addr}/unbonding_delegations";  
+    };
+
+    // Delegation queries delegate info for given agent delegator pair.
+    rpc Delegation(DelegationRequest) returns(DelegationResponse){
+        option (google.api.http).get = "/multi_token_staking/v1/agents/{agent_addr}/delegations/{delegator_addr}";  
+    };
+
+    // UnbondingDelegation queries unbonding info for given Agent delegator pair.
+    rpc UnbondingDelegation(UnbondingDelegationRequest) returns(UnbondingDelegationResponse){
+        option (google.api.http).get = "/multi_token_staking/v1/agents/{agent_addr}/delegations/"
+                                        "{delegator_addr}/unbonding_delegation";  
+    };
+
+    // DelegatorDelegations queries all delegations of a given delegator address.
+    rpc DelegatorDelegations(DelegatorDelegationsRequest) returns(DelegatorDelegationsResponse){
+        option (google.api.http).get = "/multi_token_staking/v1/delegations/{delegator_addr}"; 
+    };
+
+    // DelegatorUnbondingDelegations queries all unbonding delegations of a given delegator address.
+    rpc DelegatorUnbondingDelegations(DelegatorUnbondingDelegationsRequest) returns(DelegatorUnbondingDelegationsResponse){
+        option (google.api.http).get = "/multi_token_staking/v1/delegators/{delegator_addr}/unbonding_delegations";         
+    };
+
+    // DelegatorAgents queries all agents info for given delegator
+    rpc DelegatorAgents(DelegatorAgentsRequest) returns(DelegatorAgentsResponse){
+        option (google.api.http).get = "/multi_token_staking/v1/delegators/{delegator_addr}/agents";                 
+    };
+
+    // DelegatorAgent queries agent info for given delegator agent pair.
+    rpc DelegatorAgent(DelegatorAgentRequest) returns(DelegatorAgentResponse){
+        option (google.api.http).get = "/multi_token_staking/v1/delegators/{delegator_addr}/agents/{agent_addr}";
+    }; 
+}
+
+// QueryAgentsRequest is request type for Query/Agents RPC method.
+message QueryAgentsRequest{
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    // pagination request
+     cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+// QueryAgentsResponse is response type for Query/Agents RPC method.
+message QueryAgentsResponse{
+    repeated MTStakingAgent agents = 1 [(gogoproto.nullable) = false];
+    cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryAgentsRequest is request type for query agent by address RPC method.
+message QueryAgentRequest{
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    string agent_addr = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}
+
+// QueryAgentsRequest is response type for query agent by address RPC method.
+message QueryAgentResponse{
+    MTStakingAgent Agent = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryDenomAgentsRequest is request type for query agents by the staking denom.
+message QueryDenomAgentsRequest{
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    string denom = 1;
+    cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+// QueryDenomAgentsResponse is response type for query agents by the staking denom.
+message QueryDenomAgentsResponse{
+    repeated MTStakingAgent agents = 1 [(gogoproto.nullable) = false];
+    cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryDenomAgentsRequest is request type for query delegates of the agent.
+message QueryAgentDelegationsResquest{
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    string agent_addr = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+    cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+// QueryDenomAgentsRequest is response type for query delegates of the agent.
+message QueryAgentDelegationsResponse{
+    repeated MTStakingDelegation delegations = 1 [(gogoproto.nullable) = false];
+    cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}   
+
+// AgentUnbondingDelegationsRequest is request type for query unbonding delegations of the agent.
+message AgentUnbondingDelegationsRequest{
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    string agent_addr = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+    cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+// AgentUnbondingDelegationsResponse is response type for query unbonding delegations of the agent.
+message AgentUnbondingDelegationsResponse{
+    repeated MTStakingUnbondingDelegation unbondings =1 [(gogoproto.nullable) = false];
+    cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// DelegationRequest is request type for queries delegate info for given agent delegator pair.
+message DelegationRequest{
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+  
+    // delegator_addr defines the delegator address to query for.
+    string delegator_addr = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  
+    // agent_addr defines the agent address to query for.
+    string agent_addr = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}   
+
+// DelegationRequest is request type for queries delegate info for given agent delegator pair.
+message DelegationResponse {
+    option (gogoproto.equal)            = false;
+  
+    MTStakingDelegation delegation = 1 [(gogoproto.nullable) = false];
+  
+    cosmos.base.v1beta1.Coin balance = 2 [(gogoproto.nullable) = false];
+  }
+
+// UnbondingDelegationRequest is request type for query unbonding delegation for the delegator agent pair.
+message UnbondingDelegationRequest{
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+  
+    // delegator_addr defines the delegator address to query for.
+    string delegator_addr = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  
+    // agent_addr defines the agent address to query for.
+    string agent_addr = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}
+
+// UnbondingDelegationRequest is response type for query unbonding delegation for the delegator agent pair.
+message UnbondingDelegationResponse{
+    MTStakingUnbondingDelegation unbond = 1 [(gogoproto.nullable) = false];
+}
+
+// DelegatorDelegationsRequest is request type for query delegations of the delegator
+message DelegatorDelegationsRequest{
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    // delegator_addr defines the delegator address to query for.
+    string delegator_addr = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+// DelegatorDelegationsRequest is response type for query delegations of the delegator
+message DelegatorDelegationsResponse{
+    // delegation_responses defines all the delegations' info of a delegator.
+    repeated MTStakingDelegation delegations = 1 [(gogoproto.nullable) = false];
+    
+    cosmos.base.query.v1beta1.PageResponse pagination = 2;   
+}
+
+// DelegatorDelegationsRequest is request type for query unbonding delegations of the delegator
+message DelegatorUnbondingDelegationsRequest{
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    // delegator_addr defines the delegator address to query for.
+    string delegator_addr = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+// DelegatorDelegationsRequest is response type for query unbonding delegations of the delegator
+message DelegatorUnbondingDelegationsResponse{
+    MTStakingUnbondingDelegation unbond = 1 [(gogoproto.nullable) = false];
+
+    cosmos.base.query.v1beta1.PageResponse pagination = 2;   
+}
+
+// DelegatorAgentsRequest is request type for query all agents info for given delegator
+message DelegatorAgentsRequest{
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    // delegator_addr defines the delegator address to query for.
+    string delegator_addr = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+// DelegatorAgentsRequest is response type for query all agents info for given delegator
+message DelegatorAgentsResponse{
+    repeated MTStakingAgent agents = 1 [(gogoproto.nullable) = false];
+
+    cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// DelegatorAgentsRequest is request type for query the agent info for delegator agent pair.
+message DelegatorAgentRequest{
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    // delegator_addr defines the delegator address to query for.
+    string delegator_addr = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    // agent_addr defines the agent address to query for.
+    string agent_addr = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}
+
+// DelegatorAgentResponse
+message DelegatorAgentResponse{
+    MTStakingAgent agent = 1 [(gogoproto.nullable) = false];
+}

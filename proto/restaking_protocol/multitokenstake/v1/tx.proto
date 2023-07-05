@@ -9,46 +9,61 @@ import "cosmos/base/v1beta1/coin.proto";
 
 option go_package = "restaking_protocol/x/multitokenstaking/types";
 
-
+// Msg defines the multiTokenStaking Msg service.
 service Msg {
-    rpc AddMTStakingDenom(MsgAddMTStakingDenom) returns (MsgAddMTStakingDenomResponse);
-
+    // MTStakingDelegate define a method for delegate token to a agent. 
+    // The agent will delegate it to a validator.
     rpc MTStakingDelegate(MsgMTStakingDelegate) returns (MsgMTStakingDelegateResponse);
     
-    rpc MTStakingUndelegate(MsgMTStakingUndelegate) returns (MsgMTStakingDelegateResponse);
+    // MTStakingUndelegate define a mathod for undelegate shares from a agent.
+    rpc MTStakingUndelegate(MsgMTStakingUndelegate) returns (MsgMTStakingUndelegateResponse);
+
+    // MTStakingUndelegate define a mathod for delegator withdraw staking reward from agent.
+    rpc MTStakingWithdrawReward(MsgMTStakingWithdrawReward) returns (MsgMTStakingWithdrawRewardResponse);
 }
 
-message MsgAddMTStakingDenom{
-    string sender = 1 [ (gogoproto.moretags) = "yaml:\"sender\"" ];
-
-    string deonm = 2;
-}   
-
-message MsgAddMTStakingDenomResponse{}
-
+// MsgMTStakingDelegate define the msg delegate to a agent request type.
 message MsgMTStakingDelegate{  
     option (gogoproto.equal)           = false;
     option (gogoproto.goproto_getters) = false;
   
     string                   delegator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
     string                   validator_address = 2 [(cosmos_proto.scalar) = "cosmos.ValidatorAddressString"];
-    cosmos.base.v1beta1.Coin balance            = 3 [(gogoproto.nullable) = false];   
+    cosmos.base.v1beta1.Coin balance           = 3 [(gogoproto.nullable) = false];   
 }
 
+// MsgMTStakingDelegateResponse define the msg delegate to a agent response type.
 message MsgMTStakingDelegateResponse {}
 
+// MsgMTStakingUndelegate define the msg undelegate to a agent request type.
 message MsgMTStakingUndelegate{
     option (gogoproto.equal)           = false;
     option (gogoproto.goproto_getters) = false;
-  
+    
     string                   delegator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
     string                   validator_address = 2 [(cosmos_proto.scalar) = "cosmos.ValidatorAddressString"];
     cosmos.base.v1beta1.Coin balance            = 3 [(gogoproto.nullable) = false ];
 }
 
+// MsgMTStakingUndelegateResponse define the msg undelegate to a agent response type.
 message MsgMTStakingUndelegateResponse {
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+  
     google.protobuf.Timestamp completion_time = 1
         [(gogoproto.nullable) = false, (gogoproto.stdtime) = true];
   
-    cosmos.base.v1beta1.Coin amount            = 2 [(gogoproto.nullable) = false ];
+    cosmos.base.v1beta1.Coin amount = 2 [(gogoproto.nullable) = false ];
 }  
+
+// MsgMTStakingUndelegateResponse define the msg withdraw reward from agent request type.
+message MsgMTStakingWithdrawReward{
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+  
+    string delegator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+    string agent_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}
+
+// MsgMTStakingUndelegateResponse define the msg withdraw reward from agent response type.
+message MsgMTStakingWithdrawRewardResponse{}
