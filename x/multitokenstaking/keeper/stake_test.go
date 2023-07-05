@@ -105,7 +105,6 @@ func (s *KeeperTestSuite) TestMTStakingDelegate() {
 		s.mtStakingKeeper.AddMTStakingDenom(s.ctx, mtStakingDenom)
 		s.mtStakingKeeper.SetEquivalentNativeCoinMultiplier(s.ctx, 1, mtStakingDenom, t.toDefaultDenomMultiplier)
 
-		delegatorAddress := t.delegatorAccAddr.String()
 		agentAccAddr := s.mtStakingKeeper.GenerateAccount(s.ctx, mtStakingDenom, t.validator.OperatorAddress).GetAddress()
 		if t.isExistedAgent {
 			t.agent.AgentAddress = agentAccAddr.String()
@@ -119,13 +118,9 @@ func (s *KeeperTestSuite) TestMTStakingDelegate() {
 		eqCoin := sdk.NewCoin(defaultBondDenom, t.toDefaultDenomMultiplier.MulInt(t.delegateAmount).TruncateInt())
 
 		s.delegateExpectOtherKeeperAction(delegateCoin, t.validator, t.delegatorAccAddr, eqCoin, agentAccAddr)
-
-		err := s.mtStakingKeeper.MTStakingDelegate(s.ctx, mtstakingtypes.MsgMTStakingDelegate{
-			DelegatorAddress: delegatorAddress,
-			ValidatorAddress: t.validator.OperatorAddress,
-			Balance:          delegateCoin,
-		})
-
+		valAddr, err := sdk.ValAddressFromBech32(t.validator.OperatorAddress)
+		s.Require().NoError(err)
+		_, err = s.mtStakingKeeper.MTStakingDelegate(s.ctx, t.delegatorAccAddr, valAddr, delegateCoin)
 		s.Require().NoError(err, t.describe)
 
 		agent, found := s.mtStakingKeeper.GetMTStakingAgent(s.ctx, mtStakingDenom, valAddr)
@@ -260,7 +255,6 @@ func (s *KeeperTestSuite) TestMTStakingUndelegate() {
 
 	for _, t := range tests {
 		s.SetupTest()
-		delegatorAddress := t.delegatorAccAddr.String()
 		agentAccAddr := s.mtStakingKeeper.GenerateAccount(s.ctx, mtStakingDenom, t.validator.OperatorAddress).GetAddress()
 		t.agent.AgentAddress = agentAccAddr.String()
 
@@ -285,11 +279,7 @@ func (s *KeeperTestSuite) TestMTStakingUndelegate() {
 		)
 
 		undelegateCoin := sdk.NewCoin(mtStakingDenom, t.undelegateAmount)
-		err := s.mtStakingKeeper.MTStakingUndelegate(s.ctx, &mtstakingtypes.MsgMTStakingUndelegate{
-			DelegatorAddress: delegatorAddress,
-			ValidatorAddress: t.validator.OperatorAddress,
-			Balance:          undelegateCoin,
-		})
+		_, err := s.mtStakingKeeper.MTStakingUndelegate(s.ctx, t.delegatorAccAddr, valAddr, undelegateCoin)
 		if t.expectedError != nil {
 			s.Require().Equal(err, t.expectedAgent)
 			continue

@@ -3,6 +3,7 @@ package keeper
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	sdkerrors "cosmossdk.io/errors"
 	"cosmossdk.io/math"
@@ -14,38 +15,38 @@ import (
 	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 )
 
-// MTStakingDelegate defines a method for performing a delegation of non native coins from a delegator to a validator
-func (k Keeper) MTStakingDelegate(ctx sdk.Context, msg types.MsgMTStakingDelegate) error {
+func (k Keeper) MTStakingDelegate(
+	ctx sdk.Context, delegatorAccAddr sdk.AccAddress, validatorAddr sdk.ValAddress, balance sdk.Coin,
+) (newShares math.Int, err error) {
 	defaultBondDenom := k.stakingKeeper.BondDenom(ctx)
-	if strings.Compare(msg.Balance.Denom, defaultBondDenom) == 0 {
-		return sdkerrors.Wrapf(types.ErrForbidStakingDenom, "denom: %s is native token", msg.Balance.Denom)
+
+	if strings.Compare(balance.Denom, defaultBondDenom) == 0 {
+		return newShares, sdkerrors.Wrapf(types.ErrForbidStakingDenom, "denom: %s is native token", balance.Denom)
 	}
 
-	if !k.denomInWhiteList(ctx, msg.Balance.Denom) {
-		return sdkerrors.Wrapf(types.ErrForbidStakingDenom, "denom: %s not in white list", msg.Balance.Denom)
+	if !k.denomInWhiteList(ctx, balance.Denom) {
+		return newShares, sdkerrors.Wrapf(types.ErrForbidStakingDenom, "denom: %s not in white list", balance.Denom)
 	}
 
-	validatorAddr, err := sdk.ValAddressFromBech32(msg.ValidatorAddress)
-	if err != nil {
-		return sdkerrors.Wrapf(stakingtypes.ErrNoValidatorFound, "address: %s not in white list", msg.ValidatorAddress)
-	}
-
-	agent := k.GetOrCreateMTStakingAgent(ctx, msg.Balance.Denom, validatorAddr)
+	agent := k.GetOrCreateMTStakingAgent(ctx, balance.Denom, validatorAddr)
 	agentAccAddr := sdk.MustAccAddressFromBech32(agent.AgentAddress)
-	delegatorAccAddr := sdk.MustAccAddressFromBech32(msg.DelegatorAddress)
 
-	if err := k.depositAndDelegate(ctx, delegatorAccAddr, agentAccAddr, validatorAddr, msg.Balance); err != nil {
-		return err
+	if err := k.depositAndDelegate(ctx, delegatorAccAddr, agentAccAddr, validatorAddr, balance); err != nil {
+		return newShares, err
 	}
 
-	shares := agent.CalculateShareFromCoin(msg.Balance.Amount)
-	agent.Shares = agent.Shares.Add(shares)
-	agent.StakedAmount = agent.StakedAmount.Add(msg.Balance.Amount)
+	newShares = agent.CalculateShareFromCoin(balance.Amount)
+	agent.Shares = agent.Shares.Add(newShares)
+	agent.StakedAmount = agent.StakedAmount.Add(balance.Amount)
 
 	k.SetMTStakingAgent(ctx, agentAccAddr, agent)
 	k.SetMTStakingDenomAndValWithAgentAddress(ctx, agentAccAddr, agent.StakeDenom, validatorAddr)
 
-	return k.IncreaseDelegatorAgentShares(ctx, shares, agentAccAddr, delegatorAccAddr)
+	err = k.IncreaseDelegatorAgentShares(ctx, newShares, agentAccAddr, delegatorAccAddr)
+	if err != nil {
+		return newShares, err
+	}
+	return newShares, nil
 }
 
 // depositAndDelegate defines a method deposit coin for delegator to agent and mint shares to delegator.
@@ -86,20 +87,16 @@ func (k Keeper) mintAndDelegate(ctx sdk.Context, agentAccAddr sdk.AccAddress, va
 
 // MTStakingUndelegate defines a method for performing an undelegation from a delegate and a validator.
 // Delegator burn the shares of the agents. Then agent account begin undelegate.
-func (k Keeper) MTStakingUndelegate(ctx sdk.Context, msg *types.MsgMTStakingUndelegate) error {
-	delegatorAccAddr := sdk.MustAccAddressFromBech32(msg.DelegatorAddress)
-	valAddr, err := sdk.ValAddressFromBech32(msg.ValidatorAddress)
-	if err != nil {
-		return err
-	}
-
-	agent, found := k.GetMTStakingAgent(ctx, msg.Balance.Denom, valAddr)
+func (k Keeper) MTStakingUndelegate(
+	ctx sdk.Context, delegatorAccAddr sdk.AccAddress, valAddr sdk.ValAddress, balance sdk.Coin,
+) (completeTime time.Time, err error) {
+	agent, found := k.GetMTStakingAgent(ctx, balance.Denom, valAddr)
 	if !found {
-		return types.ErrNotExistedAgent
+		return completeTime, types.ErrNotExistedAgent
 	}
 
-	if k.Unbond(ctx, delegatorAccAddr, valAddr, msg.Balance) != nil {
-		return err
+	if err := k.Unbond(ctx, delegatorAccAddr, valAddr, balance); err != nil {
+		return completeTime, err
 	}
 
 	agentAccAddr := sdk.MustAccAddressFromBech32(agent.AgentAddress)
@@ -107,18 +104,18 @@ func (k Keeper) MTStakingUndelegate(ctx sdk.Context, msg *types.MsgMTStakingUnde
 	unbondingTime := k.stakingKeeper.GetParams(ctx).UnbondingTime
 
 	// TODO Whether the length of the entries should be limited ?
-	undelegateCompleteTime := ctx.BlockTime().Add(unbondingTime)
+	completeTime = ctx.BlockTime().Add(unbondingTime)
 	unbonding.Entries = append(unbonding.Entries, types.MTStakingUnbondingDelegationEntry{
 		CreatedHeight:  ctx.BlockHeight(),
-		CompletionTime: undelegateCompleteTime,
-		InitialBalance: msg.Balance,
-		Balance:        msg.Balance,
+		CompletionTime: completeTime,
+		InitialBalance: balance,
+		Balance:        balance,
 	})
 
 	k.SetMTStakingUnbondingDelegation(ctx, unbonding)
-	k.InsertUBDQueue(ctx, unbonding, undelegateCompleteTime)
+	k.InsertUBDQueue(ctx, unbonding, completeTime)
 
-	return nil
+	return completeTime, nil
 }
 
 // Unbond defines a method for removing shares from an agent by a delegator then agent undelegate funds from a validator.

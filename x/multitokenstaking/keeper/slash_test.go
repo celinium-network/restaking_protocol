@@ -28,11 +28,7 @@ func (s *KeeperTestSuite) TestSlashAgentFromValidator() {
 	s.mtStakingKeeper.SetEquivalentNativeCoinMultiplier(s.ctx, 1, mtStakingDenom, toDefaultDenomMultiplier)
 
 	s.delegateExpectOtherKeeperAction(delegateCoin, validator, delegatorAccAddr, eqCoin, agentAccAddr)
-	err := s.mtStakingKeeper.MTStakingDelegate(s.ctx, mtstakingtypes.MsgMTStakingDelegate{
-		DelegatorAddress: delegatorAccAddr.String(),
-		ValidatorAddress: validator.OperatorAddress,
-		Balance:          delegateCoin,
-	})
+	_, err := s.mtStakingKeeper.MTStakingDelegate(s.ctx, delegatorAccAddr, valAddr, delegateCoin)
 	s.Require().NoError(err)
 
 	slashFactor := sdk.MustNewDecFromStr("0.05")
@@ -65,11 +61,7 @@ func (s *KeeperTestSuite) TestSlashAgentFromValidatorWithUnbonding() {
 	s.mtStakingKeeper.SetEquivalentNativeCoinMultiplier(s.ctx, 1, mtStakingDenom, toDefaultDenomMultiplier)
 
 	s.delegateExpectOtherKeeperAction(delegateCoin, validator, delegatorAccAddr, eqCoin, agentAccAddr)
-	err := s.mtStakingKeeper.MTStakingDelegate(s.ctx, mtstakingtypes.MsgMTStakingDelegate{
-		DelegatorAddress: delegatorAccAddr.String(),
-		ValidatorAddress: validator.OperatorAddress,
-		Balance:          delegateCoin,
-	})
+	_, err := s.mtStakingKeeper.MTStakingDelegate(s.ctx, delegatorAccAddr, valAddr, delegateCoin)
 	s.Require().NoError(err)
 
 	// send some unbondingDelegationEntry

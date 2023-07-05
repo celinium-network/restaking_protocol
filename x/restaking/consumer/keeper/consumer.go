@@ -12,7 +12,6 @@ import (
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 	"github.com/cosmos/ibc-go/v7/modules/core/exported"
 
-	multistakingtypes "github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 	"github.com/celinium-network/restaking_protocol/x/restaking/consumer/types"
 	restaking "github.com/celinium-network/restaking_protocol/x/restaking/types"
 )
@@ -152,11 +151,6 @@ func (k Keeper) HandleRestakingDelegationPacket(
 
 	k.SetOperatorLocalAddress(ctx, delegation.OperatorAddress, delegation.ValidatorAddress, operatorLocalAddress)
 
-	validator, found := k.getValidator(ctx, delegation.ValidatorAddress)
-	if !found {
-		return types.ErrUnknownValidator
-	}
-
 	// TODO how to delegate to validator
 	// (1) adjust delegation of staking module ?
 	// (2) mint coins and delegate by multistaking module
@@ -168,11 +162,15 @@ func (k Keeper) HandleRestakingDelegationPacket(
 		return err
 	}
 
-	return k.multiStakingKeeper.MTStakingDelegate(ctx, multistakingtypes.MsgMTStakingDelegate{
-		DelegatorAddress: operatorLocalAddress.String(),
-		ValidatorAddress: validator.OperatorAddress,
-		Balance:          delegation.Balance,
-	})
+	valAddr, err := sdk.ValAddressFromBech32(delegation.ValidatorAddress)
+	if err != nil {
+		return err
+	}
+
+	if _, err = k.multiStakingKeeper.MTStakingDelegate(ctx, operatorLocalAddress, valAddr, delegation.Balance); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (k Keeper) HandleRestakingUndelegationPacket(
@@ -182,17 +180,12 @@ func (k Keeper) HandleRestakingUndelegationPacket(
 ) error {
 	operatorLocalAddress := k.GetOrCreateOperatorLocalAddress(ctx, packet.SourceChannel, packet.SourcePort, delegation.OperatorAddress, delegation.ValidatorAddress)
 
-	validator, found := k.getValidator(ctx, delegation.ValidatorAddress)
-	if !found {
-		return types.ErrUnknownValidator
-	}
-
-	valAddress, err := sdk.ValAddressFromBech32(validator.OperatorAddress)
+	valAddr, err := sdk.ValAddressFromBech32(delegation.ValidatorAddress)
 	if err != nil {
 		return err
 	}
 
-	err = k.multiStakingKeeper.Unbond(ctx, operatorLocalAddress, valAddress, delegation.Balance)
+	err = k.multiStakingKeeper.Unbond(ctx, operatorLocalAddress, valAddr, delegation.Balance)
 	if err != nil {
 		return err
 	}
@@ -200,13 +193,9 @@ func (k Keeper) HandleRestakingUndelegationPacket(
 	return nil
 }
 
-func (k Keeper) getValidator(ctx sdk.Context, valAddr string) (stakingtypes.Validator, bool) {
-	accAddr, err := sdk.ValAddressFromBech32(valAddr)
-	if err != nil {
-		return stakingtypes.Validator{}, false
-	}
-	return k.stakingKeeper.GetValidator(ctx, accAddr)
-}
+// func (k Keeper) getValidator(ctx sdk.Context, valAddr sdk.ValAddress) (stakingtypes.Validator, bool) {
+// 	return k.stakingKeeper.GetValidator(ctx, valAddr)
+// }
 
 func (k Keeper) GenerateOperatorAccount(
 	ctx sdk.Context,
@@ -233,12 +222,7 @@ func (k Keeper) HandleRestakingSlashPacket(
 ) error {
 	operatorLocalAddress := k.GetOrCreateOperatorLocalAddress(ctx, packet.SourceChannel, packet.SourcePort, slash.OperatorAddress, slash.ValidatorAddress)
 
-	validator, found := k.getValidator(ctx, slash.ValidatorAddress)
-	if !found {
-		return types.ErrUnknownValidator
-	}
-
-	valAddress, err := sdk.ValAddressFromBech32(validator.OperatorAddress)
+	valAddress, err := sdk.ValAddressFromBech32(slash.ValidatorAddress)
 	if err != nil {
 		return err
 	}
