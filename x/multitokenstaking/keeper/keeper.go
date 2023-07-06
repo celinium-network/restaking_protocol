@@ -208,74 +208,70 @@ func (k Keeper) RemoveMTStakingUnbonding(ctx sdk.Context, agentAddress, delegato
 }
 
 func (k Keeper) GetDelegatorAgentShares(ctx sdk.Context, agentAddress, delegator sdk.AccAddress) math.Int {
-	amount := math.ZeroInt()
-	store := ctx.KVStore(k.storeKey)
-	key := types.GetMTStakingSharesKey(agentAddress, delegator)
-	bz := store.Get(key)
-
-	if bz == nil {
-		return amount
-	}
-
-	if err := amount.Unmarshal(bz); err != nil {
+	delegation, found := k.GetDelegation(ctx, agentAddress, delegator)
+	if !found {
 		return math.ZeroInt()
 	}
 
-	return amount
+	return delegation.Shares
+}
+
+func (k Keeper) GetDelegation(ctx sdk.Context, agentAddress, delegator sdk.AccAddress) (*types.MTStakingDelegation, bool) {
+	store := ctx.KVStore(k.storeKey)
+	key := types.GetMTStakingDelegationKey(agentAddress, delegator)
+
+	bz := store.Get(key)
+	if bz == nil {
+		return nil, false
+	}
+
+	var delegation types.MTStakingDelegation
+	k.cdc.MustUnmarshal(bz, &delegation)
+	return &delegation, true
 }
 
 func (k Keeper) IncreaseDelegatorAgentShares(ctx sdk.Context, shares math.Int, agentAddress, delegator sdk.AccAddress) error {
-	var err error
-	amount := math.ZeroInt()
-
 	store := ctx.KVStore(k.storeKey)
-	key := types.GetMTStakingSharesKey(agentAddress, delegator)
+	key := types.GetMTStakingDelegationKey(agentAddress, delegator)
+
+	var delegation types.MTStakingDelegation
+
 	bz := store.Get(key)
 	if bz != nil {
-		if err = amount.Unmarshal(bz); err != nil {
-			return err
+		k.cdc.MustUnmarshal(bz, &delegation)
+		delegation.Shares = delegation.Shares.Add(shares)
+	} else {
+		delegation = types.MTStakingDelegation{
+			DelegatorAddress: string(agentAddress),
+			AgentAddress:     string(delegator),
+			Shares:           shares,
 		}
 	}
 
-	amount = amount.Add(shares)
-	if bz, err = amount.Marshal(); err != nil {
-		return err
-	}
-
+	bz = k.cdc.MustMarshal(&delegation)
 	store.Set(key, bz)
 	return nil
 }
 
 func (k Keeper) DecreaseDelegatorAgentShares(ctx sdk.Context, shares math.Int, agentAddress, delegator sdk.AccAddress) error {
-	var err error
-	var amount math.Int
-
+	var delegation types.MTStakingDelegation
 	store := ctx.KVStore(k.storeKey)
-	key := types.GetMTStakingSharesKey(agentAddress, delegator)
-	bz := store.Get(key)
+	key := types.GetMTStakingDelegationKey(agentAddress, delegator)
 
+	bz := store.Get(key)
 	if bz == nil {
 		return types.ErrInsufficientShares
 	}
 
-	if err = amount.Unmarshal(bz); err != nil {
-		return err
-	}
-
-	if amount.LT(shares) {
+	k.cdc.MustUnmarshal(bz, &delegation)
+	if delegation.Shares.LT(shares) {
 		return types.ErrInsufficientShares
 	}
 
-	amount = amount.Sub(shares)
-	if amount.IsZero() {
-		store.Delete(key)
-	}
-
-	if bz, err = amount.Marshal(); err != nil {
-		return err
-	}
-
+	delegation.Shares = delegation.Shares.Sub(shares)
+	bz = k.cdc.MustMarshal(&delegation)
 	store.Set(key, bz)
+
 	return nil
 }
 

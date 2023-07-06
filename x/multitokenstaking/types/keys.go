@@ -38,7 +38,7 @@ var (
 	UnbondingQueueKey = []byte{0x32}
 
 	// Prefix for key which used in `{agent_address + delegator_address} => shares_amount`
-	SharesPrefix = []byte{0x41}
+	DelegationPrefix = []byte{0x41}
 
 	// Prefix for key used in store total minted
 	MintedKey = []byte{0x51}
@@ -70,13 +70,13 @@ func GetMTStakingAgentKey(agentAddr sdk.AccAddress) []byte {
 	return append(AgentPrefix, agentAddr...)
 }
 
-func GetMTStakingSharesKey(agentAddr, delegator sdk.AccAddress) []byte {
+func GetMTStakingDelegationKey(agentAddr, delegator sdk.AccAddress) []byte {
 	agentAddBz := address.MustLengthPrefix([]byte(agentAddr))
 	delegatorBz := address.MustLengthPrefix(delegator)
-	prefixLen := len(SharesPrefix)
+	prefixLen := len(DelegationPrefix)
 
 	bz := make([]byte, prefixLen+len(agentAddBz)+len(delegatorBz))
-	copy(bz[:prefixLen], SharesPrefix)
+	copy(bz[:prefixLen], DelegationPrefix)
 	copy(bz[prefixLen:prefixLen+len(agentAddBz)], agentAddBz)
 	copy(bz[prefixLen+len(agentAddBz):], delegatorBz)
 

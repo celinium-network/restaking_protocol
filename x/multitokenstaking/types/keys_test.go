@@ -28,7 +28,7 @@ func getAllKeyPrefixes() [][]byte {
 		mtskingtypes.AgentPrefix,
 		mtskingtypes.UnbondingPrefix,
 		mtskingtypes.UnbondingQueueKey,
-		mtskingtypes.SharesPrefix,
+		mtskingtypes.DelegationPrefix,
 		mtskingtypes.MintedKey,
 		mtskingtypes.TokenMultiplierPrefix,
 	}
@@ -52,7 +52,7 @@ func getAllFullyDefinedKeys() [][]byte {
 	return [][]byte{
 		mtskingtypes.GetMTStakingAgentAddressKey("arg1", valAddr),
 		mtskingtypes.GetMTStakingAgentKey(accounts[0]),
-		mtskingtypes.GetMTStakingSharesKey(accounts[0], accounts[1]),
+		mtskingtypes.GetMTStakingDelegationKey(accounts[0], accounts[1]),
 		mtskingtypes.GetMTStakingUnbondingKey(accounts[0], accounts[1]),
 		mtskingtypes.GetMTStakingUnbondingDelegationTimeKey(time.Now()),
 		mtskingtypes.GetMTStakingMintedKey(),

@@ -34,16 +34,14 @@ message EquivalentMultiplierRecord {
 message MTStakingDelegation {
     // Delegator's address.
     string delegator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];  
-    // Validator's address.
-    string validator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-    // Amount being delegated.
-    cosmos.base.v1beta1.Coin delegation_amount = 3 [
-      (gogoproto.nullable) = false,
-      (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coin"
+    // agnet's address.
+    string agent_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+    // shares being staked.
+    string shares = 3 [
+        (cosmos_proto.scalar)  = "cosmos.Int",
+        (gogoproto.customtype) = "Int",
+        (gogoproto.nullable)   = false
     ];
-    // Equivalent staked amount.
-    cosmos.base.v1beta1.Coin equivalent_staked_amount = 4
-        [ (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coin" ];
 }
 
 // MTStakingAgent represents a multi-token staking agent.
