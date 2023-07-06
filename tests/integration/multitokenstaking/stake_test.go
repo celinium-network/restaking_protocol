@@ -10,7 +10,6 @@ import (
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 
 	app "github.com/celinium-network/restaking_protocol/app/consumer"
-	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 )
 
 var (
@@ -30,17 +29,13 @@ func (suite *KeeperTestSuite) TestDelegate() {
 	delegatorAddrs, _ := createValAddrs(2)
 	validators := suite.app.StakingKeeper.GetAllValidators(suite.ctx)
 	multiRestakingCoin := sdk.NewCoin(mockMultiRestakingDenom, sdk.NewInt(10000000))
+	valAddr, err := sdk.ValAddressFromBech32(validators[0].OperatorAddress)
+	suite.Require().NoError(err)
 
 	suite.app.MTStakingKeeper.AddMTStakingDenom(suite.ctx, mockMultiRestakingDenom)
 	suite.app.MTStakingKeeper.SetEquivalentNativeCoinMultiplier(suite.ctx, 1, mockMultiRestakingDenom, sdk.MustNewDecFromStr("1"))
 	suite.mintCoin(multiRestakingCoin, delegatorAddrs[0])
-
-	msg := types.MsgMTStakingDelegate{
-		DelegatorAddress: delegatorAddrs[0].String(),
-		ValidatorAddress: validators[0].OperatorAddress,
-		Balance:          multiRestakingCoin,
-	}
-	err := suite.app.MTStakingKeeper.MTStakingDelegate(suite.ctx, msg)
+	_, err = suite.app.MTStakingKeeper.MTStakingDelegate(suite.ctx, delegatorAddrs[0], valAddr, multiRestakingCoin)
 	suite.NoError(err)
 
 	agents := suite.app.MTStakingKeeper.GetAllAgent(suite.ctx)
@@ -56,12 +51,7 @@ func (suite *KeeperTestSuite) TestDelegate() {
 	suite.Require().True(agent.Shares.Equal(delegatorShares))
 
 	suite.mintCoin(multiRestakingCoin, delegatorAddrs[1])
-	msg2 := types.MsgMTStakingDelegate{
-		DelegatorAddress: delegatorAddrs[1].String(),
-		ValidatorAddress: validators[0].OperatorAddress,
-		Balance:          multiRestakingCoin,
-	}
-	err = suite.app.MTStakingKeeper.MTStakingDelegate(suite.ctx, msg2)
+	_, err = suite.app.MTStakingKeeper.MTStakingDelegate(suite.ctx, delegatorAddrs[1], valAddr, multiRestakingCoin)
 	suite.NoError(err)
 
 	delegator2Shares := suite.app.MTStakingKeeper.GetDelegatorAgentShares(suite.ctx, agentAccAddr, delegatorAddrs[1])
@@ -75,24 +65,18 @@ func (suite *KeeperTestSuite) TestDelegate() {
 func (suite *KeeperTestSuite) TestUndelegate() {
 	delegatorAddrs, _ := createValAddrs(1)
 	validators := suite.app.StakingKeeper.GetAllValidators(suite.ctx)
+	valAddr, err := sdk.ValAddressFromBech32(validators[0].OperatorAddress)
+	suite.Require().NoError(err)
 
 	multiRestakingCoin := sdk.NewCoin(mockMultiRestakingDenom, sdk.NewInt(10000000))
 	suite.mintCoin(multiRestakingCoin, delegatorAddrs[0])
 	suite.app.MTStakingKeeper.AddMTStakingDenom(suite.ctx, mockMultiRestakingDenom)
 	suite.app.MTStakingKeeper.SetEquivalentNativeCoinMultiplier(suite.ctx, 1, mockMultiRestakingDenom, sdk.MustNewDecFromStr("1"))
 
-	err := suite.app.MTStakingKeeper.MTStakingDelegate(suite.ctx, types.MsgMTStakingDelegate{
-		DelegatorAddress: delegatorAddrs[0].String(),
-		ValidatorAddress: validators[0].OperatorAddress,
-		Balance:          multiRestakingCoin,
-	})
+	_, err = suite.app.MTStakingKeeper.MTStakingDelegate(suite.ctx, delegatorAddrs[0], valAddr, multiRestakingCoin)
 	suite.Require().NoError(err)
 
-	err = suite.app.MTStakingKeeper.MTStakingUndelegate(suite.ctx, &types.MsgMTStakingUndelegate{
-		DelegatorAddress: delegatorAddrs[0].String(),
-		ValidatorAddress: validators[0].OperatorAddress,
-		Balance:          multiRestakingCoin,
-	})
+	_, err = suite.app.MTStakingKeeper.MTStakingUndelegate(suite.ctx, delegatorAddrs[0], valAddr, multiRestakingCoin)
 	suite.Require().NoError(err)
 
 	agents := suite.app.MTStakingKeeper.GetAllAgent(suite.ctx)
@@ -128,17 +112,15 @@ func (suite *KeeperTestSuite) TestUndelegate() {
 func (suite *KeeperTestSuite) TestUndelegateReward() {
 	delegatorAddrs, _ := createValAddrs(1)
 	validators := suite.app.StakingKeeper.GetAllValidators(suite.ctx)
+	valAddr, err := sdk.ValAddressFromBech32(validators[0].OperatorAddress)
+	suite.Require().NoError(err)
 
 	multiRestakingCoin := sdk.NewCoin(mockMultiRestakingDenom, sdk.NewInt(10000000))
 	suite.mintCoin(multiRestakingCoin, delegatorAddrs[0])
 	suite.app.MTStakingKeeper.AddMTStakingDenom(suite.ctx, mockMultiRestakingDenom)
 	suite.app.MTStakingKeeper.SetEquivalentNativeCoinMultiplier(suite.ctx, 1, mockMultiRestakingDenom, sdk.MustNewDecFromStr("1"))
 
-	err := suite.app.MTStakingKeeper.MTStakingDelegate(suite.ctx, types.MsgMTStakingDelegate{
-		DelegatorAddress: delegatorAddrs[0].String(),
-		ValidatorAddress: validators[0].OperatorAddress,
-		Balance:          multiRestakingCoin,
-	})
+	_, err = suite.app.MTStakingKeeper.MTStakingDelegate(suite.ctx, delegatorAddrs[0], valAddr, multiRestakingCoin)
 	suite.Require().NoError(err)
 
 	rewardAmount := sdk.NewIntFromUint64(500000)
@@ -151,12 +133,6 @@ func (suite *KeeperTestSuite) TestUndelegateReward() {
 	err = suite.app.BankKeeper.SendCoinsFromModuleToModule(suite.ctx, minttypes.ModuleName, distrtypes.ModuleName, rewardCoins)
 	suite.Require().NoError(err)
 
-	agents := suite.app.MTStakingKeeper.GetAllAgent(suite.ctx)
-	suite.Require().Equal(len(agents), 1)
-	agentAccAddr := sdk.MustAccAddressFromBech32(agents[0].AgentAddress)
-
-	agent, _ := suite.app.MTStakingKeeper.GetMTStakingAgentByAddress(suite.ctx, agentAccAddr)
-	valAddr, _ := sdk.ValAddressFromBech32(agent.ValidatorAddress)
 	validator := suite.app.StakingKeeper.Validator(suite.ctx, valAddr)
 
 	suite.app.DistrKeeper.AllocateTokensToValidator(suite.ctx, validator, sdk.DecCoins{
@@ -167,11 +143,7 @@ func (suite *KeeperTestSuite) TestUndelegateReward() {
 		WithBlockHeight(suite.ctx.BlockHeight() + 100).
 		WithBlockTime(suite.ctx.BlockTime().Add(time.Hour))
 
-	err = suite.app.MTStakingKeeper.MTStakingUndelegate(suite.ctx, &types.MsgMTStakingUndelegate{
-		DelegatorAddress: delegatorAddrs[0].String(),
-		ValidatorAddress: validators[0].OperatorAddress,
-		Balance:          multiRestakingCoin,
-	})
+	_, err = suite.app.MTStakingKeeper.MTStakingUndelegate(suite.ctx, delegatorAddrs[0], valAddr, multiRestakingCoin)
 	suite.Require().NoError(err)
 
 	// TODO check reward amount

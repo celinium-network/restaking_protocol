@@ -6,6 +6,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/testutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -31,6 +32,8 @@ type KeeperTestSuite struct {
 	epochKeeper       *testutilkeeper.MockEpochKeeper
 	stakingKeeper     *testutilkeeper.MockStakingKeeper
 	distributerKeeper *testutilkeeper.MockDistributionKeeper
+
+	queryClient mtstakingtypes.QueryClient
 }
 
 func (s *KeeperTestSuite) SetupTest() {
@@ -59,6 +62,11 @@ func (s *KeeperTestSuite) SetupTest() {
 	s.mtStakingKeeper = &keeper
 	s.ctx = ctx
 	s.codec = encCfg.Codec
+
+	mtstakingtypes.RegisterInterfaces(encCfg.InterfaceRegistry)
+	queryHelper := baseapp.NewQueryServerTestHelper(ctx, encCfg.InterfaceRegistry)
+	mtstakingtypes.RegisterQueryServer(queryHelper, mtstakingkeeper.Querier{Keeper: &keeper})
+	s.queryClient = mtstakingtypes.NewQueryClient(queryHelper)
 }
 
 func TestKeeperTestSuite(t *testing.T) {

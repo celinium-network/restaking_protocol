@@ -1,7 +1,6 @@
 package mtstaking_test
 
 import (
-	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -16,17 +15,15 @@ func DeclineRateCalculateEquivalentCoin(ctx sdk.Context, denom string) (sdk.Dec,
 func (suite *KeeperTestSuite) TestRefreshDelegationAmountWhenRateRise() {
 	delegatorAddrs, _ := createValAddrs(1)
 	validators := suite.app.StakingKeeper.GetAllValidators(suite.ctx)
+	valAddr, err := sdk.ValAddressFromBech32(validators[0].OperatorAddress)
+	suite.Require().NoError(err)
 
 	multiRestakingCoin := sdk.NewCoin(mockMultiRestakingDenom, sdk.NewInt(10000000))
 	suite.mintCoin(multiRestakingCoin, delegatorAddrs[0])
 	suite.app.MTStakingKeeper.AddMTStakingDenom(suite.ctx, mockMultiRestakingDenom)
 	suite.app.MTStakingKeeper.SetEquivalentNativeCoinMultiplier(suite.ctx, 1, mockMultiRestakingDenom, sdk.MustNewDecFromStr("1"))
 
-	err := suite.app.MTStakingKeeper.MTStakingDelegate(suite.ctx, types.MsgMTStakingDelegate{
-		DelegatorAddress: delegatorAddrs[0].String(),
-		ValidatorAddress: validators[0].OperatorAddress,
-		Balance:          multiRestakingCoin,
-	})
+	_, err = suite.app.MTStakingKeeper.MTStakingDelegate(suite.ctx, delegatorAddrs[0], valAddr, multiRestakingCoin)
 	suite.Require().NoError(err)
 
 	suite.app.MTStakingKeeper.RefreshAllAgentDelegation(suite.ctx)
