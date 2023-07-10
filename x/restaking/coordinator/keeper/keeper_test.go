@@ -122,7 +122,7 @@ func (s *KeeperTestSuite) mockOperator() *types.Operator {
 		Owner: userAddr.String(),
 	}
 
-	keeper.SetOperator(ctx, &operator)
+	keeper.SetOperator(ctx, operatorAddr, &operator)
 
 	return &operator
 }

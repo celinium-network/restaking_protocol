@@ -60,7 +60,8 @@ func (k Keeper) OnRecvConsumerSlash(
 ) error {
 	// TODO how process error in this loop? panic or not?
 	for _, slash := range slashList {
-		operator, found := k.GetOperator(ctx, slash.OperatorAddress)
+		operatorAccAddr := sdk.MustAccAddressFromBech32(slash.OperatorAddress)
+		operator, found := k.GetOperator(ctx, operatorAccAddr)
 		if !found {
 			ctx.Logger().Error("slashing operator no exist", slash.OperatorAddress)
 			continue
@@ -69,9 +70,7 @@ func (k Keeper) OnRecvConsumerSlash(
 		slashAmt := slash.SlashFactor.MulInt(operator.RestakedAmount).TruncateInt()
 		operator.RestakedAmount = operator.RestakedAmount.Sub(slashAmt)
 
-		k.SetOperator(ctx, operator)
-
-		operatorAccAddr := sdk.MustAccAddressFromBech32(operator.OperatorAddress)
+		k.SetOperator(ctx, operatorAccAddr, operator)
 
 		slashCoin := sdk.NewCoin(operator.RestakingDenom, slashAmt)
 		err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, operatorAccAddr, types.ModuleName, sdk.NewCoins(slashCoin))

@@ -37,7 +37,7 @@ func (s *IntegrationTestSuite) TestDelegation() {
 	err := coordKeeper.Delegate(coordCtx, user, operatorAccAddr, amount)
 	s.Require().NoError(err)
 
-	operatorDelegationRecord, found := coordKeeper.GetOperatorDelegateRecord(coordCtx, uint64(coordCtx.BlockHeight()), operator.OperatorAddress)
+	operatorDelegationRecord, found := coordKeeper.GetOperatorDelegateRecord(coordCtx, uint64(coordCtx.BlockHeight()), operatorAccAddr)
 	s.Require().True(found)
 	s.Require().Equal(operatorDelegationRecord.Status, rscoordinatortypes.InterChainDelegateCall)
 	s.Require().True(operatorDelegationRecord.DelegationAmount.Equal(amount))
@@ -53,7 +53,9 @@ func (s *IntegrationTestSuite) TestDelegation() {
 	consumerCtx := s.rsConsumerChain.GetContext()
 	consumerKeeper := consumerApp.RestakingConsumerKeeper
 
-	localOperatorAccAddr, found := consumerKeeper.GetOperatorLocalAddress(consumerCtx, operator.OperatorAddress, valSets[0].Address)
+	valAddr, err := sdk.ValAddressFromBech32(valSets[0].Address)
+	s.Require().NoError(err)
+	localOperatorAccAddr, found := consumerKeeper.GetOperatorLocalAddress(consumerCtx, operatorAccAddr, valAddr)
 	s.Require().True(found)
 
 	agents := consumerApp.MTStakingKeeper.GetAllAgent(consumerCtx)
@@ -99,8 +101,8 @@ func (s *IntegrationTestSuite) TestUndelegate() {
 	operator.Shares = operator.Shares.Add(amount)
 	operator.RestakedAmount = operator.RestakedAmount.Add(amount)
 
-	coordKeeper.SetOperator(coordCtx, &operator)
-	coordKeeper.SetDelegation(coordCtx, user.String(), operator.OperatorAddress, &rscoordinatortypes.Delegation{
+	coordKeeper.SetOperator(coordCtx, operatorAccAddr, &operator)
+	coordKeeper.SetDelegation(coordCtx, user, operatorAccAddr, &rscoordinatortypes.Delegation{
 		Delegator: user.String(),
 		Operator:  operator.OperatorAddress,
 		Shares:    amount,

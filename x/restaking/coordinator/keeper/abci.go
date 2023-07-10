@@ -128,7 +128,8 @@ func (k Keeper) ProcessPendingOperatorDelegationRecord(ctx sdk.Context) {
 
 	for _, key := range recordMapKeys {
 		amount := recordMap[key]
-		operator, found := k.GetOperator(ctx, key)
+		operatorAccAddr := sdk.MustAccAddressFromBech32(key)
+		operator, found := k.GetOperator(ctx, operatorAccAddr)
 		if !found {
 			ctx.Logger().Error("operator not found, operator address: ", key)
 			continue
@@ -202,9 +203,10 @@ func (k Keeper) SendDelegation(ctx sdk.Context, operator *types.Operator, amount
 		ibcCallbackKey := types.IBCCallbackKey(channel, restaking.CoordinatorPortID, seq)
 		processingRecord.IbcCallbackIds = append(processingRecord.IbcCallbackIds, string(ibcCallbackKey))
 
+		operatorAccAddr := sdk.MustAccAddressFromBech32(operator.OperatorAddress)
 		callback := types.IBCCallback{
 			CallType: types.InterChainDelegateCall,
-			Args:     string(types.DelegationRecordKey(uint64(ctx.BlockHeight()), operator.OperatorAddress)),
+			Args:     string(types.DelegationRecordKey(uint64(ctx.BlockHeight()), operatorAccAddr)),
 		}
 
 		k.SetCallback(ctx, channel, restaking.CoordinatorPortID, seq, callback)
@@ -258,7 +260,8 @@ func (k Keeper) ProcessPendingOperatorUndelegationRecord(ctx sdk.Context) {
 
 	for _, key := range recordMapKeys {
 		amount := recordMap[key]
-		operator, found := k.GetOperator(ctx, key)
+		operatorAccAddr := sdk.MustAccAddressFromBech32(key)
+		operator, found := k.GetOperator(ctx, operatorAccAddr)
 		if !found {
 			ctx.Logger().Error("operator not found, operator address: ", key)
 			continue
@@ -334,9 +337,10 @@ func (k Keeper) SendUndelegation(ctx sdk.Context, operator *types.Operator, amou
 		ibcCallbackKey := types.IBCCallbackKey(channel, restaking.CoordinatorPortID, seq)
 		processingRecord.IbcCallbackIds = append(processingRecord.IbcCallbackIds, string(ibcCallbackKey))
 
+		operatorAccAddr := sdk.MustAccAddressFromBech32(operator.OperatorAddress)
 		callback := types.IBCCallback{
 			CallType: types.InterChainUndelegateCall,
-			Args:     string(types.UndelegationRecordKey(uint64(ctx.BlockHeight()), operator.OperatorAddress)),
+			Args:     string(types.UndelegationRecordKey(uint64(ctx.BlockHeight()), operatorAccAddr)),
 		}
 
 		k.SetCallback(ctx, channel, restaking.CoordinatorPortID, seq, callback)

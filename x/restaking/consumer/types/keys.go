@@ -1,6 +1,9 @@
 package types
 
-import "github.com/cosmos/cosmos-sdk/types/address"
+import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/address"
+)
 
 const (
 	// ModuleName is the name of the restaking coordinator module
@@ -41,9 +44,9 @@ func GetCoordinatorChannelIDKey() []byte {
 	return []byte{CoordinatorChannelID}
 }
 
-func OperatorAddressKey(operatorAddress string, valAddr string) []byte {
+func OperatorAddressKey(operatorAddress sdk.AccAddress, valAddr sdk.ValAddress) []byte {
 	// key: byte{prefix}| byte{valAddrLen}| valAddr| operatorAddr
-	return append([]byte{OperatorAddressPrefix}, append(address.MustLengthPrefix([]byte(valAddr)), operatorAddress...)...)
+	return append([]byte{OperatorAddressPrefix}, append(address.MustLengthPrefix(valAddr), operatorAddress...)...)
 }
 
 func GetPendingConsumerSlashListKey() []byte {
