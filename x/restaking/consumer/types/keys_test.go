@@ -1,6 +1,7 @@
 package types_test
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 
@@ -14,16 +15,12 @@ var PKs = simtestutil.CreateTestPubKeys(5)
 
 func TestParseValidatorOperatorKey(t *testing.T) {
 	simAccounts := simtestutil.CreateIncrementalAccounts(1)
-	operator := simAccounts[0]
+	operatorAccAddr := simAccounts[0]
 
 	valAddr := sdk.ValAddress(PKs[0].Address().Bytes())
-	operatorAddr := operator.String()
-
-	key := types.OperatorAddressKey(operator, valAddr)
-
+	key := types.OperatorAddressKey(operatorAccAddr, valAddr)
 	addrFromParse := types.ParseValidatorOperatorKey(key)
-
-	if string(addrFromParse) != operatorAddr {
-		panic(fmt.Sprintf("%s not equal %s", addrFromParse, operatorAddr))
+	if !bytes.Equal(addrFromParse, operatorAccAddr) {
+		panic(fmt.Sprintf("%s not equal %s", addrFromParse, operatorAccAddr))
 	}
 }
