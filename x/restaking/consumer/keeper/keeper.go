@@ -210,7 +210,7 @@ func (k Keeper) GetCoordinatorChannelID(ctx sdk.Context) (string, error) {
 	return string(bz), nil
 }
 
-func (k Keeper) GetOperatorLocalAddress(ctx sdk.Context, operatorAddress string, valAddr string) (addr sdk.AccAddress, found bool) {
+func (k Keeper) GetOperatorLocalAddress(ctx sdk.Context, operatorAddress sdk.AccAddress, valAddr sdk.ValAddress) (addr sdk.AccAddress, found bool) {
 	store := ctx.KVStore(k.storeKey)
 
 	bz := store.Get(types.OperatorAddressKey(operatorAddress, valAddr))
@@ -226,9 +226,7 @@ func (k Keeper) GetOperatorLocalAddress(ctx sdk.Context, operatorAddress string,
 }
 
 func (k Keeper) GetOrCreateOperatorLocalAddress(
-	ctx sdk.Context,
-	srcChannel, srcPort, operatorAddress string,
-	valAddr string,
+	ctx sdk.Context, srcChannel, srcPort string, operatorAddress sdk.AccAddress, valAddr sdk.ValAddress,
 ) sdk.AccAddress {
 	operatorLocalAddress, found := k.GetOperatorLocalAddress(ctx, operatorAddress, valAddr)
 	if !found {
@@ -245,7 +243,7 @@ func (k Keeper) GetOrCreateOperatorLocalAddress(
 	return operatorLocalAddress
 }
 
-func (k Keeper) SetOperatorLocalAddress(ctx sdk.Context, operatorAddress, valAddr string, localAddress sdk.AccAddress) {
+func (k Keeper) SetOperatorLocalAddress(ctx sdk.Context, operatorAddress sdk.AccAddress, valAddr sdk.ValAddress, localAddress sdk.AccAddress) {
 	store := ctx.KVStore(k.storeKey)
 	store.Set(types.OperatorAddressKey(operatorAddress, valAddr), []byte(localAddress.String()))
 }

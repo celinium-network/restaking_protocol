@@ -4,6 +4,7 @@ import (
 	"github.com/golang/mock/gomock"
 
 	"cosmossdk.io/math"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
 	host "github.com/cosmos/ibc-go/v7/modules/core/24-host"
@@ -50,11 +51,11 @@ func (s *KeeperTestSuite) TestProcessPendingOperatorDelegationRecord() {
 		ibcCallbackIDs = append(ibcCallbackIDs, string(types.IBCCallbackKey(channel, restaking.CoordinatorPortID, uint64(i))))
 		s.Require().True(found)
 		s.Require().Equal(callback.CallType, types.InterChainDelegateCall)
-		s.Require().Equal(callback.Args, string(types.DelegationRecordKey(uint64(ctx.BlockHeight()), operator.OperatorAddress)))
+		s.Require().Equal(callback.Args, string(types.DelegationRecordKey(uint64(ctx.BlockHeight()), sdk.MustAccAddressFromBech32(operator.OperatorAddress))))
 	}
 
 	// check delegateRecord
-	processedOperatorDelegation, found := keeper.GetOperatorDelegateRecord(ctx, uint64(ctx.BlockHeight()), operator.OperatorAddress)
+	processedOperatorDelegation, found := keeper.GetOperatorDelegateRecord(ctx, uint64(ctx.BlockHeight()), sdk.MustAccAddressFromBech32(operator.OperatorAddress))
 	s.Require().True(found)
 	s.Require().True(processedOperatorDelegation.DelegationAmount.Equal(operatorDelegateRecord.DelegationAmount))
 
@@ -98,10 +99,10 @@ func (s *KeeperTestSuite) TestProcessPendingOperatorUndelegationRecord() {
 		ibcCallbackIDs = append(ibcCallbackIDs, string(types.IBCCallbackKey(channel, restaking.CoordinatorPortID, uint64(i))))
 		s.Require().True(found)
 		s.Require().Equal(callback.CallType, types.InterChainUndelegateCall)
-		s.Require().Equal(callback.Args, string(types.UndelegationRecordKey(uint64(ctx.BlockHeight()), operator.OperatorAddress)))
+		s.Require().Equal(callback.Args, string(types.UndelegationRecordKey(uint64(ctx.BlockHeight()), sdk.MustAccAddressFromBech32(operator.OperatorAddress))))
 	}
 
-	processedOUndelegationRecord, found := keeper.GetOperatorUndelegationRecord(ctx, uint64(ctx.BlockHeight()), operator.OperatorAddress)
+	processedOUndelegationRecord, found := keeper.GetOperatorUndelegationRecord(ctx, uint64(ctx.BlockHeight()), sdk.MustAccAddressFromBech32(operator.OperatorAddress))
 	s.Require().True(found)
 	s.Require().True(processedOUndelegationRecord.UndelegationAmount.Equal(operatorDelegateRecord.UndelegationAmount))
 	s.Require().ElementsMatch(processedOUndelegationRecord.IbcCallbackIds, ibcCallbackIDs)

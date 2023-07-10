@@ -16,10 +16,10 @@ func TestParseValidatorOperatorKey(t *testing.T) {
 	simAccounts := simtestutil.CreateIncrementalAccounts(1)
 	operator := simAccounts[0]
 
-	valAddr := sdk.ValAddress(PKs[0].Address().Bytes()).String()
+	valAddr := sdk.ValAddress(PKs[0].Address().Bytes())
 	operatorAddr := operator.String()
 
-	key := types.OperatorAddressKey(operatorAddr, valAddr)
+	key := types.OperatorAddressKey(operator, valAddr)
 
 	addrFromParse := types.ParseValidatorOperatorKey(key)
 

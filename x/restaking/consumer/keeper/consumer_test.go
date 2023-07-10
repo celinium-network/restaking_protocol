@@ -46,8 +46,8 @@ func (s *KeeperTestSuite) TestHandleRestakingDelegationPacket() {
 		s.ctx,
 		packet.SourceChannel,
 		packet.SourcePort,
-		restakingDelegation.OperatorAddress,
-		valAddress)
+		operatorAccounts[0],
+		valAddr)
 
 	s.bankKeeper.EXPECT().MintCoins(gomock.Any(), types.ModuleName, sdk.Coins{restakingDelegation.Balance})
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(
@@ -88,8 +88,8 @@ func (s *KeeperTestSuite) TestHandleRestakingUndelegationPacket() {
 		s.ctx,
 		packet.SourceChannel,
 		packet.SourcePort,
-		restakingUndelegation.OperatorAddress,
-		valAddress,
+		operatorAccounts[0],
+		valAddr,
 	)
 
 	s.multiStakingKeeper.EXPECT().Unbond(gomock.Any(), localOperator, valAddr, restakingUndelegation.Balance)

@@ -36,7 +36,8 @@ func (k Keeper) HandleIBCAcknowledgement(ctx sdk.Context, packet *channeltypes.P
 		index := slices.Index(record.IbcCallbackIds, string(callbackID))
 		slices.Delete(record.IbcCallbackIds, index, index+1)
 		if len(record.IbcCallbackIds) == 0 {
-			operator, found := k.GetOperator(ctx, record.OperatorAddress)
+			operatorAccAddr := sdk.MustAccAddressFromBech32(record.OperatorAddress)
+			operator, found := k.GetOperator(ctx, operatorAccAddr)
 			if !found {
 				return types.ErrUnknownOperator
 			}
@@ -70,7 +71,8 @@ func (k Keeper) HandleIBCAcknowledgement(ctx sdk.Context, packet *channeltypes.P
 		}
 
 		if len(record.IbcCallbackIds) == 0 {
-			operator, found := k.GetOperator(ctx, record.OperatorAddress)
+			operatorAccAddr := sdk.MustAccAddressFromBech32(record.OperatorAddress)
+			operator, found := k.GetOperator(ctx, operatorAccAddr)
 			if !found {
 				return types.ErrUnknownOperator
 			}
