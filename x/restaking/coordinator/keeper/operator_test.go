@@ -103,13 +103,13 @@ func (s *KeeperTestSuite) TestDelegate() {
 	err = s.coordinatorKeeper.Delegate(s.ctx, user, createdOperatorAccAddr, delegateAmt)
 	s.Require().NoError(err)
 
-	delegation, found := s.coordinatorKeeper.GetDelegation(s.ctx, user.String(), createdOperator.OperatorAddress)
+	delegation, found := s.coordinatorKeeper.GetDelegation(s.ctx, user, createdOperatorAccAddr)
 	s.Require().True(found)
 	s.Require().Equal(delegation.Delegator, user.String())
 	s.Require().Equal(delegation.Operator, createdOperator.OperatorAddress)
 	s.Require().True(delegation.Shares.Equal(delegateAmt))
 
-	opDelegationRecord, found := s.coordinatorKeeper.GetOperatorDelegateRecord(s.ctx, uint64(s.ctx.BlockHeight()), createdOperator.OperatorAddress)
+	opDelegationRecord, found := s.coordinatorKeeper.GetOperatorDelegateRecord(s.ctx, uint64(s.ctx.BlockHeight()), createdOperatorAccAddr)
 	s.Require().True(found)
 	s.Require().True(opDelegationRecord.DelegationAmount.Equal(delegateAmt))
 	s.Require().Equal(opDelegationRecord.Status, types.OpDelRecordPending)
@@ -126,22 +126,21 @@ func (s *KeeperTestSuite) TestUndelegate() {
 
 	// TODO maybe become a mock function like: mockDelegation
 	delegateAmt := math.NewIntFromUint64(100000)
-	keeper.SetDelegation(ctx, delegatorAddress, operator.OperatorAddress, &types.Delegation{
+	operatorAccAddr := sdk.MustAccAddressFromBech32(operator.OperatorAddress)
+	keeper.SetDelegation(ctx, delegatorAccAddr, operatorAccAddr, &types.Delegation{
 		Delegator: delegatorAddress,
 		Operator:  operator.OperatorAddress,
 		Shares:    delegateAmt,
 	})
 	operator.Shares = delegateAmt
 	operator.RestakedAmount = delegateAmt
-	keeper.SetOperator(ctx, operator)
-
-	operatorAccAddr := sdk.MustAccAddressFromBech32(operator.OperatorAddress)
+	keeper.SetOperator(ctx, operatorAccAddr, operator)
 
 	err := keeper.Undelegate(ctx, delegatorAccAddr, operatorAccAddr, delegateAmt)
 	s.Require().NoError(err)
 
 	// check UnbondDelegationRecord
-	record, found := keeper.GetOperatorUndelegationRecord(ctx, uint64(ctx.BlockHeight()), operator.OperatorAddress)
+	record, found := keeper.GetOperatorUndelegationRecord(ctx, uint64(ctx.BlockHeight()), operatorAccAddr)
 	s.Require().True(found)
 	s.Require().Equal(record.Status, types.OpUndelegationRecordPending)
 	s.Require().Equal(len(record.UnbondingEntryIds), 1)

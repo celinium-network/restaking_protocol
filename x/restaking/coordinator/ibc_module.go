@@ -44,9 +44,7 @@ func (am AppModule) OnChanOpenTry(
 	counterpartyVersion string,
 ) (version string, err error) {
 	// Validate parameters
-	if err := validateRestakingChannelParams(
-		ctx, &am.keeper, order, portID,
-	); err != nil {
+	if err := validateRestakingChannelParams(ctx, &am.keeper, order, portID); err != nil {
 		return "", err
 	}
 

@@ -94,23 +94,23 @@ func ConsumerClientToChannelKey(clientID string) []byte {
 	return append([]byte{ConsumerClientToChannelPrefix}, []byte(clientID)...)
 }
 
-func OperatorKey(operatorAddr string) []byte {
-	return append([]byte{OperatorPrefix}, []byte(operatorAddr)...)
+func OperatorKey(operatorAccAddr sdk.AccAddress) []byte {
+	return append([]byte{OperatorPrefix}, operatorAccAddr...)
 }
 
-func DelegationRecordKey(blockHeight uint64, operatorAddr string) []byte {
+func DelegationRecordKey(blockHeight uint64, operatorAccAddr sdk.AccAddress) []byte {
 	bz := sdk.Uint64ToBigEndian(blockHeight)
-	return append([]byte{DelegationRecordPrefix}, []byte(operatorAddr+string(bz))...)
+	return append([]byte{DelegationRecordPrefix}, (append(operatorAccAddr, bz...))...)
 }
 
-func UndelegationRecordKey(blockHeight uint64, operatorAddr string) []byte {
+func UndelegationRecordKey(blockHeight uint64, operatorAccAddr sdk.AccAddress) []byte {
 	bz := sdk.Uint64ToBigEndian(blockHeight)
-	return append([]byte{UndelegationRecordPrefix}, []byte(operatorAddr+string(bz))...)
+	return append([]byte{UndelegationRecordPrefix}, append(operatorAccAddr, bz...)...)
 }
 
-func OperatorSharesKey(ownerAddr, operatorAddr string) []byte {
+func OperatorSharesKey(ownerAccAddr, operatorAccAddr sdk.AccAddress) []byte {
 	// TODO address string in key should has length as prefix ?
-	return append([]byte{OperatorSharesPrefix}, []byte(ownerAddr+operatorAddr)...)
+	return append([]byte{OperatorSharesPrefix}, append(ownerAccAddr, operatorAccAddr...)...)
 }
 
 func IBCCallbackKey(channelID, portID string, seq uint64) []byte {

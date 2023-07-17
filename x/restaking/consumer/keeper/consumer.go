@@ -147,9 +147,18 @@ func (k Keeper) HandleRestakingDelegationPacket(
 	packet channeltypes.Packet,
 	delegation *restaking.DelegationPacket,
 ) error {
-	operatorLocalAddress := k.GetOrCreateOperatorLocalAddress(ctx, packet.SourceChannel, packet.SourcePort, delegation.OperatorAddress, delegation.ValidatorAddress)
+	delegationOperatorAccAddr, err := sdk.AccAddressFromBech32(delegation.OperatorAddress)
+	if err != nil {
+		return err
+	}
 
-	k.SetOperatorLocalAddress(ctx, delegation.OperatorAddress, delegation.ValidatorAddress, operatorLocalAddress)
+	delegationValAddr, err := sdk.ValAddressFromBech32(delegation.ValidatorAddress)
+	if err != nil {
+		return err
+	}
+
+	operatorLocalAddress := k.GetOrCreateOperatorLocalAddress(ctx, packet.SourceChannel, packet.SourcePort, delegationOperatorAccAddr, delegationValAddr)
+	k.SetOperatorLocalAddress(ctx, delegationOperatorAccAddr, delegationValAddr, operatorLocalAddress)
 
 	// TODO how to delegate to validator
 	// (1) adjust delegation of staking module ?
@@ -162,12 +171,7 @@ func (k Keeper) HandleRestakingDelegationPacket(
 		return err
 	}
 
-	valAddr, err := sdk.ValAddressFromBech32(delegation.ValidatorAddress)
-	if err != nil {
-		return err
-	}
-
-	if _, err = k.multiStakingKeeper.MTStakingDelegate(ctx, operatorLocalAddress, valAddr, delegation.Balance); err != nil {
+	if _, err = k.multiStakingKeeper.MTStakingDelegate(ctx, operatorLocalAddress, delegationValAddr, delegation.Balance); err != nil {
 		return err
 	}
 	return nil
@@ -178,12 +182,16 @@ func (k Keeper) HandleRestakingUndelegationPacket(
 	packet channeltypes.Packet,
 	delegation *restaking.UndelegationPacket,
 ) error {
-	operatorLocalAddress := k.GetOrCreateOperatorLocalAddress(ctx, packet.SourceChannel, packet.SourcePort, delegation.OperatorAddress, delegation.ValidatorAddress)
-
+	delegationOperatorAccAddr, err := sdk.AccAddressFromBech32(delegation.OperatorAddress)
+	if err != nil {
+		return err
+	}
 	valAddr, err := sdk.ValAddressFromBech32(delegation.ValidatorAddress)
 	if err != nil {
 		return err
 	}
+
+	operatorLocalAddress := k.GetOrCreateOperatorLocalAddress(ctx, packet.SourceChannel, packet.SourcePort, delegationOperatorAccAddr, valAddr)
 
 	err = k.multiStakingKeeper.Unbond(ctx, operatorLocalAddress, valAddr, delegation.Balance)
 	if err != nil {
@@ -193,14 +201,8 @@ func (k Keeper) HandleRestakingUndelegationPacket(
 	return nil
 }
 
-// func (k Keeper) getValidator(ctx sdk.Context, valAddr sdk.ValAddress) (stakingtypes.Validator, bool) {
-// 	return k.stakingKeeper.GetValidator(ctx, valAddr)
-// }
-
 func (k Keeper) GenerateOperatorAccount(
-	ctx sdk.Context,
-	channel, portID, operatorAddress string,
-	valAddr string,
+	ctx sdk.Context, channel, portID string, operatorAccAddr sdk.AccAddress, valAddr sdk.ValAddress,
 ) authtypes.AccountI {
 	header := ctx.BlockHeader()
 
@@ -209,7 +211,7 @@ func (k Keeper) GenerateOperatorAccount(
 	buf = append(buf, header.DataHash...)
 	buf = append(buf, []byte(channel)...)
 	buf = append(buf, []byte(portID)...)
-	buf = append(buf, []byte(operatorAddress)...)
+	buf = append(buf, []byte(operatorAccAddr)...)
 	buf = append(buf, valAddr...)
 
 	return authtypes.NewEmptyModuleAccount(string(buf), authtypes.Staking)
@@ -220,14 +222,18 @@ func (k Keeper) HandleRestakingSlashPacket(
 	packet channeltypes.Packet,
 	slash *restaking.SlashPacket,
 ) error {
-	operatorLocalAddress := k.GetOrCreateOperatorLocalAddress(ctx, packet.SourceChannel, packet.SourcePort, slash.OperatorAddress, slash.ValidatorAddress)
-
-	valAddress, err := sdk.ValAddressFromBech32(slash.ValidatorAddress)
+	slashOperatorAccAddr, err := sdk.AccAddressFromBech32(slash.OperatorAddress)
+	if err != nil {
+		return err
+	}
+	slashValAddr, err := sdk.ValAddressFromBech32(slash.ValidatorAddress)
 	if err != nil {
 		return err
 	}
 
-	err = k.multiStakingKeeper.InstantSlash(ctx, valAddress, operatorLocalAddress, slash.Balance)
+	operatorLocalAddress := k.GetOrCreateOperatorLocalAddress(ctx, packet.SourceChannel, packet.SourcePort, slashOperatorAccAddr, slashValAddr)
+
+	err = k.multiStakingKeeper.InstantSlash(ctx, slashValAddr, operatorLocalAddress, slash.Balance)
 	if err != nil {
 		return err
 	}

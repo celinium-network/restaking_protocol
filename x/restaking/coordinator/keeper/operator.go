@@ -56,7 +56,7 @@ func (k Keeper) RegisterOperator(ctx sdk.Context, msg types.MsgRegisterOperator)
 		Owner:              msg.Sender,
 	}
 
-	k.SetOperator(ctx, &operator)
+	k.SetOperator(ctx, operatorAccount.GetAddress(), &operator)
 
 	return nil
 }
@@ -73,20 +73,20 @@ func generateOperatorAddress(ctx sdk.Context) *authtypes.ModuleAccount {
 	return authtypes.NewEmptyModuleAccount(string(buf), authtypes.Staking)
 }
 
-func (k Keeper) Delegate(ctx sdk.Context, delegator sdk.AccAddress, operatorAccAddr sdk.AccAddress, amount math.Int) error {
+func (k Keeper) Delegate(ctx sdk.Context, delegatorAccAddr sdk.AccAddress, operatorAccAddr sdk.AccAddress, amount math.Int) error {
 	operatorAddress := operatorAccAddr.String()
-	operator, found := k.GetOperator(ctx, operatorAddress)
+	operator, found := k.GetOperator(ctx, operatorAccAddr)
 	if !found {
 		return errorsmod.Wrap(types.ErrUnknownOperator, fmt.Sprintf("operator address %s", operatorAddress))
 	}
 
 	if err := k.sendCoinsFromAccountToAccount(
-		ctx, delegator, operatorAccAddr, sdk.Coins{sdk.NewCoin(operator.RestakingDenom, amount)},
+		ctx, delegatorAccAddr, operatorAccAddr, sdk.Coins{sdk.NewCoin(operator.RestakingDenom, amount)},
 	); err != nil {
 		return err
 	}
 
-	delegatorRecord, found := k.GetOperatorDelegateRecord(ctx, uint64(ctx.BlockHeight()), operatorAddress)
+	delegatorRecord, found := k.GetOperatorDelegateRecord(ctx, uint64(ctx.BlockHeight()), operatorAccAddr)
 	if !found {
 		delegatorRecord = &types.OperatorDelegationRecord{
 			OperatorAddress:  operatorAddress,
@@ -109,8 +109,8 @@ func (k Keeper) Delegate(ctx sdk.Context, delegator sdk.AccAddress, operatorAccA
 	// TODO maybe use epoch replace blockHight
 	k.SetOperatorDelegateRecord(ctx, uint64(ctx.BlockHeight()), delegatorRecord)
 
-	delegatorAddress := delegator.String()
-	delegation, found := k.GetDelegation(ctx, delegatorAddress, operatorAddress)
+	delegatorAddress := delegatorAccAddr.String()
+	delegation, found := k.GetDelegation(ctx, delegatorAccAddr, operatorAccAddr)
 	if !found {
 		delegation = &types.Delegation{
 			Delegator: delegatorAddress,
@@ -121,25 +121,19 @@ func (k Keeper) Delegate(ctx sdk.Context, delegator sdk.AccAddress, operatorAccA
 
 	// TODO shares should be math.Dec?
 	delegation.Shares = delegation.Shares.Add(addedShares)
-	k.SetDelegation(ctx, delegatorAddress, operatorAddress, delegation)
+	k.SetDelegation(ctx, delegatorAccAddr, operatorAccAddr, delegation)
 	return nil
 }
 
-func (k Keeper) Undelegate(
-	ctx sdk.Context,
-	delegator, operatorAccAddr sdk.AccAddress,
-	amount math.Int,
-) error {
+func (k Keeper) Undelegate(ctx sdk.Context, delegatorAccAddr, operatorAccAddr sdk.AccAddress, amount math.Int) error {
 	operatorAddress := operatorAccAddr.String()
-	operator, found := k.GetOperator(ctx, operatorAddress)
+	operator, found := k.GetOperator(ctx, operatorAccAddr)
 	if !found {
 		return errorsmod.Wrapf(types.ErrUnknownOperator, "operator address %s", operatorAddress)
 	}
 
 	// TODO check entry UnbondingDelegationEntry length? Set by module params?
-
-	delegatorAddress := delegator.String()
-	delegation, found := k.GetDelegation(ctx, delegatorAddress, operatorAddress)
+	delegation, found := k.GetDelegation(ctx, delegatorAccAddr, operatorAccAddr)
 	if !found {
 		return errorsmod.Wrapf(types.ErrInsufficientDelegation, "delegation is't existed")
 	}
@@ -152,11 +146,11 @@ func (k Keeper) Undelegate(
 	operator.Shares = operator.Shares.Sub(removedShared)
 	delegation.Shares = delegation.Shares.Sub(removedShared)
 
-	k.SetOperator(ctx, operator)
-	k.SetDelegation(ctx, delegatorAddress, operatorAddress, delegation)
+	k.SetOperator(ctx, operatorAccAddr, operator)
+	k.SetDelegation(ctx, delegatorAccAddr, operatorAccAddr, delegation)
 
 	blockHeight := uint64(ctx.BlockHeight())
-	undelegationRecord, found := k.GetOperatorUndelegationRecord(ctx, blockHeight, operatorAddress)
+	undelegationRecord, found := k.GetOperatorUndelegationRecord(ctx, blockHeight, operatorAccAddr)
 	if !found {
 		undelegationRecord = &types.OperatorUndelegationRecord{
 			OperatorAddress:    operatorAddress,
@@ -167,10 +161,8 @@ func (k Keeper) Undelegate(
 		}
 	}
 
+	entryID := k.SetUnbondingDelegationEntry(ctx, blockHeight, delegatorAccAddr, operatorAccAddr, sdk.NewCoin(operator.RestakingDenom, amount))
 	undelegationRecord.UndelegationAmount = undelegationRecord.UndelegationAmount.Add(amount)
-
-	entryID := k.SetUnbondingDelegationEntry(ctx, blockHeight, delegator, operatorAccAddr, sdk.NewCoin(operator.RestakingDenom, amount))
-
 	undelegationRecord.UnbondingEntryIds = append(undelegationRecord.UnbondingEntryIds, entryID)
 
 	// TODO maybe use epoch replace blockHight
@@ -179,7 +171,9 @@ func (k Keeper) Undelegate(
 	return nil
 }
 
-func (k Keeper) SetUnbondingDelegationEntry(ctx sdk.Context, creationHeight uint64, delAddr sdk.AccAddress, opAddr sdk.AccAddress, balance sdk.Coin) (entryID uint64) {
+func (k Keeper) SetUnbondingDelegationEntry(
+	ctx sdk.Context, creationHeight uint64, delAddr sdk.AccAddress, opAddr sdk.AccAddress, balance sdk.Coin,
+) (entryID uint64) {
 	ubd, found := k.GetUnbondingDelegation(ctx, delAddr, opAddr)
 	id := k.IncrementUnbondingID(ctx)
 

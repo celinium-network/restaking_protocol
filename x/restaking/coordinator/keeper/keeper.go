@@ -278,16 +278,16 @@ func (k Keeper) GetConsumerRewardToken(ctx sdk.Context, clientID string) []strin
 	return strings.Split(string(bz), types.StringListSplitter)
 }
 
-func (k Keeper) SetOperator(ctx sdk.Context, operator *types.Operator) {
+func (k Keeper) SetOperator(ctx sdk.Context, operatorAccAddr sdk.AccAddress, operator *types.Operator) {
 	store := ctx.KVStore(k.storeKey)
 	bz := k.cdc.MustMarshal(operator)
-	store.Set(types.OperatorKey(operator.OperatorAddress), bz)
+	store.Set(types.OperatorKey(operatorAccAddr), bz)
 }
 
-func (k Keeper) GetOperator(ctx sdk.Context, addr string) (*types.Operator, bool) {
+func (k Keeper) GetOperator(ctx sdk.Context, operatorAccAddr sdk.AccAddress) (*types.Operator, bool) {
 	store := ctx.KVStore(k.storeKey)
 
-	bz := store.Get(types.OperatorKey(addr))
+	bz := store.Get(types.OperatorKey(operatorAccAddr))
 	if bz == nil {
 		return nil, false
 	}
@@ -313,10 +313,10 @@ func (k Keeper) GetAllOperators(ctx sdk.Context) (operators []types.Operator) {
 }
 
 // TODO convert blockHeight to epoch?
-func (k Keeper) GetOperatorDelegateRecord(ctx sdk.Context, blockHeight uint64, operatorAddr string) (*types.OperatorDelegationRecord, bool) {
+func (k Keeper) GetOperatorDelegateRecord(ctx sdk.Context, blockHeight uint64, operatorAccAddr sdk.AccAddress) (*types.OperatorDelegationRecord, bool) {
 	store := ctx.KVStore(k.storeKey)
 
-	bz := store.Get(types.DelegationRecordKey(blockHeight, operatorAddr))
+	bz := store.Get(types.DelegationRecordKey(blockHeight, operatorAccAddr))
 	if bz == nil {
 		return nil, false
 	}
@@ -342,7 +342,8 @@ func (k Keeper) GetOperatorDelegateRecordByKey(ctx sdk.Context, key string) (*ty
 func (k Keeper) SetOperatorDelegateRecord(ctx sdk.Context, blockHeight uint64, record *types.OperatorDelegationRecord) {
 	store := ctx.KVStore(k.storeKey)
 	bz := k.cdc.MustMarshal(record)
-	store.Set(types.DelegationRecordKey(blockHeight, record.OperatorAddress), bz)
+	operatorAccAddr := sdk.MustAccAddressFromBech32(record.OperatorAddress)
+	store.Set(types.DelegationRecordKey(blockHeight, operatorAccAddr), bz)
 }
 
 func (k Keeper) SetOperatorDelegateRecordByKey(ctx sdk.Context, key string, record *types.OperatorDelegationRecord) {
@@ -356,10 +357,10 @@ func (k Keeper) DeleteOperatorDelegateRecordByKey(ctx sdk.Context, key string) {
 	store.Delete([]byte(key))
 }
 
-func (k Keeper) GetOperatorUndelegationRecord(ctx sdk.Context, blockHeight uint64, operatorAddr string) (*types.OperatorUndelegationRecord, bool) {
+func (k Keeper) GetOperatorUndelegationRecord(ctx sdk.Context, blockHeight uint64, operatorAccAddr sdk.AccAddress) (*types.OperatorUndelegationRecord, bool) {
 	store := ctx.KVStore(k.storeKey)
 
-	bz := store.Get(types.UndelegationRecordKey(blockHeight, operatorAddr))
+	bz := store.Get(types.UndelegationRecordKey(blockHeight, operatorAccAddr))
 	if bz == nil {
 		return nil, false
 	}
@@ -385,7 +386,8 @@ func (k Keeper) GetOperatorUndelegationRecordByKey(ctx sdk.Context, key string) 
 func (k Keeper) SetOperatorUndelegationRecord(ctx sdk.Context, blockHeight uint64, record *types.OperatorUndelegationRecord) {
 	store := ctx.KVStore(k.storeKey)
 	bz := k.cdc.MustMarshal(record)
-	store.Set(types.UndelegationRecordKey(blockHeight, record.OperatorAddress), bz)
+	operatorAccAddr := sdk.MustAccAddressFromBech32(record.OperatorAddress)
+	store.Set(types.UndelegationRecordKey(blockHeight, operatorAccAddr), bz)
 }
 
 func (k Keeper) SetOperatorUndelegationRecordByKey(ctx sdk.Context, key string, record *types.OperatorUndelegationRecord) {
@@ -394,7 +396,7 @@ func (k Keeper) SetOperatorUndelegationRecordByKey(ctx sdk.Context, key string, 
 	store.Set([]byte(key), bz)
 }
 
-func (k Keeper) SetDelegation(ctx sdk.Context, ownerAddr, operatorAddr string, delegation *types.Delegation) {
+func (k Keeper) SetDelegation(ctx sdk.Context, ownerAddr, operatorAddr sdk.AccAddress, delegation *types.Delegation) {
 	store := ctx.KVStore(k.storeKey)
 	if delegation.Shares.IsZero() {
 		store.Delete(types.OperatorSharesKey(ownerAddr, operatorAddr))
@@ -406,7 +408,7 @@ func (k Keeper) SetDelegation(ctx sdk.Context, ownerAddr, operatorAddr string, d
 	store.Set(types.OperatorSharesKey(ownerAddr, operatorAddr), bz)
 }
 
-func (k Keeper) GetDelegation(ctx sdk.Context, ownerAddr, operatorAddr string) (*types.Delegation, bool) {
+func (k Keeper) GetDelegation(ctx sdk.Context, ownerAddr, operatorAddr sdk.AccAddress) (*types.Delegation, bool) {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.OperatorSharesKey(ownerAddr, operatorAddr))
 	if bz == nil {
