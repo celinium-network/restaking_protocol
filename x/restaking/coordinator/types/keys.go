@@ -49,6 +49,10 @@ const (
 
 	UndelegationRecordPrefix
 
+	WithdrawRecordPrefix
+
+	ConsumerTransferRewardPrefix
+
 	UnbondingDelegationKey
 
 	OperatorSharesPrefix
@@ -106,6 +110,19 @@ func DelegationRecordKey(blockHeight uint64, operatorAccAddr sdk.AccAddress) []b
 func UndelegationRecordKey(blockHeight uint64, operatorAccAddr sdk.AccAddress) []byte {
 	bz := sdk.Uint64ToBigEndian(blockHeight)
 	return append([]byte{UndelegationRecordPrefix}, append(operatorAccAddr, bz...)...)
+}
+
+func OperatorWithdrawRecordKey(blockHeight uint64, operatorAccAddr sdk.AccAddress) []byte {
+	bz := sdk.Uint64ToBigEndian(blockHeight)
+	return append([]byte{WithdrawRecordPrefix}, append(operatorAccAddr, bz...)...)
+}
+
+func ConsumerTransferRewardKey(destChannel, destPort string, sequence uint64) []byte {
+	bz := utils.BytesLengthPrefix([]byte(destChannel))
+	bz = append(bz, utils.BytesLengthPrefix([]byte(destChannel))...)
+	bz = append(bz, sdk.Uint64ToBigEndian(sequence)...)
+
+	return append([]byte{ConsumerTransferRewardPrefix}, bz...)
 }
 
 func OperatorSharesKey(ownerAccAddr, operatorAccAddr sdk.AccAddress) []byte {

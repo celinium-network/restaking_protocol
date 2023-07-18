@@ -50,6 +50,7 @@ func (k Keeper) HandleIBCAcknowledgement(ctx sdk.Context, packet *channeltypes.P
 		operatorUndelegationRecordKey := callback.Args
 		record, found := k.GetOperatorUndelegationRecordByKey(ctx, operatorUndelegationRecordKey)
 		if !found {
+			// TODO correct error
 			return types.ErrAdditionalProposalNotFound
 		}
 
@@ -101,6 +102,7 @@ func (k Keeper) HandleIBCAcknowledgement(ctx sdk.Context, packet *channeltypes.P
 		} else {
 			k.SetOperatorUndelegationRecordByKey(ctx, operatorUndelegationRecordKey, record)
 		}
+	case types.InterChainWithdrawRewardCall:
 
 	default:
 		return types.ErrUnknownIBCCallbackType

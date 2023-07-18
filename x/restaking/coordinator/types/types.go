@@ -7,12 +7,13 @@ import (
 )
 
 type (
-	Int                              = sdkmath.Int
-	Dec                              = sdk.Dec
-	TendermintLightClientState       = ibctm.ClientState
-	OperatorDelegationRecordStatus   = uint32
-	OperatorUndelegationRecordStatus = uint32
-	CallType                         = uint32
+	Int                                = sdkmath.Int
+	Dec                                = sdk.Dec
+	TendermintLightClientState         = ibctm.ClientState
+	OperatorDelegationRecordStatus     = uint32
+	OperatorUndelegationRecordStatus   = uint32
+	OperatorWithdrawRewardRecordStatus = uint32
+	CallType                           = uint32
 )
 
 const (
@@ -26,6 +27,13 @@ const (
 )
 
 const (
+	OpWithdrawingReward OperatorWithdrawRewardRecordStatus = iota
+	OpTransferringReward
+	OpTransferredReward
+)
+
+const (
 	InterChainDelegateCall CallType = iota
 	InterChainUndelegateCall
+	InterChainWithdrawRewardCall
 )
