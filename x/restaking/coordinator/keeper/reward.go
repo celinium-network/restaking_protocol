@@ -63,11 +63,34 @@ func (k Keeper) HandleOperatorWithdrawRewardCallback(
 // OnOperatorReceiveReward define a method for operator receive restaking reward.
 // It should be called at ibc transfer ack.
 // When receive rewards from all consumers then the operator start a new period
-func (k Keeper) OnOperatorReceiveReward(ctx sdk.Context, chainID string, operatorAccAddr sdk.AccAddress, reward []sdk.Coin) {
-}
+func (k Keeper) OnOperatorReceiveReward(ctx sdk.Context, chainID string, operatorAccAddr sdk.AccAddress, rewards []sdk.Coin) {
+	var rewardRatios sdk.DecCoins
+	operator, found := k.GetOperator(ctx, operatorAccAddr)
+	if !found {
+		panic("not found")
+	}
+	for _, r := range rewards {
+		rewardRatios = append(rewardRatios, sdk.NewDecCoin(r.Denom, r.Amount.Quo(operator.RestakedAmount)))
+	}
 
-func (k Keeper) IncreaseOperatorPeriod(ctx sdk.Context, operatorAccAddr sdk.AccAddress) uint64 {
-	panic("unimplemented")
+	lastPeriod, found := k.GetOperatorLastRewardPeriod(ctx, operatorAccAddr)
+	if !found {
+		lastPeriod = 0
+		k.SetOperatorHistoricalRewards(ctx, lastPeriod, operatorAccAddr, types.OperatorHistoricalRewards{
+			CumulativeRewardRatios: rewardRatios,
+		})
+	} else {
+		lastHistoricalReward, found := k.GetOperatorHistoricalRewards(ctx, lastPeriod-1, operatorAccAddr)
+		if !found {
+			panic("todo")
+		}
+
+		lastHistoricalReward.CumulativeRewardRatios = rewardRatios.Add(lastHistoricalReward.CumulativeRewardRatios...)
+		k.SetOperatorHistoricalRewards(ctx, lastPeriod, operatorAccAddr, lastHistoricalReward)
+	}
+
+	nextPeriod := lastPeriod + 1
+	k.SetOperatorLastRewardPeriod(ctx, operatorAccAddr, nextPeriod)
 }
 
 // WithdrawOperatorsReward define a method to withdraw all operator restaking reward from consumer
@@ -199,28 +222,10 @@ func (k Keeper) OnRecvIBCTransferPacket(ctx sdk.Context, packet channeltypes.Pac
 		// TODO correct error
 		return types.ErrMismatchStatus
 	}
-
-	var data transfertypes.FungibleTokenPacketData
-	transfertypes.ModuleCdc.UnmarshalJSON(packet.GetData(), &data)
-
-	transferAmount, ok := sdk.NewIntFromString(data.Amount)
-	if !ok {
-		return sdkerrors.Wrapf(transfertypes.ErrInvalidAmount, "unable to parse transfer amount (%s) into math.Int", data.Amount)
+	token, err := getCoinFromTransferPacket(&packet)
+	if err != nil {
+		return err
 	}
-
-	voucherPrefix := transfertypes.GetDenomPrefix(packet.GetSourcePort(), packet.GetSourceChannel())
-	unprefixedDenom := data.Denom[len(voucherPrefix):]
-
-	// coin denomination used in sending from the escrow address
-	denom := unprefixedDenom
-
-	// The denomination used to send the coins is either the native denom or the hash of the path
-	// if the denomination is not native.
-	denomTrace := transfertypes.ParseDenomTrace(unprefixedDenom)
-	if denomTrace.Path != "" {
-		denom = denomTrace.IBCDenom()
-	}
-	token := sdk.NewCoin(denom, transferAmount)
 
 	index := slices.Index(record.TransferIds, string(transferID))
 	record.Statues[index] = types.OpTransferredReward
@@ -256,4 +261,66 @@ func (k Keeper) GetWithdrawRewardRecordKeyFromTransferID(ctx sdk.Context, transf
 		return nil, false
 	}
 	return bz, true
+}
+
+func getCoinFromTransferPacket(packet *channeltypes.Packet) (sdk.Coin, error) {
+	var coin sdk.Coin
+	var data transfertypes.FungibleTokenPacketData
+	transfertypes.ModuleCdc.UnmarshalJSON(packet.GetData(), &data)
+
+	transferAmount, ok := sdk.NewIntFromString(data.Amount)
+	if !ok {
+		return coin, sdkerrors.Wrapf(transfertypes.ErrInvalidAmount, "unable to parse transfer amount (%s) into math.Int", data.Amount)
+	}
+
+	voucherPrefix := transfertypes.GetDenomPrefix(packet.GetSourcePort(), packet.GetSourceChannel())
+	unprefixedDenom := data.Denom[len(voucherPrefix):]
+
+	// coin denomination used in sending from the escrow address
+	denom := unprefixedDenom
+
+	// The denomination used to send the coins is either the native denom or the hash of the path
+	// if the denomination is not native.
+	denomTrace := transfertypes.ParseDenomTrace(unprefixedDenom)
+	if denomTrace.Path != "" {
+		denom = denomTrace.IBCDenom()
+	}
+	coin = sdk.NewCoin(denom, transferAmount)
+
+	return coin, nil
+}
+
+func (k Keeper) GetOperatorHistoricalRewards(ctx sdk.Context, period uint64, operatorAccAddr sdk.AccAddress) (history types.OperatorHistoricalRewards, found bool) {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.OperatorHistoricalRewardKey(period, operatorAccAddr))
+	if bz == nil {
+		return history, false
+	}
+
+	err := k.cdc.Unmarshal(bz, &history)
+	if err != nil {
+		return history, false
+	}
+	return history, true
+}
+
+func (k Keeper) SetOperatorHistoricalRewards(ctx sdk.Context, period uint64, operatorAccAddr sdk.AccAddress, history types.OperatorHistoricalRewards) {
+	store := ctx.KVStore(k.storeKey)
+	bz := k.cdc.MustMarshal(&history)
+	store.Set(types.OperatorHistoricalRewardKey(period, operatorAccAddr), bz)
+}
+
+func (k Keeper) GetOperatorLastRewardPeriod(ctx sdk.Context, operatorAccAddr sdk.AccAddress) (uint64, bool) {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.OperatorLastRewardPeriodKey(operatorAccAddr))
+	if bz == nil {
+		return 0, false
+	}
+	return sdk.BigEndianToUint64(bz), true
+}
+
+func (k Keeper) SetOperatorLastRewardPeriod(ctx sdk.Context, operatorAccAddr sdk.AccAddress, period uint64) {
+	store := ctx.KVStore(k.storeKey)
+	bz := sdk.Uint64ToBigEndian(period)
+	store.Set(types.OperatorLastRewardPeriodKey(operatorAccAddr), bz)
 }

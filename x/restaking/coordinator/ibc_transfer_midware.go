@@ -15,7 +15,7 @@ import (
 
 var _ porttypes.Middleware = IBCTransferMiddleware{}
 
-// Middleware just warp IBCTransferMoudle
+// Middleware just warp IBCTransferModule
 type IBCTransferMiddleware struct {
 	app    porttypes.IBCModule
 	keeper keeper.Keeper
