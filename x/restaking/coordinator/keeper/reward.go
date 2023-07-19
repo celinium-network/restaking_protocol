@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	sdkerrors "cosmossdk.io/errors"
 	"golang.org/x/exp/slices"
 
+	sdkerrors "cosmossdk.io/errors"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	transfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
@@ -181,12 +182,6 @@ func (k Keeper) operatorWithdrawReward(ctx sdk.Context, operator *types.Operator
 	return nil
 }
 
-func (k Keeper) AfterOperatorCreated(ctx sdk.Context) {}
-
-func (k Keeper) BeforeDelegationSharesModified(ctx sdk.Context) {}
-
-func (k Keeper) AfterDelegationSharesModified(ctx sdk.Context) {}
-
 func (k Keeper) SetOperatorWithdrawRewardRecord(ctx sdk.Context, blockHeight uint64, operatorAccAddr sdk.AccAddress, withdraw *types.OperatorWithdrawRewardRecord) {
 	store := ctx.KVStore(k.storeKey)
 	bz := k.cdc.MustMarshal(withdraw)
@@ -323,4 +318,97 @@ func (k Keeper) SetOperatorLastRewardPeriod(ctx sdk.Context, operatorAccAddr sdk
 	store := ctx.KVStore(k.storeKey)
 	bz := sdk.Uint64ToBigEndian(period)
 	store.Set(types.OperatorLastRewardPeriodKey(operatorAccAddr), bz)
+}
+
+func (k Keeper) SetDelegationStartInfo(
+	ctx sdk.Context,
+	delegatorAccAddr, operatorAccAddr sdk.AccAddress,
+	starting types.DelegationStartingInfo,
+) {
+	store := ctx.KVStore(k.storeKey)
+	bz := k.cdc.MustMarshal(&starting)
+	store.Set(types.DelegationStartingInfoKey(delegatorAccAddr, operatorAccAddr), bz)
+}
+
+func (k Keeper) GetDelegationStartInfo(
+	ctx sdk.Context, delegatorAccAddr, operatorAccAddr sdk.AccAddress,
+) (starting types.DelegationStartingInfo, found bool) {
+	store := ctx.KVStore(k.storeKey)
+
+	bz := store.Get(types.DelegationStartingInfoKey(delegatorAccAddr, operatorAccAddr))
+	if bz == nil {
+		return starting, false
+	}
+
+	k.cdc.MustUnmarshal(bz, &starting)
+	return starting, true
+}
+
+func (k Keeper) HasDelegationStartInfo(ctx sdk.Context, delegatorAccAddr, operatorAccAddr sdk.AccAddress) bool {
+	store := ctx.KVStore(k.storeKey)
+	return store.Has(types.DelegationStartingInfoKey(delegatorAccAddr, operatorAccAddr))
+}
+
+func (k Keeper) DeleteDelegationStartInfo(ctx sdk.Context, delegatorAccAddr, operatorAccAddr sdk.AccAddress) {
+	store := ctx.KVStore(k.storeKey)
+	store.Delete(types.DelegationStartingInfoKey(delegatorAccAddr, operatorAccAddr))
+}
+
+func (k Keeper) BeforeDelegationSharesModified(ctx sdk.Context, delegatorAccAddr, operatorAccAddr sdk.AccAddress) {
+	startingInfo, found := k.GetDelegationStartInfo(ctx, delegatorAccAddr, operatorAccAddr)
+	if !found {
+		return
+	}
+
+	delegation, found := k.GetDelegation(ctx, delegatorAccAddr, operatorAccAddr)
+	if !found {
+		return
+	}
+
+	// TODO Slashes of operator will effect delegator shares.
+
+	operator, found := k.GetOperator(ctx, operatorAccAddr)
+	if !found {
+		return
+	}
+
+	lastPeriod, found := k.GetOperatorLastRewardPeriod(ctx, operatorAccAddr)
+	// if lastPeriod == 0, operator has't receive reward from consumer
+	if !found || lastPeriod == 0 {
+		return
+	}
+	startPeriod := startingInfo.PreviousPeriod
+	endPeriod := lastPeriod - 1
+
+	stakeTokens := operator.TokensFromShares(delegation.Shares)
+
+	starting, found := k.GetOperatorHistoricalRewards(ctx, startPeriod, operatorAccAddr)
+	if !found {
+		panic("")
+	}
+	ending, found := k.GetOperatorHistoricalRewards(ctx, endPeriod, operatorAccAddr)
+	if !found {
+		panic("")
+	}
+
+	difference := sdk.DecCoins(ending.CumulativeRewardRatios).Sub(starting.CumulativeRewardRatios)
+	rewards, _ := difference.MulDecTruncate(math.LegacyDec(stakeTokens)).TruncateDecimal()
+
+	k.sendCoinsFromAccountToAccount(ctx, operatorAccAddr, delegatorAccAddr, rewards)
+	k.DeleteDelegationStartInfo(ctx, delegatorAccAddr, operatorAccAddr)
+}
+
+func (k Keeper) AfterDelegationSharesModified(ctx sdk.Context, delegatorAccAddr, operatorAccAddr sdk.AccAddress) {
+	delegation, found := k.GetDelegation(ctx, delegatorAccAddr, operatorAccAddr)
+	if !found {
+		return
+	}
+
+	lastPeriod, _ := k.GetOperatorLastRewardPeriod(ctx, operatorAccAddr)
+
+	k.SetDelegationStartInfo(ctx, delegatorAccAddr, operatorAccAddr, types.DelegationStartingInfo{
+		PreviousPeriod: lastPeriod,
+		Stake:          delegation.Shares,
+		Height:         uint64(ctx.BlockHeight()),
+	})
 }

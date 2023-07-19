@@ -252,3 +252,16 @@ message OperatorWithdrawRewardRecord{
         (gogoproto.nullable) = false
     ];
 }
+
+// DelegationStartingInfo represent a delegation info at starting.
+message DelegationStartingInfo{
+    uint64 previous_period = 1;
+
+    string stake = 2 [
+        (cosmos_proto.scalar)  = "cosmos.Int",
+        (gogoproto.customtype) = "Int",
+        (gogoproto.nullable)   = false
+    ];
+
+    uint64 height = 3;
+}

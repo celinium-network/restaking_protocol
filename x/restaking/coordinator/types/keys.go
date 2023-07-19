@@ -47,6 +47,8 @@ const (
 
 	DelegationRecordPrefix
 
+	DelegationStartingInfoPrefix
+
 	UndelegationRecordPrefix
 
 	WithdrawRecordPrefix
@@ -109,6 +111,10 @@ func OperatorKey(operatorAccAddr sdk.AccAddress) []byte {
 func DelegationRecordKey(blockHeight uint64, operatorAccAddr sdk.AccAddress) []byte {
 	bz := sdk.Uint64ToBigEndian(blockHeight)
 	return append([]byte{DelegationRecordPrefix}, (append(operatorAccAddr, bz...))...)
+}
+
+func DelegationStartingInfoKey(delegatorAccAddr, operatorAccAddr sdk.AccAddress) []byte {
+	return append([]byte{DelegationStartingInfoPrefix}, append(delegatorAccAddr, operatorAccAddr...)...)
 }
 
 func UndelegationRecordKey(blockHeight uint64, operatorAccAddr sdk.AccAddress) []byte {
