@@ -199,6 +199,8 @@ func (k Keeper) operatorWithdrawReward(ctx sdk.Context, operator *types.Operator
 		withdrawPacket := restaking.WithdrawRewardPacket{
 			OperatorAddress:  operator.OperatorAddress,
 			ValidatorAddress: va.ValidatorAddress,
+			Denom:            operator.RestakingDenom,
+			TransferChanel:   "",
 		}
 
 		bz := k.cdc.MustMarshal(&withdrawPacket)

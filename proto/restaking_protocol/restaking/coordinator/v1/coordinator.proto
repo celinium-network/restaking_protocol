@@ -42,6 +42,8 @@ message ConsumerAdditionProposal{
     repeated string restaking_tokens = 7;
     // Tokens are rewards for restaking on the consumer platform.
     repeated string reward_tokens = 8;
+    // ibc transfer channel id.
+    string transfer_channel_id = 9;
 }
 
 // Operator represents an operator who restakes tokens on the consumer platform.

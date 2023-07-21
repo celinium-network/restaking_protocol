@@ -124,4 +124,6 @@ type MTStakingKeeper interface {
 	Unbond(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress, token sdk.Coin) error
 
 	InstantSlash(ctx sdk.Context, valAddr sdk.ValAddress, delegator sdk.AccAddress, slashCoin sdk.Coin) error
+
+	WithdrawReward(ctx sdk.Context, valAddr sdk.ValAddress, stakeDenom string, delegator sdk.AccAddress) (sdk.Coin, error)
 }

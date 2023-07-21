@@ -89,6 +89,10 @@ message WithdrawRewardPacket{
     string operator_address = 1;
     // Address of the validator.
     string validator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    string denom = 3;
+
+    string transfer_chanel = 4;
 }
 
 // WithdrawRewardPacket represents a response to withdraw restaking reward.
