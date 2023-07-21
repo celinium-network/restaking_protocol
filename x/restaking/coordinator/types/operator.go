@@ -1,9 +1,7 @@
 package types
 
-import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
-)
+import "cosmossdk.io/math"
 
-func (o Operator) TokensFromShares(shares sdk.Int) sdk.Int {
+func (o Operator) TokensFromShares(shares math.Int) math.Int {
 	return o.RestakedAmount.Mul(shares).Quo(o.Shares)
 }

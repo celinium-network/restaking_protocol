@@ -10,7 +10,6 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
-	ibcclienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 	"github.com/cosmos/ibc-go/v7/modules/core/exported"
 
@@ -277,7 +276,7 @@ func (k Keeper) sendCoinToCoordinator(ctx sdk.Context, from, to sdk.AccAddress, 
 		Token:            balance,
 		Sender:           from.String(),
 		Receiver:         to.String(),
-		TimeoutHeight:    ibcclienttypes.Height{},
+		TimeoutHeight:    clienttypes.Height{},
 		TimeoutTimestamp: uint64(timeoutTimestamp),
 		Memo:             "",
 	}

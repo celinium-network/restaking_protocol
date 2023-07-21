@@ -461,7 +461,7 @@ func New(
 	)
 	transferModule := transfer.NewAppModule(app.TransferKeeper)
 	transferIBCModule := transfer.NewIBCModule(app.TransferKeeper)
-	transferStack := coordinator.NewIBCMiddleware(app.RestakingCoordinatorKeeper, transferIBCModule)
+	transferStack := coordinator.NewIBCMiddleware(&app.RestakingCoordinatorKeeper, transferIBCModule)
 
 	app.ICAHostKeeper = icahostkeeper.NewKeeper(
 		appCodec, keys[icahosttypes.StoreKey],

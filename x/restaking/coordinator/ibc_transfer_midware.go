@@ -18,7 +18,7 @@ var _ porttypes.Middleware = IBCTransferMiddleware{}
 // Middleware just warp IBCTransferModule
 type IBCTransferMiddleware struct {
 	app    porttypes.IBCModule
-	keeper keeper.Keeper
+	keeper *keeper.Keeper
 }
 
 // OnAcknowledgementPacket implements types.Middleware
@@ -84,7 +84,7 @@ func (IBCTransferMiddleware) WriteAcknowledgement(ctx sdk.Context, chanCap *capa
 	panic("unimplemented")
 }
 
-func NewIBCMiddleware(k keeper.Keeper, app porttypes.IBCModule) IBCTransferMiddleware {
+func NewIBCMiddleware(k *keeper.Keeper, app porttypes.IBCModule) IBCTransferMiddleware {
 	return IBCTransferMiddleware{
 		app:    app,
 		keeper: k,
