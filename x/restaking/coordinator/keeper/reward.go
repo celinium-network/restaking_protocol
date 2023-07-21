@@ -7,7 +7,6 @@ import (
 	"golang.org/x/exp/slices"
 
 	sdkerrors "cosmossdk.io/errors"
-	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	transfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
@@ -15,227 +14,6 @@ import (
 	"github.com/celinium-network/restaking_protocol/x/restaking/coordinator/types"
 	restaking "github.com/celinium-network/restaking_protocol/x/restaking/types"
 )
-
-func (k Keeper) HandleOperatorWithdrawRewardCallback(
-	ctx sdk.Context,
-	packet *channeltypes.Packet,
-	acknowledgement []byte,
-	callback *types.IBCCallback,
-) error {
-	if callback.CallType != types.InterChainWithdrawRewardCall {
-		// TODO check or not check? panic?
-		panic("mismatch callback type with handler")
-	}
-
-	recordKey := callback.Args
-	record, found := k.GetOperatorWithdrawRewardRecordByKey(ctx, recordKey)
-	if !found {
-		// TODO correct error
-		return types.ErrMismatchStatus
-	}
-
-	callbackID := types.IBCCallbackKey(packet.SourceChannel, packet.SourcePort, packet.Sequence)
-	index := slices.Index(record.IbcCallbackIds, string(callbackID))
-	record.Statues[index] = types.OpTransferringReward
-	if len(record.TransferIds) == 0 {
-		record.TransferIds = make([]string, len(record.IbcCallbackIds))
-		record.Rewards = make([]sdk.Coin, len(record.IbcCallbackIds))
-	}
-
-	slices.Delete(record.IbcCallbackIds, index, index+1)
-
-	ackResp, err := GetResultFromAcknowledgement(acknowledgement)
-	if err != nil {
-		return err
-	}
-
-	var resp restaking.ConsumerWithdrawRewardResponse
-	k.cdc.MustUnmarshal(ackResp, &resp)
-
-	transferKey := types.ConsumerTransferRewardKey(resp.TransferDestChannel, resp.TransferDestPort, resp.TransferDestSeq)
-	record.TransferIds[index] = string(transferKey)
-
-	k.SetOperatorWithdrawRewardRecordByKey(ctx, recordKey, &record)
-	k.SetTransferIDToWithdrawRewardRecordKey(ctx, string(transferKey), recordKey)
-
-	return nil
-}
-
-// OnOperatorReceiveReward define a method for operator receive restaking reward.
-// It should be called at ibc transfer ack.
-// When receive rewards from all consumers then the operator start a new period
-func (k Keeper) OnOperatorReceiveReward(ctx sdk.Context, chainID string, operatorAccAddr sdk.AccAddress, rewards []sdk.Coin) {
-	var rewardRatios sdk.DecCoins
-	operator, found := k.GetOperator(ctx, operatorAccAddr)
-	if !found {
-		panic("not found")
-	}
-	for _, r := range rewards {
-		rewardRatios = append(rewardRatios, sdk.NewDecCoin(r.Denom, r.Amount.Quo(operator.RestakedAmount)))
-	}
-
-	lastPeriod, found := k.GetOperatorLastRewardPeriod(ctx, operatorAccAddr)
-	if !found {
-		lastPeriod = 0
-		k.SetOperatorHistoricalRewards(ctx, lastPeriod, operatorAccAddr, types.OperatorHistoricalRewards{
-			CumulativeRewardRatios: rewardRatios,
-		})
-	} else {
-		lastHistoricalReward, found := k.GetOperatorHistoricalRewards(ctx, lastPeriod-1, operatorAccAddr)
-		if !found {
-			panic("todo")
-		}
-
-		lastHistoricalReward.CumulativeRewardRatios = rewardRatios.Add(lastHistoricalReward.CumulativeRewardRatios...)
-		k.SetOperatorHistoricalRewards(ctx, lastPeriod, operatorAccAddr, lastHistoricalReward)
-	}
-
-	nextPeriod := lastPeriod + 1
-	k.SetOperatorLastRewardPeriod(ctx, operatorAccAddr, nextPeriod)
-}
-
-// WithdrawOperatorsReward define a method to withdraw all operator restaking reward from consumer
-// TODO there maybe to many operators, so call it by offChain service? or make a queues, don't iterate all operator?
-func (k Keeper) WithdrawOperatorsReward(ctx sdk.Context) {
-	store := ctx.KVStore(k.storeKey)
-	iterator := sdk.KVStorePrefixIterator(store, []byte{types.OperatorPrefix})
-
-	for ; iterator.Valid(); iterator.Next() {
-		bz := iterator.Value()
-		var operator types.Operator
-		if err := k.cdc.Unmarshal(bz, &operator); err != nil {
-			continue
-		}
-
-		k.operatorWithdrawReward(ctx, &operator)
-	}
-}
-
-// operatorWithdrawReward define a method to withdraw the operator reward
-func (k Keeper) operatorWithdrawReward(ctx sdk.Context, operator *types.Operator) error {
-	withdrawingRecord := types.OperatorWithdrawRewardRecord{
-		OperatorAddress: operator.OperatorAddress,
-	}
-	operatorAccAddr := sdk.MustAccAddressFromBech32(operator.OperatorAddress)
-
-	for _, va := range operator.OperatedValidators {
-		tmClientID, found := k.GetConsumerClientID(ctx, va.ChainID)
-		if !found {
-			ctx.Logger().Error("operator contain chain which has't tendermint light client. ChainID: ",
-				va.ChainID, " Operator address", operator.OperatorAddress)
-			continue
-		}
-		channel, found := k.GetConsumerClientIDToChannel(ctx, string(tmClientID))
-		if !found {
-			ctx.Logger().Error(fmt.Sprintf(
-				"the consumer chain of operator has't IBC Channel, chainID: %s, operator address: %s",
-				va.ChainID, operator.OperatedValidators))
-			continue
-		}
-
-		// TODO correct TIMEOUT
-		timeout := time.Minute * 10
-
-		withdrawPacket := restaking.WithdrawRewardPacket{
-			OperatorAddress:  operator.OperatorAddress,
-			ValidatorAddress: va.ValidatorAddress,
-		}
-
-		bz := k.cdc.MustMarshal(&withdrawPacket)
-		restakingPacket := restaking.CoordinatorPacket{
-			Type: 0,
-			Data: string(bz),
-		}
-
-		restakingProtocolPacketBz, err := k.cdc.Marshal(&restakingPacket)
-		if err != nil {
-			ctx.Logger().Error("marshal restaking.Delegation has err: ", err)
-			// TODO continue ?
-			continue
-		}
-		seq, err := restaking.SendIBCPacket(
-			ctx,
-			k.scopedKeeper,
-			k.channelKeeper,
-			channel,
-			restaking.CoordinatorPortID,
-			restakingProtocolPacketBz,
-			timeout,
-		)
-		if err != nil {
-			ctx.Logger().Error("send ibc packet has error:", err)
-		}
-
-		callback := types.IBCCallback{
-			CallType: types.InterChainWithdrawRewardCall,
-			Args:     string(types.DelegationRecordKey(uint64(ctx.BlockHeight()), operatorAccAddr)),
-		}
-
-		ibcCallbackKey := types.IBCCallbackKey(channel, restaking.CoordinatorPortID, seq)
-		withdrawingRecord.IbcCallbackIds = append(withdrawingRecord.IbcCallbackIds, string(ibcCallbackKey))
-		withdrawingRecord.Statues = append(withdrawingRecord.Statues, types.OpWithdrawingReward)
-
-		k.SetCallback(ctx, channel, restaking.CoordinatorPortID, seq, callback)
-	}
-
-	k.SetOperatorWithdrawRewardRecord(ctx, uint64(ctx.BlockHeight()), operatorAccAddr, &withdrawingRecord)
-	return nil
-}
-
-func (k Keeper) SetOperatorWithdrawRewardRecord(ctx sdk.Context, blockHeight uint64, operatorAccAddr sdk.AccAddress, withdraw *types.OperatorWithdrawRewardRecord) {
-	store := ctx.KVStore(k.storeKey)
-	bz := k.cdc.MustMarshal(withdraw)
-	store.Set(types.OperatorWithdrawRecordKey(blockHeight, operatorAccAddr), bz)
-}
-
-func (k Keeper) GetOperatorWithdrawRewardRecordByKey(ctx sdk.Context, recordKey string) (types.OperatorWithdrawRewardRecord, bool) {
-	var record types.OperatorWithdrawRewardRecord
-
-	store := ctx.KVStore(k.storeKey)
-	bz := store.Get([]byte(recordKey))
-	if len(bz) == 0 {
-		return record, false
-	}
-	err := k.cdc.Unmarshal(bz, &record)
-	if err != nil {
-		return record, false
-	}
-
-	return record, true
-}
-
-func (k Keeper) OnRecvIBCTransferPacket(ctx sdk.Context, packet channeltypes.Packet) error {
-	transferID := types.ConsumerTransferRewardKey(packet.DestinationChannel, packet.DestinationPort, packet.Sequence)
-
-	recordKey, found := k.GetWithdrawRewardRecordKeyFromTransferID(ctx, string(transferID))
-	if !found {
-		return nil
-	}
-
-	record, found := k.GetOperatorWithdrawRewardRecordByKey(ctx, string(recordKey))
-	if !found {
-		// TODO correct error
-		return types.ErrMismatchStatus
-	}
-	token, err := getCoinFromTransferPacket(&packet)
-	if err != nil {
-		return err
-	}
-
-	index := slices.Index(record.TransferIds, string(transferID))
-	record.Statues[index] = types.OpTransferredReward
-	slices.Delete(record.TransferIds, index, index+1)
-	record.Rewards[index] = token
-
-	if len(record.IbcCallbackIds) != 0 || len(record.TransferIds) != 0 {
-		k.SetOperatorWithdrawRewardRecordByKey(ctx, string(recordKey), &record)
-		// TODO delete withdraw reward record now?
-		return nil
-	}
-
-	k.OnOperatorReceiveReward(ctx, "", sdk.AccAddress(record.OperatorAddress), record.Rewards)
-	return nil
-}
 
 func (k Keeper) SetOperatorWithdrawRewardRecordByKey(ctx sdk.Context, recordKey string, record *types.OperatorWithdrawRewardRecord) {
 	store := ctx.KVStore(k.storeKey)
@@ -354,48 +132,281 @@ func (k Keeper) DeleteDelegationStartInfo(ctx sdk.Context, delegatorAccAddr, ope
 	store.Delete(types.DelegationStartingInfoKey(delegatorAccAddr, operatorAccAddr))
 }
 
-func (k Keeper) BeforeDelegationSharesModified(ctx sdk.Context, delegatorAccAddr, operatorAccAddr sdk.AccAddress) {
+func (k Keeper) SetOperatorWithdrawRewardRecord(ctx sdk.Context, blockHeight uint64, operatorAccAddr sdk.AccAddress, withdraw *types.OperatorWithdrawRewardRecord) {
+	store := ctx.KVStore(k.storeKey)
+	bz := k.cdc.MustMarshal(withdraw)
+	store.Set(types.OperatorWithdrawRecordKey(blockHeight, operatorAccAddr), bz)
+}
+
+func (k Keeper) GetOperatorWithdrawRewardRecordByKey(ctx sdk.Context, recordKey string) (types.OperatorWithdrawRewardRecord, bool) {
+	var record types.OperatorWithdrawRewardRecord
+
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get([]byte(recordKey))
+	if len(bz) == 0 {
+		return record, false
+	}
+	err := k.cdc.Unmarshal(bz, &record)
+	if err != nil {
+		return record, false
+	}
+
+	return record, true
+}
+
+// WithdrawOperatorsReward define a method to withdraw all operator restaking reward from consumer
+// TODO there maybe to many operators, so call it by offChain service? or make a queues, don't iterate all operator?
+func (k Keeper) WithdrawOperatorsReward(ctx sdk.Context) {
+	store := ctx.KVStore(k.storeKey)
+	iterator := sdk.KVStorePrefixIterator(store, []byte{types.OperatorPrefix})
+
+	for ; iterator.Valid(); iterator.Next() {
+		bz := iterator.Value()
+		var operator types.Operator
+		if err := k.cdc.Unmarshal(bz, &operator); err != nil {
+			continue
+		}
+
+		k.operatorWithdrawReward(ctx, &operator)
+	}
+}
+
+// operatorWithdrawReward define a method to withdraw the operator reward
+func (k Keeper) operatorWithdrawReward(ctx sdk.Context, operator *types.Operator) error {
+	withdrawingRecord := types.OperatorWithdrawRewardRecord{
+		OperatorAddress: operator.OperatorAddress,
+	}
+	operatorAccAddr := sdk.MustAccAddressFromBech32(operator.OperatorAddress)
+
+	for _, va := range operator.OperatedValidators {
+		tmClientID, found := k.GetConsumerClientID(ctx, va.ChainID)
+		if !found {
+			ctx.Logger().Error("operator contain chain which has't tendermint light client. ChainID: ",
+				va.ChainID, " Operator address", operator.OperatorAddress)
+			continue
+		}
+		channel, found := k.GetConsumerClientIDToChannel(ctx, string(tmClientID))
+		if !found {
+			ctx.Logger().Error(fmt.Sprintf(
+				"the consumer chain of operator has't IBC Channel, chainID: %s, operator address: %s",
+				va.ChainID, operator.OperatedValidators))
+			continue
+		}
+
+		// TODO correct TIMEOUT
+		timeout := time.Minute * 10
+
+		withdrawPacket := restaking.WithdrawRewardPacket{
+			OperatorAddress:  operator.OperatorAddress,
+			ValidatorAddress: va.ValidatorAddress,
+		}
+
+		bz := k.cdc.MustMarshal(&withdrawPacket)
+		restakingPacket := restaking.CoordinatorPacket{
+			Type: 0,
+			Data: string(bz),
+		}
+
+		restakingProtocolPacketBz, err := k.cdc.Marshal(&restakingPacket)
+		if err != nil {
+			ctx.Logger().Error("marshal restaking.Delegation has err: ", err)
+			// TODO continue ?
+			continue
+		}
+		seq, err := restaking.SendIBCPacket(
+			ctx,
+			k.scopedKeeper,
+			k.channelKeeper,
+			channel,
+			restaking.CoordinatorPortID,
+			restakingProtocolPacketBz,
+			timeout,
+		)
+		if err != nil {
+			ctx.Logger().Error("send ibc packet has error:", err)
+		}
+
+		callback := types.IBCCallback{
+			CallType: types.InterChainWithdrawRewardCall,
+			Args:     string(types.DelegationRecordKey(uint64(ctx.BlockHeight()), operatorAccAddr)),
+		}
+
+		ibcCallbackKey := types.IBCCallbackKey(channel, restaking.CoordinatorPortID, seq)
+		withdrawingRecord.IbcCallbackIds = append(withdrawingRecord.IbcCallbackIds, string(ibcCallbackKey))
+		withdrawingRecord.Statues = append(withdrawingRecord.Statues, types.OpWithdrawingReward)
+
+		k.SetCallback(ctx, channel, restaking.CoordinatorPortID, seq, callback)
+	}
+
+	k.SetOperatorWithdrawRewardRecord(ctx, uint64(ctx.BlockHeight()), operatorAccAddr, &withdrawingRecord)
+	return nil
+}
+
+func (k Keeper) HandleOperatorWithdrawRewardCallback(
+	ctx sdk.Context,
+	packet *channeltypes.Packet,
+	acknowledgement []byte,
+	callback *types.IBCCallback,
+) error {
+	if callback.CallType != types.InterChainWithdrawRewardCall {
+		return sdkerrors.Wrapf(types.ErrIBCCallback, "callback mismatch callback handler")
+	}
+
+	recordKey := callback.Args
+	record, found := k.GetOperatorWithdrawRewardRecordByKey(ctx, recordKey)
+	if !found {
+		// TODO correct error
+		return types.ErrMismatchStatus
+	}
+
+	callbackID := types.IBCCallbackKey(packet.SourceChannel, packet.SourcePort, packet.Sequence)
+	index := slices.Index(record.IbcCallbackIds, string(callbackID))
+	record.Statues[index] = types.OpTransferringReward
+	if len(record.TransferIds) == 0 {
+		record.TransferIds = make([]string, len(record.IbcCallbackIds))
+		record.Rewards = make([]sdk.Coin, len(record.IbcCallbackIds))
+	}
+
+	slices.Delete(record.IbcCallbackIds, index, index+1)
+
+	ackResp, err := GetResultFromAcknowledgement(acknowledgement)
+	if err != nil {
+		return err
+	}
+
+	var resp restaking.ConsumerWithdrawRewardResponse
+	k.cdc.MustUnmarshal(ackResp, &resp)
+
+	transferKey := types.ConsumerTransferRewardKey(resp.TransferDestChannel, resp.TransferDestPort, resp.TransferDestSeq)
+	record.TransferIds[index] = string(transferKey)
+
+	k.SetOperatorWithdrawRewardRecordByKey(ctx, recordKey, &record)
+	k.SetTransferIDToWithdrawRewardRecordKey(ctx, string(transferKey), recordKey)
+
+	return nil
+}
+
+// OnOperatorReceiveAllRewards define a method for operator receive restaking reward.
+// It should be called at ibc transfer ack.
+// When receive rewards from all consumers then the operator start a new period
+func (k Keeper) OnOperatorReceiveAllRewards(ctx sdk.Context, operatorAccAddr sdk.AccAddress, rewards []sdk.Coin) error {
+	var rewardRatios sdk.DecCoins
+	operator, found := k.GetOperator(ctx, operatorAccAddr)
+	if !found {
+		return sdkerrors.Wrapf(types.ErrUnknownOperator, "address %s", operatorAccAddr.String())
+	}
+	for _, r := range rewards {
+		rewardRatios = append(rewardRatios, sdk.NewDecCoinFromDec(r.Denom, sdk.NewDecFromInt(r.Amount).QuoInt(operator.RestakedAmount)))
+	}
+
+	lastPeriod, found := k.GetOperatorLastRewardPeriod(ctx, operatorAccAddr)
+	if !found {
+		lastPeriod = 0
+		k.SetOperatorHistoricalRewards(ctx, lastPeriod, operatorAccAddr, types.OperatorHistoricalRewards{
+			CumulativeRewardRatios: rewardRatios,
+		})
+	} else {
+		lastHistoricalReward, found := k.GetOperatorHistoricalRewards(ctx, lastPeriod-1, operatorAccAddr)
+		if !found {
+			return sdkerrors.Wrapf(types.ErrUnknownOperator, "operator lost historical reward,address %s, period %d", operatorAccAddr.String(), lastPeriod-1)
+		}
+
+		lastHistoricalReward.CumulativeRewardRatios = rewardRatios.Add(lastHistoricalReward.CumulativeRewardRatios...)
+		k.SetOperatorHistoricalRewards(ctx, lastPeriod, operatorAccAddr, lastHistoricalReward)
+	}
+
+	nextPeriod := lastPeriod + 1
+	k.SetOperatorLastRewardPeriod(ctx, operatorAccAddr, nextPeriod)
+
+	return nil
+}
+
+func (k Keeper) OnRecvIBCTransferPacket(ctx sdk.Context, packet channeltypes.Packet) error {
+	transferID := types.ConsumerTransferRewardKey(packet.DestinationChannel, packet.DestinationPort, packet.Sequence)
+
+	recordKey, found := k.GetWithdrawRewardRecordKeyFromTransferID(ctx, string(transferID))
+	if !found {
+		return nil
+	}
+
+	record, found := k.GetOperatorWithdrawRewardRecordByKey(ctx, string(recordKey))
+	if !found {
+		// TODO correct error
+		return types.ErrMismatchStatus
+	}
+	token, err := getCoinFromTransferPacket(&packet)
+	if err != nil {
+		return err
+	}
+
+	index := slices.Index(record.TransferIds, string(transferID))
+	record.Statues[index] = types.OpTransferredReward
+	slices.Delete(record.TransferIds, index, index+1)
+	record.Rewards[index] = token
+
+	if len(record.IbcCallbackIds) == 0 && len(record.TransferIds) == 0 {
+		// TODO delete withdraw reward record now?
+		k.OnOperatorReceiveAllRewards(ctx, sdk.AccAddress(record.OperatorAddress), record.Rewards)
+		return nil
+	}
+
+	k.SetOperatorWithdrawRewardRecordByKey(ctx, string(recordKey), &record)
+	return nil
+}
+
+func (k Keeper) BeforeDelegationSharesModified(ctx sdk.Context, delegatorAccAddr, operatorAccAddr sdk.AccAddress) error {
 	startingInfo, found := k.GetDelegationStartInfo(ctx, delegatorAccAddr, operatorAccAddr)
 	if !found {
-		return
+		return nil
 	}
 
 	delegation, found := k.GetDelegation(ctx, delegatorAccAddr, operatorAccAddr)
 	if !found {
-		return
+		return nil
 	}
 
 	// TODO Slashes of operator will effect delegator shares.
 
 	operator, found := k.GetOperator(ctx, operatorAccAddr)
 	if !found {
-		return
+		return nil
 	}
 
 	lastPeriod, found := k.GetOperatorLastRewardPeriod(ctx, operatorAccAddr)
 	// if lastPeriod == 0, operator has't receive reward from consumer
 	if !found || lastPeriod == 0 {
-		return
+		return nil
 	}
 	startPeriod := startingInfo.PreviousPeriod
 	endPeriod := lastPeriod - 1
-
 	stakeTokens := operator.TokensFromShares(delegation.Shares)
 
-	starting, found := k.GetOperatorHistoricalRewards(ctx, startPeriod, operatorAccAddr)
-	if !found {
-		panic("")
-	}
 	ending, found := k.GetOperatorHistoricalRewards(ctx, endPeriod, operatorAccAddr)
 	if !found {
-		panic("")
+		return sdkerrors.Wrapf(types.ErrUnknownOperator,
+			"operator lost historical reward,address %s, period %d", operatorAccAddr.String(), endPeriod)
 	}
 
-	difference := sdk.DecCoins(ending.CumulativeRewardRatios).Sub(starting.CumulativeRewardRatios)
-	rewards, _ := difference.MulDecTruncate(math.LegacyDec(stakeTokens)).TruncateDecimal()
+	var difference sdk.DecCoins
+	if startPeriod != 0 {
+		starting, found := k.GetOperatorHistoricalRewards(ctx, startPeriod, operatorAccAddr)
+		if !found {
+			return sdkerrors.Wrapf(types.ErrUnknownOperator,
+				"operator lost historical reward,address %s, period %d", operatorAccAddr.String(), startPeriod)
+		}
+		difference = sdk.DecCoins(ending.CumulativeRewardRatios).Sub(starting.CumulativeRewardRatios)
+	} else {
+		difference = sdk.NewDecCoins(ending.CumulativeRewardRatios...)
+	}
+
+	fmt.Println(difference.TruncateDecimal())
+	rewards, rs := difference.MulDec(sdk.NewDecFromInt(stakeTokens)).TruncateDecimal()
+	fmt.Println(rs)
 
 	k.sendCoinsFromAccountToAccount(ctx, operatorAccAddr, delegatorAccAddr, rewards)
 	k.DeleteDelegationStartInfo(ctx, delegatorAccAddr, operatorAccAddr)
+
+	return nil
 }
 
 func (k Keeper) AfterDelegationSharesModified(ctx sdk.Context, delegatorAccAddr, operatorAccAddr sdk.AccAddress) {
