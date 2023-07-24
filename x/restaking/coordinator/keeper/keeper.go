@@ -85,9 +85,23 @@ func (k Keeper) SetConsumerClientIDToChannel(ctx sdk.Context, clientID, channelI
 	store.Set(types.ConsumerClientIDKey(clientID), []byte(channelID))
 }
 
+func (k Keeper) SetConsumerClientIDToTransferChannel(ctx sdk.Context, clientID, channelID string) {
+	store := ctx.KVStore(k.storeKey)
+	store.Set(types.ConsumerClientIDToTransferKey(clientID), []byte(channelID))
+}
+
 func (k Keeper) GetConsumerClientIDToChannel(ctx sdk.Context, clientID string) (string, bool) {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.ConsumerClientIDKey(clientID))
+	if bz == nil {
+		return "", false
+	}
+	return string(bz), true
+}
+
+func (k Keeper) GetConsumerClientIDToTransferChannel(ctx sdk.Context, clientID string) (string, bool) {
+	store := ctx.KVStore(k.storeKey)
+	bz := store.Get(types.ConsumerClientIDToTransferKey(clientID))
 	if bz == nil {
 		return "", false
 	}

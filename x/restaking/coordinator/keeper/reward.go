@@ -46,20 +46,15 @@ func getCoinFromTransferPacket(packet *channeltypes.Packet) (sdk.Coin, error) {
 		return coin, sdkerrors.Wrapf(transfertypes.ErrInvalidAmount, "unable to parse transfer amount (%s) into math.Int", data.Amount)
 	}
 
-	voucherPrefix := transfertypes.GetDenomPrefix(packet.GetSourcePort(), packet.GetSourceChannel())
-	unprefixedDenom := data.Denom[len(voucherPrefix):]
+	sourcePrefix := transfertypes.GetDenomPrefix(packet.GetDestPort(), packet.GetDestChannel())
+	// NOTE: sourcePrefix contains the trailing "/"
+	prefixedDenom := sourcePrefix + data.Denom
 
-	// coin denomination used in sending from the escrow address
-	denom := unprefixedDenom
+	// construct the denomination trace from the full raw denomination
+	denomTrace := transfertypes.ParseDenomTrace(prefixedDenom)
+	voucherDenom := denomTrace.IBCDenom()
 
-	// The denomination used to send the coins is either the native denom or the hash of the path
-	// if the denomination is not native.
-	denomTrace := transfertypes.ParseDenomTrace(unprefixedDenom)
-	if denomTrace.Path != "" {
-		denom = denomTrace.IBCDenom()
-	}
-	coin = sdk.NewCoin(denom, transferAmount)
-
+	coin = sdk.NewCoin(voucherDenom, transferAmount)
 	return coin, nil
 }
 
@@ -159,7 +154,7 @@ func (k Keeper) GetOperatorWithdrawRewardRecordByKey(ctx sdk.Context, recordKey 
 func (k Keeper) WithdrawOperatorsReward(ctx sdk.Context) {
 	store := ctx.KVStore(k.storeKey)
 	iterator := sdk.KVStorePrefixIterator(store, []byte{types.OperatorPrefix})
-
+	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		bz := iterator.Value()
 		var operator types.Operator
@@ -193,6 +188,14 @@ func (k Keeper) operatorWithdrawReward(ctx sdk.Context, operator *types.Operator
 			continue
 		}
 
+		transferChannelID, found := k.GetConsumerClientIDToTransferChannel(ctx, string(tmClientID))
+		if !found {
+			ctx.Logger().Error(fmt.Sprintf(
+				"the consumer chain of operator has't IBC transfer Channel, chainID: %s, operator address: %s",
+				va.ChainID, operator.OperatedValidators))
+			continue
+		}
+
 		// TODO correct TIMEOUT
 		timeout := time.Minute * 10
 
@@ -200,12 +203,12 @@ func (k Keeper) operatorWithdrawReward(ctx sdk.Context, operator *types.Operator
 			OperatorAddress:  operator.OperatorAddress,
 			ValidatorAddress: va.ValidatorAddress,
 			Denom:            operator.RestakingDenom,
-			TransferChanel:   "",
+			TransferChanel:   transferChannelID,
 		}
 
 		bz := k.cdc.MustMarshal(&withdrawPacket)
 		restakingPacket := restaking.CoordinatorPacket{
-			Type: 0,
+			Type: restaking.CoordinatorPacket_WithdrawReward,
 			Data: string(bz),
 		}
 
@@ -230,7 +233,7 @@ func (k Keeper) operatorWithdrawReward(ctx sdk.Context, operator *types.Operator
 
 		callback := types.IBCCallback{
 			CallType: types.InterChainWithdrawRewardCall,
-			Args:     string(types.DelegationRecordKey(uint64(ctx.BlockHeight()), operatorAccAddr)),
+			Args:     string(types.OperatorWithdrawRecordKey(uint64(ctx.BlockHeight()), operatorAccAddr)),
 		}
 
 		ibcCallbackKey := types.IBCCallbackKey(channel, restaking.CoordinatorPortID, seq)
@@ -269,7 +272,7 @@ func (k Keeper) HandleOperatorWithdrawRewardCallback(
 		record.Rewards = make([]sdk.Coin, len(record.IbcCallbackIds))
 	}
 
-	slices.Delete(record.IbcCallbackIds, index, index+1)
+	record.IbcCallbackIds = slices.Delete(record.IbcCallbackIds, index, index+1)
 
 	ackResp, err := GetResultFromAcknowledgement(acknowledgement)
 	if err != nil {
@@ -343,12 +346,13 @@ func (k Keeper) OnRecvIBCTransferPacket(ctx sdk.Context, packet channeltypes.Pac
 
 	index := slices.Index(record.TransferIds, string(transferID))
 	record.Statues[index] = types.OpTransferredReward
-	slices.Delete(record.TransferIds, index, index+1)
+	record.TransferIds = slices.Delete(record.TransferIds, index, index+1)
 	record.Rewards[index] = token
 
 	if len(record.IbcCallbackIds) == 0 && len(record.TransferIds) == 0 {
 		// TODO delete withdraw reward record now?
-		k.OnOperatorReceiveAllRewards(ctx, sdk.AccAddress(record.OperatorAddress), record.Rewards)
+		operatorAccAddr := sdk.MustAccAddressFromBech32(record.OperatorAddress)
+		k.OnOperatorReceiveAllRewards(ctx, operatorAccAddr, record.Rewards)
 		return nil
 	}
 

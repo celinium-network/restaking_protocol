@@ -34,7 +34,7 @@ func (k Keeper) HandleIBCAcknowledgement(ctx sdk.Context, packet *channeltypes.P
 
 		// remove callback id
 		index := slices.Index(record.IbcCallbackIds, string(callbackID))
-		slices.Delete(record.IbcCallbackIds, index, index+1)
+		record.IbcCallbackIds = slices.Delete(record.IbcCallbackIds, index, index+1)
 		if len(record.IbcCallbackIds) == 0 {
 			operatorAccAddr := sdk.MustAccAddressFromBech32(record.OperatorAddress)
 			operator, found := k.GetOperator(ctx, operatorAccAddr)
@@ -43,6 +43,7 @@ func (k Keeper) HandleIBCAcknowledgement(ctx sdk.Context, packet *channeltypes.P
 			}
 			operator.RestakedAmount = operator.RestakedAmount.Add(record.DelegationAmount)
 			k.DeleteOperatorDelegateRecordByKey(ctx, operatorDelegationRecordKey)
+			k.SetOperator(ctx, operatorAccAddr, operator)
 		} else {
 			k.SetOperatorDelegateRecordByKey(ctx, operatorDelegationRecordKey, record)
 		}
@@ -103,7 +104,7 @@ func (k Keeper) HandleIBCAcknowledgement(ctx sdk.Context, packet *channeltypes.P
 			k.SetOperatorUndelegationRecordByKey(ctx, operatorUndelegationRecordKey, record)
 		}
 	case types.InterChainWithdrawRewardCall:
-
+		k.HandleOperatorWithdrawRewardCallback(ctx, packet, acknowledgement, callback)
 	default:
 		return types.ErrUnknownIBCCallbackType
 	}

@@ -155,11 +155,18 @@ func (k Keeper) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, coordi
 			return channeltypes.NewErrorAcknowledgement(err)
 		}
 
-		err = k.sendCoinToCoordinator(ctx, operatorLocalAddress, coordinatorOperatorAccAddr, coin, withdrawPacket.TransferChanel)
+		transferSeq, err := k.sendCoinToCoordinator(ctx, operatorLocalAddress, coordinatorOperatorAccAddr, coin, withdrawPacket.TransferChanel)
 		if err != nil {
 			return channeltypes.NewErrorAcknowledgement(err)
 		} else {
-			return channeltypes.NewResultAcknowledgement([]byte{1})
+			withdrawResp := restaking.ConsumerWithdrawRewardResponse{
+				TransferDestChannel: withdrawPacket.TransferChanel,
+				TransferDestPort:    ibctransfertypes.PortID,
+				TransferDestSeq:     transferSeq,
+				Balance:             coin,
+			}
+			withdrawRespBz := k.cdc.MustMarshal(&withdrawResp)
+			return channeltypes.NewResultAcknowledgement(withdrawRespBz)
 		}
 
 	default:
@@ -268,8 +275,8 @@ func (k Keeper) HandleRestakingSlashPacket(
 	return nil
 }
 
-func (k Keeper) sendCoinToCoordinator(ctx sdk.Context, from, to sdk.AccAddress, balance sdk.Coin, channelID string) error {
-	timeoutTimestamp := ctx.BlockTime().UnixNano() + 10
+func (k Keeper) sendCoinToCoordinator(ctx sdk.Context, from, to sdk.AccAddress, balance sdk.Coin, channelID string) (uint64, error) {
+	timeoutTimestamp := ctx.BlockTime().UnixNano() + 1800000000000
 	msg := ibctransfertypes.MsgTransfer{
 		SourcePort:       ibctransfertypes.PortID,
 		SourceChannel:    channelID,
@@ -281,10 +288,10 @@ func (k Keeper) sendCoinToCoordinator(ctx sdk.Context, from, to sdk.AccAddress, 
 		Memo:             "",
 	}
 
-	_, err := k.ibcTransferKeeper.Transfer(ctx, &msg)
+	resp, err := k.ibcTransferKeeper.Transfer(ctx, &msg)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	return resp.Sequence, nil
 }

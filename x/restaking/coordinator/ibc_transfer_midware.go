@@ -1,8 +1,6 @@
 package coordinator
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
 	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
@@ -58,10 +56,12 @@ func (im IBCTransferMiddleware) OnChanOpenTry(ctx sdk.Context, order channeltype
 
 // OnRecvPacket implements types.Middleware
 func (im IBCTransferMiddleware) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, relayer sdk.AccAddress) exported.Acknowledgement {
+	ack := im.app.OnRecvPacket(ctx, packet, relayer)
+
 	if err := im.keeper.OnRecvIBCTransferPacket(ctx, packet); err != nil {
-		return channeltypes.NewErrorAcknowledgement(fmt.Errorf("cannot unmarshal CCV packet data"))
+		return channeltypes.NewErrorAcknowledgement(err)
 	}
-	return im.app.OnRecvPacket(ctx, packet, relayer)
+	return ack
 }
 
 // OnTimeoutPacket implements types.Middleware

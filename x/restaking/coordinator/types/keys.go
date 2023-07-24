@@ -29,6 +29,8 @@ const (
 
 	ConsumerClientIDPrefix
 
+	ConsumerClientIDToTransferChannelPrefix
+
 	ConsumerValidatorListPrefix
 
 	ConsumerValidatorPrefix
@@ -82,6 +84,10 @@ func ConsumerAdditionProposalKey(chainID string) []byte {
 
 func ConsumerClientIDKey(chainID string) []byte {
 	return append([]byte{ConsumerClientIDPrefix}, []byte(chainID)...)
+}
+
+func ConsumerClientIDToTransferKey(chainID string) []byte {
+	return append([]byte{ConsumerClientIDToTransferChannelPrefix}, []byte(chainID)...)
 }
 
 func ConsumerValidatorListKey(chainID string) []byte {
