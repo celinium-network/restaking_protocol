@@ -276,6 +276,7 @@ func (k Keeper) HandleRestakingSlashPacket(
 }
 
 func (k Keeper) sendCoinToCoordinator(ctx sdk.Context, from, to sdk.AccAddress, balance sdk.Coin, channelID string) (uint64, error) {
+	// TODO correct timeout duration
 	timeoutTimestamp := ctx.BlockTime().UnixNano() + 1800000000000
 	msg := ibctransfertypes.MsgTransfer{
 		SourcePort:       ibctransfertypes.PortID,
