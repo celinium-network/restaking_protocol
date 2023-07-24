@@ -461,6 +461,7 @@ func New(
 	)
 	transferModule := transfer.NewAppModule(app.TransferKeeper)
 	transferIBCModule := transfer.NewIBCModule(app.TransferKeeper)
+	transferStack := coordinator.NewIBCMiddleware(&app.RestakingCoordinatorKeeper, transferIBCModule)
 
 	app.ICAHostKeeper = icahostkeeper.NewKeeper(
 		appCodec, keys[icahosttypes.StoreKey],
@@ -534,7 +535,7 @@ func New(
 	// Create static IBC router, add transfer route, then set and seal it
 	ibcRouter := ibcporttypes.NewRouter()
 	ibcRouter.AddRoute(icahosttypes.SubModuleName, icaHostIBCModule).
-		AddRoute(ibctransfertypes.ModuleName, transferIBCModule).
+		AddRoute(ibctransfertypes.ModuleName, transferStack).
 		AddRoute(coordinatortypes.ModuleName, coordinatorIBCModule)
 
 	app.IBCKeeper.SetRouter(ibcRouter)

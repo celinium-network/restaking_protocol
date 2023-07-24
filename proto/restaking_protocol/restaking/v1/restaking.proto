@@ -83,6 +83,32 @@ message ConsumerUndelegateResponse{
     int64 completion_time = 1; 
 }
 
+// WithdrawRewardPacket represents a request to withdraw restaking reward.
+message WithdrawRewardPacket{
+    // Operator address
+    string operator_address = 1;
+    // Address of the validator.
+    string validator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    string denom = 3;
+
+    string transfer_chanel = 4;
+}
+
+// WithdrawRewardPacket represents a response to withdraw restaking reward.
+message ConsumerWithdrawRewardResponse{
+    string transfer_dest_channel = 1;
+
+    string transfer_dest_port = 2;
+
+    uint64 transfer_dest_seq = 3;
+
+    cosmos.base.v1beta1.Coin balance = 4[ 
+        (gogoproto.castrepeated) = "github.com/cosmos/cosmos-sdk/types.Coin",
+        (gogoproto.nullable) = false
+    ];
+}
+
 // SlashPacket represents a packet containing slash information
 message SlashPacket{
     // Operator address
@@ -106,6 +132,8 @@ message CoordinatorPacket{
         Undelegation = 1;
         // Slash
         Slash =2;
+        // Withdraw Reward
+        WithdrawReward = 3;
     }
     // Type of the packet indicating delegation or undelegation.
     PacketType type = 1;

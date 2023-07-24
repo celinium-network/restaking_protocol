@@ -29,6 +29,8 @@ const (
 
 	ConsumerClientIDPrefix
 
+	ConsumerClientIDToTransferChannelPrefix
+
 	ConsumerValidatorListPrefix
 
 	ConsumerValidatorPrefix
@@ -47,7 +49,17 @@ const (
 
 	DelegationRecordPrefix
 
+	DelegationStartingInfoPrefix
+
 	UndelegationRecordPrefix
+
+	WithdrawRecordPrefix
+
+	OperatorLastRewardPeriodPrefix
+
+	OperatorHistoricalRewardPrefix
+
+	ConsumerTransferRewardPrefix
 
 	UnbondingDelegationKey
 
@@ -72,6 +84,10 @@ func ConsumerAdditionProposalKey(chainID string) []byte {
 
 func ConsumerClientIDKey(chainID string) []byte {
 	return append([]byte{ConsumerClientIDPrefix}, []byte(chainID)...)
+}
+
+func ConsumerClientIDToTransferKey(chainID string) []byte {
+	return append([]byte{ConsumerClientIDToTransferChannelPrefix}, []byte(chainID)...)
 }
 
 func ConsumerValidatorListKey(chainID string) []byte {
@@ -103,9 +119,35 @@ func DelegationRecordKey(blockHeight uint64, operatorAccAddr sdk.AccAddress) []b
 	return append([]byte{DelegationRecordPrefix}, (append(operatorAccAddr, bz...))...)
 }
 
+func DelegationStartingInfoKey(delegatorAccAddr, operatorAccAddr sdk.AccAddress) []byte {
+	return append([]byte{DelegationStartingInfoPrefix}, append(delegatorAccAddr, operatorAccAddr...)...)
+}
+
 func UndelegationRecordKey(blockHeight uint64, operatorAccAddr sdk.AccAddress) []byte {
 	bz := sdk.Uint64ToBigEndian(blockHeight)
 	return append([]byte{UndelegationRecordPrefix}, append(operatorAccAddr, bz...)...)
+}
+
+func OperatorWithdrawRecordKey(blockHeight uint64, operatorAccAddr sdk.AccAddress) []byte {
+	bz := sdk.Uint64ToBigEndian(blockHeight)
+	return append([]byte{WithdrawRecordPrefix}, append(operatorAccAddr, bz...)...)
+}
+
+func OperatorLastRewardPeriodKey(operatorAccAddr sdk.AccAddress) []byte {
+	return append([]byte{OperatorLastRewardPeriodPrefix}, operatorAccAddr...)
+}
+
+func OperatorHistoricalRewardKey(period uint64, operatorAccAddr sdk.AccAddress) []byte {
+	bz := sdk.Uint64ToBigEndian(period)
+	return append([]byte{OperatorHistoricalRewardPrefix}, append(bz, operatorAccAddr...)...)
+}
+
+func ConsumerTransferRewardKey(destChannel, destPort string, sequence uint64) []byte {
+	bz := utils.BytesLengthPrefix([]byte(destChannel))
+	bz = append(bz, utils.BytesLengthPrefix([]byte(destChannel))...)
+	bz = append(bz, sdk.Uint64ToBigEndian(sequence)...)
+
+	return append([]byte{ConsumerTransferRewardPrefix}, bz...)
 }
 
 func OperatorSharesKey(ownerAccAddr, operatorAccAddr sdk.AccAddress) []byte {

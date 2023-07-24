@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
 	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 	"github.com/cosmos/ibc-go/v7/modules/core/exported"
@@ -135,6 +136,39 @@ func (k Keeper) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet, coordi
 		} else {
 			return channeltypes.NewResultAcknowledgement([]byte{1})
 		}
+	case restaking.CoordinatorPacket_WithdrawReward:
+		var withdrawPacket restaking.WithdrawRewardPacket
+		k.cdc.MustUnmarshal([]byte(coordinatorPacket.Data), &withdrawPacket)
+
+		validatorAddr, err := sdk.ValAddressFromBech32(withdrawPacket.ValidatorAddress)
+		if err != nil {
+			return channeltypes.NewErrorAcknowledgement(err)
+		}
+		coordinatorOperatorAccAddr, err := sdk.AccAddressFromBech32(withdrawPacket.OperatorAddress)
+		if err != nil {
+			return channeltypes.NewErrorAcknowledgement(err)
+		}
+		operatorLocalAddress := k.GetOrCreateOperatorLocalAddress(ctx, packet.SourceChannel, packet.SourcePort, coordinatorOperatorAccAddr, validatorAddr)
+
+		coin, err := k.multiStakingKeeper.WithdrawReward(ctx, validatorAddr, withdrawPacket.Denom, operatorLocalAddress)
+		if err != nil {
+			return channeltypes.NewErrorAcknowledgement(err)
+		}
+
+		transferSeq, err := k.sendCoinToCoordinator(ctx, operatorLocalAddress, coordinatorOperatorAccAddr, coin, withdrawPacket.TransferChanel)
+		if err != nil {
+			return channeltypes.NewErrorAcknowledgement(err)
+		} else {
+			withdrawResp := restaking.ConsumerWithdrawRewardResponse{
+				TransferDestChannel: withdrawPacket.TransferChanel,
+				TransferDestPort:    ibctransfertypes.PortID,
+				TransferDestSeq:     transferSeq,
+				Balance:             coin,
+			}
+			withdrawRespBz := k.cdc.MustMarshal(&withdrawResp)
+			return channeltypes.NewResultAcknowledgement(withdrawRespBz)
+		}
+
 	default:
 		return channeltypes.NewErrorAcknowledgement(fmt.Errorf("unknown restaking protocol packet type"))
 	}
@@ -239,4 +273,26 @@ func (k Keeper) HandleRestakingSlashPacket(
 	}
 
 	return nil
+}
+
+func (k Keeper) sendCoinToCoordinator(ctx sdk.Context, from, to sdk.AccAddress, balance sdk.Coin, channelID string) (uint64, error) {
+	// TODO correct timeout duration
+	timeoutTimestamp := ctx.BlockTime().UnixNano() + 1800000000000
+	msg := ibctransfertypes.MsgTransfer{
+		SourcePort:       ibctransfertypes.PortID,
+		SourceChannel:    channelID,
+		Token:            balance,
+		Sender:           from.String(),
+		Receiver:         to.String(),
+		TimeoutHeight:    clienttypes.Height{},
+		TimeoutTimestamp: uint64(timeoutTimestamp),
+		Memo:             "",
+	}
+
+	resp, err := k.ibcTransferKeeper.Transfer(ctx, &msg)
+	if err != nil {
+		return 0, err
+	}
+
+	return resp.Sequence, nil
 }

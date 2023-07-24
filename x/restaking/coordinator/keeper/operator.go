@@ -74,6 +74,8 @@ func generateOperatorAddress(ctx sdk.Context) *authtypes.ModuleAccount {
 }
 
 func (k Keeper) Delegate(ctx sdk.Context, delegatorAccAddr sdk.AccAddress, operatorAccAddr sdk.AccAddress, amount math.Int) error {
+	k.BeforeDelegationSharesModified(ctx, delegatorAccAddr, operatorAccAddr)
+
 	operatorAddress := operatorAccAddr.String()
 	operator, found := k.GetOperator(ctx, operatorAccAddr)
 	if !found {
@@ -122,6 +124,8 @@ func (k Keeper) Delegate(ctx sdk.Context, delegatorAccAddr sdk.AccAddress, opera
 	// TODO shares should be math.Dec?
 	delegation.Shares = delegation.Shares.Add(addedShares)
 	k.SetDelegation(ctx, delegatorAccAddr, operatorAccAddr, delegation)
+
+	k.AfterDelegationSharesModified(ctx, delegatorAccAddr, operatorAccAddr)
 	return nil
 }
 

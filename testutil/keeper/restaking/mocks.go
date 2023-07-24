@@ -1084,3 +1084,18 @@ func (mr *MockMTStakingKeeperMockRecorder) Unbond(ctx, delAddr, valAddr, token i
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unbond", reflect.TypeOf((*MockMTStakingKeeper)(nil).Unbond), ctx, delAddr, valAddr, token)
 }
+
+// WithdrawReward mocks base method.
+func (m *MockMTStakingKeeper) WithdrawReward(ctx types0.Context, valAddr types0.ValAddress, stakeDenom string, delegator types0.AccAddress) (types0.Coin, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WithdrawReward", ctx, valAddr, stakeDenom, delegator)
+	ret0, _ := ret[0].(types0.Coin)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// WithdrawReward indicates an expected call of WithdrawReward.
+func (mr *MockMTStakingKeeperMockRecorder) WithdrawReward(ctx, valAddr, stakeDenom, delegator interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WithdrawReward", reflect.TypeOf((*MockMTStakingKeeper)(nil).WithdrawReward), ctx, valAddr, stakeDenom, delegator)
+}

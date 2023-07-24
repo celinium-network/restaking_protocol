@@ -42,6 +42,8 @@ message ConsumerAdditionProposal{
     repeated string restaking_tokens = 7;
     // Tokens are rewards for restaking on the consumer platform.
     repeated string reward_tokens = 8;
+    // ibc transfer channel id.
+    string transfer_channel_id = 9;
 }
 
 // Operator represents an operator who restakes tokens on the consumer platform.
@@ -195,4 +197,73 @@ message DOPair{
 // DVPairs defines an array of DOPair objects.
 message DOPairs{
     repeated DOPair pairs = 1 [(gogoproto.nullable) = false];
+}
+
+// OperatorHistoricalRewards
+message OperatorHistoricalRewards{
+    option (gogoproto.goproto_getters)  = false;
+
+    repeated cosmos.base.v1beta1.DecCoin cumulative_reward_ratios = 1[ 
+        (gogoproto.nullable) = false
+    ];
+}
+
+//OperatorCurrentRewards
+message OperatorCurrentRewards{
+    option (gogoproto.goproto_getters)  = false;
+
+    repeated cosmos.base.v1beta1.DecCoin rewards = 1[ 
+        (gogoproto.nullable) = false
+    ];
+
+    uint64 period = 2;
+}
+
+// DelegationStartInfo
+message DelegationStartInfo{
+    option (gogoproto.goproto_getters)  = false;
+
+    uint64 previous_period = 1;
+
+    string shares = 2 [
+        (cosmos_proto.scalar)  = "cosmos.Int",
+        (gogoproto.customtype) = "Int",
+        (gogoproto.nullable)   = false
+    ];
+
+    uint64 height = 3;
+}
+
+// WithdrawRewardRecord represents a record of operator withdraw reward from all consumer in a epoch.
+message OperatorWithdrawRewardRecord{
+    // The operator's address.
+    string operator_address = 1[(cosmos_proto.scalar) = "cosmos.AddressString"]; 
+
+    // The list of IBC callback IDs associated with the undelegation record.
+    repeated string ibc_callback_ids = 2;
+
+    repeated string transfer_ids = 3;
+
+    // withdraw -> done then ibc transfer
+    repeated uint32 statues = 4 [
+        (gogoproto.customtype) = "OperatorWithdrawRewardRecordStatus",
+        (gogoproto.nullable)   = false
+    ]; 
+
+    repeated cosmos.base.v1beta1.Coin rewards = 5[ 
+        (gogoproto.nullable) = false
+    ];
+}
+
+// DelegationStartingInfo represent a delegation info at starting.
+message DelegationStartingInfo{
+    uint64 previous_period = 1;
+
+    string stake = 2 [
+        (cosmos_proto.scalar)  = "cosmos.Int",
+        (gogoproto.customtype) = "Int",
+        (gogoproto.nullable)   = false
+    ];
+
+    uint64 height = 3;
 }
