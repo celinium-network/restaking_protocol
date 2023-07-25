@@ -17,7 +17,7 @@ import (
 func (k Keeper) RegisterOperator(ctx sdk.Context, msg types.MsgRegisterOperatorRequest) error {
 	// TODO The number of consumers in a operator should be limited.
 	if len(msg.ConsumerChainIDs) != len(msg.ConsumerValidatorAddresses) {
-		return types.ErrMismatchParams
+		return types.ErrParams
 	}
 
 	var operatedValidators []types.OperatedValidator

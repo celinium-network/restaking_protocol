@@ -12,6 +12,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
+	"github.com/celinium-network/restaking_protocol/x/restaking/coordinator/client/cli"
 	"github.com/celinium-network/restaking_protocol/x/restaking/coordinator/keeper"
 	"github.com/celinium-network/restaking_protocol/x/restaking/coordinator/types"
 )
@@ -39,7 +40,7 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 
 // GetTxCmd implements module.AppModuleBasic
 func (AppModuleBasic) GetTxCmd() *cobra.Command {
-	return nil
+	return cli.NewTxCommand()
 }
 
 // Name implements module.AppModuleBasic
@@ -115,5 +116,6 @@ func (AppModule) RegisterInvariants(sdk.InvariantRegistry) {
 }
 
 // RegisterServices implements module.AppModule
-func (AppModule) RegisterServices(module.Configurator) {
+func (am AppModule) RegisterServices(cfg module.Configurator) {
+	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(&am.keeper))
 }

@@ -14,6 +14,10 @@ type msgServer struct {
 	keeper *Keeper
 }
 
+func NewMsgServerImpl(keeper *Keeper) types.MsgServer {
+	return &msgServer{keeper: keeper}
+}
+
 // Delegate implements types.MsgServer.
 func (m msgServer) Delegate(goCtx context.Context, msg *types.MsgDelegateRequest) (*types.MsgDelegateResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
