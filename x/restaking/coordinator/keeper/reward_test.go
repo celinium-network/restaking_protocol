@@ -90,5 +90,5 @@ func (s *KeeperTestSuite) TestRewardDistributionWithoutSlash() {
 	s.bankKeeper.EXPECT().SendCoinsFromAccountToModule(gomock.Any(), operatorAccAddr, types.ModuleName, rewards)
 	s.bankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), types.ModuleName, delegatorAccAddr, rewards)
 
-	keeper.BeforeDelegationSharesModified(ctx, delegatorAccAddr, operatorAccAddr)
+	keeper.WithdrawDelegatorRewards(ctx, delegatorAccAddr, operatorAccAddr)
 }

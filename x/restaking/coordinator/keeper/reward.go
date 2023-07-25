@@ -360,7 +360,7 @@ func (k Keeper) OnRecvIBCTransferPacket(ctx sdk.Context, packet channeltypes.Pac
 	return nil
 }
 
-func (k Keeper) BeforeDelegationSharesModified(ctx sdk.Context, delegatorAccAddr, operatorAccAddr sdk.AccAddress) error {
+func (k Keeper) WithdrawDelegatorRewards(ctx sdk.Context, delegatorAccAddr, operatorAccAddr sdk.AccAddress) error {
 	startingInfo, found := k.GetDelegationStartInfo(ctx, delegatorAccAddr, operatorAccAddr)
 	if !found {
 		return nil
@@ -405,9 +405,7 @@ func (k Keeper) BeforeDelegationSharesModified(ctx sdk.Context, delegatorAccAddr
 		difference = sdk.NewDecCoins(ending.CumulativeRewardRatios...)
 	}
 
-	fmt.Println(difference.TruncateDecimal())
-	rewards, rs := difference.MulDec(sdk.NewDecFromInt(stakeTokens)).TruncateDecimal()
-	fmt.Println(rs)
+	rewards, _ := difference.MulDec(sdk.NewDecFromInt(stakeTokens)).TruncateDecimal()
 
 	k.sendCoinsFromAccountToAccount(ctx, operatorAccAddr, delegatorAccAddr, rewards)
 	k.DeleteDelegationStartInfo(ctx, delegatorAccAddr, operatorAccAddr)

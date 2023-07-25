@@ -50,7 +50,7 @@ func (s *IntegrationTestSuite) registerOperator(
 	coordCtx := s.rsCoordinatorChain.GetContext()
 	coordApp := getCoordinatorApp(s.rsCoordinatorChain)
 
-	err := coordApp.RestakingCoordinatorKeeper.RegisterOperator(coordCtx, rscoordinatortypes.MsgRegisterOperator{
+	err := coordApp.RestakingCoordinatorKeeper.RegisterOperator(coordCtx, rscoordinatortypes.MsgRegisterOperatorRequest{
 		ConsumerChainIDs:           []string{consumerChainID},
 		ConsumerValidatorAddresses: []string{consumerValidatorAddress},
 		RestakingDenom:             restakingDenom,
