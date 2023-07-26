@@ -52,7 +52,8 @@ func (AppModuleBasic) Name() string {
 func (AppModuleBasic) RegisterGRPCGatewayRoutes(client.Context, *runtime.ServeMux) {}
 
 // RegisterInterfaces implements module.AppModuleBasic
-func (AppModuleBasic) RegisterInterfaces(codectypes.InterfaceRegistry) {
+func (AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry) {
+	types.RegisterInterfaces(registry)
 }
 
 // RegisterLegacyAminoCodec implements module.AppModuleBasic
