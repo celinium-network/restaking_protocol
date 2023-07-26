@@ -413,18 +413,18 @@ func (k Keeper) SetOperatorUndelegationRecordByKey(ctx sdk.Context, key string, 
 func (k Keeper) SetDelegation(ctx sdk.Context, ownerAddr, operatorAddr sdk.AccAddress, delegation *types.Delegation) {
 	store := ctx.KVStore(k.storeKey)
 	if delegation.Shares.IsZero() {
-		store.Delete(types.OperatorSharesKey(ownerAddr, operatorAddr))
+		store.Delete(types.DelegationKey(ownerAddr, operatorAddr))
 		return
 	}
 
 	bz := k.cdc.MustMarshal(delegation)
 
-	store.Set(types.OperatorSharesKey(ownerAddr, operatorAddr), bz)
+	store.Set(types.DelegationKey(ownerAddr, operatorAddr), bz)
 }
 
 func (k Keeper) GetDelegation(ctx sdk.Context, ownerAddr, operatorAddr sdk.AccAddress) (*types.Delegation, bool) {
 	store := ctx.KVStore(k.storeKey)
-	bz := store.Get(types.OperatorSharesKey(ownerAddr, operatorAddr))
+	bz := store.Get(types.DelegationKey(ownerAddr, operatorAddr))
 	if bz == nil {
 		return nil, false
 	}

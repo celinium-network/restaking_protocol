@@ -63,7 +63,7 @@ const (
 
 	UnbondingDelegationKey
 
-	OperatorSharesPrefix
+	DelegationPrefix
 
 	IBCCallbackPrefix
 
@@ -150,9 +150,9 @@ func ConsumerTransferRewardKey(destChannel, destPort string, sequence uint64) []
 	return append([]byte{ConsumerTransferRewardPrefix}, bz...)
 }
 
-func OperatorSharesKey(ownerAccAddr, operatorAccAddr sdk.AccAddress) []byte {
+func DelegationKey(ownerAccAddr, operatorAccAddr sdk.AccAddress) []byte {
 	// TODO address string in key should has length as prefix ?
-	return append([]byte{OperatorSharesPrefix}, append(ownerAccAddr, operatorAccAddr...)...)
+	return append([]byte{DelegationPrefix}, append(ownerAccAddr, operatorAccAddr...)...)
 }
 
 func IBCCallbackKey(channelID, portID string, seq uint64) []byte {
