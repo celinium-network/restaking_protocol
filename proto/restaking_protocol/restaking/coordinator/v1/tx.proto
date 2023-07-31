@@ -4,11 +4,27 @@ package restaking_protocol.restaking.coordinator.v1;
 
 import "gogoproto/gogo.proto";
 import "cosmos_proto/cosmos.proto";
-import "tendermint/crypto/keys.proto";
 
 option go_package = "restaking_protocol/x/restaking/coordinator/types";
 
-message MsgRegisterOperator{
+// Msg defines the restaking coordinator Msg service.
+// Msg defines the multiTokenStaking Msg service.
+service Msg {
+    // RegisterOperator define a method for register a operator.
+    rpc RegisterOperator(MsgRegisterOperatorRequest) returns (MsgRegisterOperatorResponse);
+
+    // Delegate define a method for staker delegate to a opeator.
+    rpc Delegate(MsgDelegateRequest) returns (MsgDelegateResponse);
+
+    // Undelegate define a method for staker undelegate from a opeator.
+    rpc Undelegate(MsgUndelegateRequest) returns (MsgUndelegateResponse);
+
+    // Undelegate define a method for staker withdraw rewards from a opeator.
+    rpc WithdrawReward(MsgWithdrawRewardRequest) returns(MsgWithdrawRewardResponse);
+}
+
+// MsgRegisterOperator define the msg to register a operator request type.
+message MsgRegisterOperatorRequest{
     option (gogoproto.goproto_getters)  = false;
 
     repeated string ConsumerChainIDs  = 1;
@@ -19,3 +35,49 @@ message MsgRegisterOperator{
 
     string sender = 4 [(cosmos_proto.scalar) = "cosmos.AddressString"]; 
 }
+
+// MsgRegisterOperatorResponse define the msg to register a operator response type
+message MsgRegisterOperatorResponse{}
+
+// MsgDelegateRequset define the msg for staker delegate to the operator request type
+message MsgDelegateRequest{
+    string delegator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+    string operator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    string amount = 3 [
+        (cosmos_proto.scalar)  = "cosmos.Int",
+        (gogoproto.customtype) = "Int",
+        (gogoproto.nullable)   = false
+    ];
+}
+
+// MsgDelegateRequset define the msg for staker delegate to the operator response type
+message MsgDelegateResponse{
+
+}
+
+// MsgUndelegateRequset define the msg for staker undelegate from the operator resquest type
+message MsgUndelegateRequest{
+    string delegator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+    string operator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    string amount = 3 [
+        (cosmos_proto.scalar)  = "cosmos.Int",
+        (gogoproto.customtype) = "Int",
+        (gogoproto.nullable)   = false
+    ];
+}
+
+// MsgUndelegateRequset define the msg for staker undelegate from the operator response type
+message MsgUndelegateResponse{
+
+}
+
+// MsgWithdrawRewardRequst define the msg for staker withdraw the restaking rewards request type
+message MsgWithdrawRewardRequest{
+    string delegator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+    string operator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}
+
+// MsgWithdrawRewardResponse define the msg for staker withdraw the restaking reward response type
+message MsgWithdrawRewardResponse{}

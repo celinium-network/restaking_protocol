@@ -1,0 +1,211 @@
+syntax = "proto3";
+
+package restaking_protocol.restaking.coordinator.v1;
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "cosmos_proto/cosmos.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "restaking_protocol/restaking/coordinator/v1/coordinator.proto";
+
+option go_package = "restaking_protocol/x/restaking/coordinator/types";
+
+// Query provides defines the gRPC querier service
+service Query{
+    // Operators queries all operators.
+    rpc Operators(QueryOperatorsRequest) returns (QueryOperatorsResponse){
+        option (google.api.http).get = "/restaking_protocol/v1/operators";
+    };
+
+    // Operator queries the operator by the address.
+    rpc Operator(QueryOperatorRequest) returns(QueryOperatorResponse){
+        option (google.api.http).get = "/restaking_protocol/v1/operators/{operator_address}";
+    };
+
+    // OperatorDelegations queries delegate info for given operator.
+    rpc OperatorDelegations(QueryOperatorDelegationsRequest)returns(QueryOperatorDelegationsResponse){
+        option (google.api.http).get = "/restaking_protocol/v1/operators/{operator_address}/delegations";  
+    };
+
+    // OperatorUnbondingDelegations queries unbonding delegations of a operator.
+    rpc OperatorUnbondingDelegations(QueryOperatorUnbondingDelegationsRequest) returns(QueryOperatorUnbondingDelegationsResponse){
+        option (google.api.http).get = "/restaking_protocol/v1/operators/{operator_address}/unbonding_delegations";  
+    };
+
+    // Delegation queries delegate info for given operator delegator pair.
+    rpc Delegation(QueryDelegationRequest)returns (QueryDelegationResponse){
+        option (google.api.http).get = "/restaking_protocol/v1/operators/{operator_address}/delegations/{delegator_address}";  
+    };
+
+    // UnbondingDelegation queries unbonding info for given operator delegator pair.
+    rpc UnbondingDelegation(QueryUnbondingDelegationRequest) returns(QueryUnbondingDelegationResponse){
+        option (google.api.http).get = "/restaking/v1/operators/{operator_address}/delegations/"
+                                        "{delegator_address}/unbonding_delegation";  
+    };
+
+    // DelegatorDelegations queries all delegations of a given delegator address.
+    rpc DelegatorDelegations(QueryDelegatorDelegationsRequest) returns(QueryDelegatorDelegationsResponse){
+        option (google.api.http).get = "/restaking/v1/delegations/{delegator_addr}"; 
+    };
+
+    // DelegatorUnbondingDelegations queries all unbonding delegations of a given delegator address.
+    rpc DelegatorUnbondingDelegations(QueryDelegatorUnbondingDelegationsRequest) returns(QueryDelegatorUnbondingDelegationsResponse){
+        option (google.api.http).get = "/restaking/v1/delegators/{delegator_addr}/unbonding_delegations";         
+    };
+
+    // DelegatorOperators queries all Operators info for given delegator
+    rpc DelegatorOperators(QueryDelegatorOperatorsRequest) returns(QueryDelegatorOperatorsResponse){
+        option (google.api.http).get = "/restaking/v1/delegators/{delegator_addr}/operators";                 
+    };
+}
+
+// QueryOperatorsRequest is request type for Query/Operator RPC method.
+message QueryOperatorsRequest{
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    // pagination request
+    cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+// QueryOperatorsResponse is response type for Query/Operator RPC method.
+message QueryOperatorsResponse{
+    repeated Operator operators = 1 [(gogoproto.nullable) = false];
+    cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryOperatorRequest is request type for Query/Operator by address RPC method.
+message QueryOperatorRequest{
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    string operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}
+
+// QueryOperatorRequest is response type for Query/Operator by address RPC method.
+message QueryOperatorResponse{
+    Operator operator = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryOperatorDelegationsRequest is request type for query delegates of the operator.
+message QueryOperatorDelegationsRequest{
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    string operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+    cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+// QueryOperatorDelegationsResponse is response type for query delegates of the operator.
+message QueryOperatorDelegationsResponse{
+    repeated Delegation delegations = 1 [(gogoproto.nullable) = false];
+    cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryOperatorUnbondingDelegationsRequest
+message QueryOperatorUnbondingDelegationsRequest{
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    string operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+    cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+// QueryOperatorUnbondingDelegationsResponse
+message QueryOperatorUnbondingDelegationsResponse{
+    repeated UnbondingDelegation unbonding_delegations = 1 [(gogoproto.nullable) = false];
+    cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// QueryDelegationRequest is request type for queries delegate info for given operator delegator pair.
+message QueryDelegationRequest{
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+  
+    // delegator_addr defines the delegator address to query for.
+    string delegator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  
+    // operator_addr defines the agent address to query for.
+    string operator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}
+
+// QueryDelegationResponse is response type for queries delegate info for given operator delegator pair.
+message QueryDelegationResponse{
+    option (gogoproto.equal)            = false;
+  
+    Delegation delegation = 1 [(gogoproto.nullable) = false];
+    cosmos.base.v1beta1.Coin balance = 2 [(gogoproto.nullable) = false];
+}
+
+// UnbondingDelegationRequest is request type for query unbonding delegation for the delegator operator pair.
+message QueryUnbondingDelegationRequest{
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+  
+    // delegator_addr defines the delegator address to query for.
+    string delegator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  
+    // operator_addr defines the agent address to query for.
+    string operator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}
+
+// UnbondingDelegationRequest is response type for query unbonding delegation for the delegator operator pair.
+message QueryUnbondingDelegationResponse{
+    UnbondingDelegation unbond = 1 [(gogoproto.nullable) = false];
+}
+
+// DelegatorDelegationsRequest is request type for query delegations of the delegator
+message QueryDelegatorDelegationsRequest{
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    // delegator_addr defines the delegator address to query for.
+    string delegator_addr = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+// DelegatorDelegationsResponse is response type for query delegations of the delegator
+message QueryDelegatorDelegationsResponse{
+    // delegation_responses defines all the delegations' info of a delegator.
+    repeated Delegation delegations = 1 [(gogoproto.nullable) = false];
+
+    cosmos.base.query.v1beta1.PageResponse pagination = 2;   
+}
+
+// QueryDelegatorUnbondingDelegationsRequest is request type for query unbonding delegations of the delegator
+message QueryDelegatorUnbondingDelegationsRequest{
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    // delegator_addr defines the delegator address to query for.
+    string delegator_addr = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+// QueryDelegatorUnbondingDelegationsResponse is response type for query unbonding delegations of the delegator
+message QueryDelegatorUnbondingDelegationsResponse{
+    repeated UnbondingDelegation unbonding_delegations = 1 [(gogoproto.nullable) = false];
+
+    cosmos.base.query.v1beta1.PageResponse pagination = 2;   
+}
+
+// QueryDelegatorOperatorsRequest is request type for query all operators info for given delegator
+message QueryDelegatorOperatorsRequest{
+    option (gogoproto.equal)           = false;
+    option (gogoproto.goproto_getters) = false;
+
+    // delegator_addr defines the delegator address to query for.
+    string delegator_addr = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+    cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+// QueryDelegatorOperatorsResponse is response type for query all operators info for given delegator
+message QueryDelegatorOperatorsResponse{
+    repeated Operator operators = 1 [(gogoproto.nullable) = false];
+
+    cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}

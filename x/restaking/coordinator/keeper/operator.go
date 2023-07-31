@@ -14,10 +14,10 @@ import (
 	"github.com/celinium-network/restaking_protocol/x/restaking/coordinator/types"
 )
 
-func (k Keeper) RegisterOperator(ctx sdk.Context, msg types.MsgRegisterOperator) error {
+func (k Keeper) RegisterOperator(ctx sdk.Context, msg types.MsgRegisterOperatorRequest) error {
 	// TODO The number of consumers in a operator should be limited.
 	if len(msg.ConsumerChainIDs) != len(msg.ConsumerValidatorAddresses) {
-		return types.ErrMismatchParams
+		return types.ErrParams
 	}
 
 	var operatedValidators []types.OperatedValidator
@@ -74,7 +74,7 @@ func generateOperatorAddress(ctx sdk.Context) *authtypes.ModuleAccount {
 }
 
 func (k Keeper) Delegate(ctx sdk.Context, delegatorAccAddr sdk.AccAddress, operatorAccAddr sdk.AccAddress, amount math.Int) error {
-	k.BeforeDelegationSharesModified(ctx, delegatorAccAddr, operatorAccAddr)
+	k.WithdrawDelegatorRewards(ctx, delegatorAccAddr, operatorAccAddr)
 
 	operatorAddress := operatorAccAddr.String()
 	operator, found := k.GetOperator(ctx, operatorAccAddr)

@@ -111,7 +111,7 @@ message QueryDenomAgentsResponse{
     cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
 
-// QueryDenomAgentsRequest is request type for query delegates of the agent.
+// QueryAgentDelegationsRequest is request type for query delegates of the agent.
 message QueryAgentDelegationsRequest{
     option (gogoproto.equal)           = false;
     option (gogoproto.goproto_getters) = false;
@@ -120,7 +120,7 @@ message QueryAgentDelegationsRequest{
     cosmos.base.query.v1beta1.PageRequest pagination = 2;
 }
 
-// QueryDenomAgentsRequest is response type for query delegates of the agent.
+// QueryAgentDelegationsResponse is response type for query delegates of the agent.
 message QueryAgentDelegationsResponse{
     repeated MTStakingDelegation delegations = 1 [(gogoproto.nullable) = false];
     cosmos.base.query.v1beta1.PageResponse pagination = 2;
@@ -160,7 +160,7 @@ message DelegationResponse {
     MTStakingDelegation delegation = 1 [(gogoproto.nullable) = false];
   
     cosmos.base.v1beta1.Coin balance = 2 [(gogoproto.nullable) = false];
-  }
+}
 
 // UnbondingDelegationRequest is request type for query unbonding delegation for the delegator agent pair.
 message UnbondingDelegationRequest{
@@ -190,7 +190,7 @@ message DelegatorDelegationsRequest{
     cosmos.base.query.v1beta1.PageRequest pagination = 2;
 }
 
-// DelegatorDelegationsRequest is response type for query delegations of the delegator
+// DelegatorDelegationsResponse is response type for query delegations of the delegator
 message DelegatorDelegationsResponse{
     // delegation_responses defines all the delegations' info of a delegator.
     repeated MTStakingDelegation delegations = 1 [(gogoproto.nullable) = false];
@@ -198,7 +198,7 @@ message DelegatorDelegationsResponse{
     cosmos.base.query.v1beta1.PageResponse pagination = 2;   
 }
 
-// DelegatorDelegationsRequest is request type for query unbonding delegations of the delegator
+// DelegatorUnbondingDelegationsRequest is request type for query unbonding delegations of the delegator
 message DelegatorUnbondingDelegationsRequest{
     option (gogoproto.equal)           = false;
     option (gogoproto.goproto_getters) = false;
@@ -209,7 +209,7 @@ message DelegatorUnbondingDelegationsRequest{
     cosmos.base.query.v1beta1.PageRequest pagination = 2;
 }
 
-// DelegatorDelegationsRequest is response type for query unbonding delegations of the delegator
+// DelegatorUnbondingDelegationsResponse is response type for query unbonding delegations of the delegator
 message DelegatorUnbondingDelegationsResponse{
     repeated MTStakingUnbondingDelegation unbond = 1 [(gogoproto.nullable) = false];
 

@@ -10,6 +10,7 @@ import (
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	tmtime "github.com/cometbft/cometbft/types/time"
 
+	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/testutil"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -40,6 +41,7 @@ type KeeperTestSuite struct {
 	connectionKeeper  *testutilkeeper.MockConnectionKeeper
 	clientKeeper      *testutilkeeper.MockClientKeeper
 	transferKeeper    *testutilkeeper.MockIBCTransferKeeper
+	queryClient       types.QueryClient
 }
 
 func (s *KeeperTestSuite) SetupTest() {
@@ -71,6 +73,11 @@ func (s *KeeperTestSuite) SetupTest() {
 
 	s.ctx = ctx
 	s.coordinatorKeeper = &keeper
+
+	types.RegisterInterfaces(encCfg.InterfaceRegistry)
+	queryHelper := baseapp.NewQueryServerTestHelper(ctx, encCfg.InterfaceRegistry)
+	types.RegisterQueryServer(queryHelper, coordkeeper.Querier{Keeper: &keeper})
+	s.queryClient = types.NewQueryClient(queryHelper)
 }
 
 func TestKeeperTestSuite(t *testing.T) {

@@ -51,7 +51,7 @@ func (s *KeeperTestSuite) TestRegisterOperator() {
 		keeper.SetConsumerRewardToken(ctx, consumerClientIDs[i], []string{"stake"})
 	}
 
-	err := keeper.RegisterOperator(ctx, types.MsgRegisterOperator{
+	err := keeper.RegisterOperator(ctx, types.MsgRegisterOperatorRequest{
 		ConsumerChainIDs:           consumerChainIDs,
 		ConsumerValidatorAddresses: validatorAddress,
 		RestakingDenom:             "stake",
@@ -83,7 +83,7 @@ func (s *KeeperTestSuite) TestDelegate() {
 
 	accounts := simtestutil.CreateIncrementalAccounts(1)
 	user := accounts[0]
-	err := s.coordinatorKeeper.RegisterOperator(s.ctx, types.MsgRegisterOperator{
+	err := s.coordinatorKeeper.RegisterOperator(s.ctx, types.MsgRegisterOperatorRequest{
 		ConsumerChainIDs:           consumerChainIDs,
 		ConsumerValidatorAddresses: consumerValidatorAddresses,
 		RestakingDenom:             "stake",

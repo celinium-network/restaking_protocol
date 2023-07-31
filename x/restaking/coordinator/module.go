@@ -12,6 +12,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
+	"github.com/celinium-network/restaking_protocol/x/restaking/coordinator/client/cli"
 	"github.com/celinium-network/restaking_protocol/x/restaking/coordinator/keeper"
 	"github.com/celinium-network/restaking_protocol/x/restaking/coordinator/types"
 )
@@ -34,12 +35,12 @@ func (AppModuleBasic) DefaultGenesis(codec.JSONCodec) json.RawMessage {
 
 // GetQueryCmd implements module.AppModuleBasic
 func (AppModuleBasic) GetQueryCmd() *cobra.Command {
-	return nil
+	return cli.GetQueryCmd()
 }
 
 // GetTxCmd implements module.AppModuleBasic
 func (AppModuleBasic) GetTxCmd() *cobra.Command {
-	return nil
+	return cli.NewTxCommand()
 }
 
 // Name implements module.AppModuleBasic
@@ -51,7 +52,8 @@ func (AppModuleBasic) Name() string {
 func (AppModuleBasic) RegisterGRPCGatewayRoutes(client.Context, *runtime.ServeMux) {}
 
 // RegisterInterfaces implements module.AppModuleBasic
-func (AppModuleBasic) RegisterInterfaces(codectypes.InterfaceRegistry) {
+func (AppModuleBasic) RegisterInterfaces(registry codectypes.InterfaceRegistry) {
+	types.RegisterInterfaces(registry)
 }
 
 // RegisterLegacyAminoCodec implements module.AppModuleBasic
@@ -115,5 +117,9 @@ func (AppModule) RegisterInvariants(sdk.InvariantRegistry) {
 }
 
 // RegisterServices implements module.AppModule
-func (AppModule) RegisterServices(module.Configurator) {
+func (am AppModule) RegisterServices(cfg module.Configurator) {
+	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(&am.keeper))
+
+	querier := keeper.Querier{Keeper: &am.keeper}
+	types.RegisterQueryServer(cfg.QueryServer(), querier)
 }

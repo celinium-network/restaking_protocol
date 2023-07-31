@@ -300,7 +300,7 @@ func (m *QueryDenomAgentsResponse) GetPagination() *query.PageResponse {
 	return nil
 }
 
-// QueryDenomAgentsRequest is request type for query delegates of the agent.
+// QueryAgentDelegationsRequest is request type for query delegates of the agent.
 type QueryAgentDelegationsRequest struct {
 	AgentAddr  string             `protobuf:"bytes,1,opt,name=agent_addr,json=agentAddr,proto3" json:"agent_addr,omitempty"`
 	Pagination *query.PageRequest `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
@@ -339,7 +339,7 @@ func (m *QueryAgentDelegationsRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_QueryAgentDelegationsRequest proto.InternalMessageInfo
 
-// QueryDenomAgentsRequest is response type for query delegates of the agent.
+// QueryAgentDelegationsResponse is response type for query delegates of the agent.
 type QueryAgentDelegationsResponse struct {
 	Delegations []MTStakingDelegation `protobuf:"bytes,1,rep,name=delegations,proto3" json:"delegations"`
 	Pagination  *query.PageResponse   `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
@@ -704,7 +704,7 @@ func (m *DelegatorDelegationsRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DelegatorDelegationsRequest proto.InternalMessageInfo
 
-// DelegatorDelegationsRequest is response type for query delegations of the delegator
+// DelegatorDelegationsResponse is response type for query delegations of the delegator
 type DelegatorDelegationsResponse struct {
 	// delegation_responses defines all the delegations' info of a delegator.
 	Delegations []MTStakingDelegation `protobuf:"bytes,1,rep,name=delegations,proto3" json:"delegations"`
@@ -758,7 +758,7 @@ func (m *DelegatorDelegationsResponse) GetPagination() *query.PageResponse {
 	return nil
 }
 
-// DelegatorDelegationsRequest is request type for query unbonding delegations of the delegator
+// DelegatorUnbondingDelegationsRequest is request type for query unbonding delegations of the delegator
 type DelegatorUnbondingDelegationsRequest struct {
 	// delegator_addr defines the delegator address to query for.
 	DelegatorAddr string             `protobuf:"bytes,1,opt,name=delegator_addr,json=delegatorAddr,proto3" json:"delegator_addr,omitempty"`
@@ -798,7 +798,7 @@ func (m *DelegatorUnbondingDelegationsRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DelegatorUnbondingDelegationsRequest proto.InternalMessageInfo
 
-// DelegatorDelegationsRequest is response type for query unbonding delegations of the delegator
+// DelegatorUnbondingDelegationsResponse is response type for query unbonding delegations of the delegator
 type DelegatorUnbondingDelegationsResponse struct {
 	Unbond     []MTStakingUnbondingDelegation `protobuf:"bytes,1,rep,name=unbond,proto3" json:"unbond"`
 	Pagination *query.PageResponse            `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
