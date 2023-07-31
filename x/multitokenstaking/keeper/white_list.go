@@ -3,9 +3,13 @@ package keeper
 import (
 	"strings"
 
-	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"golang.org/x/exp/slices"
+
+	errorsmod "cosmossdk.io/errors"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 )
 
 func (k Keeper) GetMTStakingDenomWhiteList(ctx sdk.Context) (*types.MTStakingDenomWhiteList, bool) {
@@ -71,4 +75,14 @@ func (k Keeper) RemoveMTStakingDenom(ctx sdk.Context, denom string) bool {
 	store.Set(types.DenomWhiteListKey, bz)
 
 	return true
+}
+
+func (k Keeper) HandleMultiTokenStakingAdditionProposal(ctx sdk.Context, proposal *types.AddNonNativeTokenToStakingProposal) error {
+	for _, denom := range proposal.Denoms {
+		if ok := k.AddMTStakingDenom(ctx, denom); !ok {
+			return errorsmod.Wrapf(sdkerrors.ErrUnknownRequest, "add token: %s, failed", denom)
+		}
+	}
+
+	return nil
 }

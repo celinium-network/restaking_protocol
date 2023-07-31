@@ -1,4 +1,4 @@
-package coordinator
+package multistaking
 
 import (
 	errorsmod "cosmossdk.io/errors"
@@ -6,15 +6,15 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 
-	"github.com/celinium-network/restaking_protocol/x/restaking/coordinator/keeper"
-	"github.com/celinium-network/restaking_protocol/x/restaking/coordinator/types"
+	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/keeper"
+	"github.com/celinium-network/restaking_protocol/x/multitokenstaking/types"
 )
 
 func NewProviderProposalHandler(k keeper.Keeper) govtypes.Handler {
 	return func(ctx sdk.Context, content govtypes.Content) error {
 		switch c := content.(type) {
-		case *types.ConsumerAdditionProposal:
-			return k.HandleConsumerAdditionProposal(ctx, c)
+		case *types.AddNonNativeTokenToStakingProposal:
+			return k.HandleMultiTokenStakingAdditionProposal(ctx, c)
 		default:
 			return errorsmod.Wrapf(sdkerrors.ErrUnknownRequest, "unrecognized proposal content type: %T", c)
 		}
