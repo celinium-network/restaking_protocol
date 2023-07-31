@@ -5,7 +5,7 @@ import (
 
 	ibctesting "github.com/cosmos/ibc-go/v7/testing"
 
-	"github.com/celinium-network/restaking_protocol/app/params"
+	coordapp "github.com/celinium-network/restaking_protocol/app/coordinator"
 	rscoordinatortypes "github.com/celinium-network/restaking_protocol/x/restaking/coordinator/types"
 )
 
@@ -57,7 +57,7 @@ func CreateConsumerAdditionalProposal(path *ibctesting.Path, consumerChain *ibct
 		UnbondingPeriod:       tmClientCfg.UnbondingPeriod,
 		TimeoutPeriod:         tmClientCfg.TrustingPeriod,
 		TransferTimeoutPeriod: tmClientCfg.MaxClockDrift,
-		RestakingTokens:       []string{params.DefaultBondDenom},
-		RewardTokens:          []string{params.DefaultBondDenom},
+		RestakingTokens:       []string{coordapp.DefaultBondDenom},
+		RewardTokens:          []string{coordapp.DefaultBondDenom},
 	}
 }

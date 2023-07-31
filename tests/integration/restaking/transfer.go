@@ -14,7 +14,6 @@ import (
 
 	rsconsumer "github.com/celinium-network/restaking_protocol/app/consumer"
 	rscoordinator "github.com/celinium-network/restaking_protocol/app/coordinator"
-	"github.com/celinium-network/restaking_protocol/app/params"
 )
 
 func (s *IntegrationTestSuite) TestIBCTransfer() {
@@ -23,16 +22,16 @@ func (s *IntegrationTestSuite) TestIBCTransfer() {
 	consumerAccAddr := s.rsConsumerChain.SenderAccount.GetAddress()
 	coordAccAddr := s.rsCoordinatorChain.SenderAccount.GetAddress()
 
-	coin := sdk.NewCoin(params.DefaultBondDenom, sdk.NewIntFromUint64(1000000))
+	coin := sdk.NewCoin(rscoordinator.DefaultBondDenom, sdk.NewIntFromUint64(1000000))
 	err := mintCoin(s.rsConsumerChain, consumerAccAddr, coin)
 	s.Require().NoError(err)
 
 	s.IBCTransfer(consumerAccAddr.String(), coordAccAddr.String(), coin, s.transferPath, true)
 
-	coordApp := getCoordinatorApp(s.rsCoordinatorChain)
+	rscoordinator := getCoordinatorApp(s.rsCoordinatorChain)
 	ibcDenom := calculateIBCDenom(ibctesting.TransferPort, s.transferPath.EndpointA.ChannelID, coin.Denom)
 
-	balance := coordApp.BankKeeper.GetBalance(s.rsCoordinatorChain.GetContext(), coordAccAddr, ibcDenom)
+	balance := rscoordinator.BankKeeper.GetBalance(s.rsCoordinatorChain.GetContext(), coordAccAddr, ibcDenom)
 
 	s.Require().True(balance.Amount.Equal(coin.Amount))
 }
