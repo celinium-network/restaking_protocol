@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	DefaultBondDenom = "cntr" // coordinator token
+	DefaultBondDenom = "CNTR" // coordinator token
 
 	// Bech32PrefixAccAddr defines the Bech32 prefix of an account's address.
 	Bech32PrefixAccAddr = "coordinator"

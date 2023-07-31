@@ -11,7 +11,7 @@ import (
 
 const (
 	// ModuleName is the name of the restaking coordinator module
-	ModuleName = "restaking-coordinator"
+	ModuleName = "restakingCoordinator"
 
 	// StoreKey is the string store representation
 	StoreKey = ModuleName

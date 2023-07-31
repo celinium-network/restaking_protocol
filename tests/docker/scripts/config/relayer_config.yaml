@@ -1,0 +1,59 @@
+global:
+    api-listen-addr: :5183
+    timeout: 10s
+    memo: ""
+    light-cache-size: 20
+chains:
+    celinium:
+        type: cosmos
+        value:
+            key-directory: /root/.relayer/keys/celinium
+            key: celi-0
+            chain-id: celinium
+            rpc-addr: http://celinium:26657
+            account-prefix: celi
+            keyring-backend: test
+            gas-adjustment: 1.2
+            gas-prices: 0.001CELI
+            min-gas-amount: 0
+            debug: true
+            timeout: 10s
+            block-timeout: ""
+            output-format: json
+            sign-mode: direct
+            extra-codecs: []
+            coin-type: 0
+            signing-algorithm: ""
+            broadcast-mode: batch
+            min-loop-duration: 0s
+    gaia:
+        type: cosmos
+        value:
+            key-directory: /root/.relayer/keys/gaia
+            key: gaia-0
+            chain-id: gaia
+            rpc-addr: http://gaia-validator-1:26657
+            account-prefix: cosmos
+            keyring-backend: test
+            gas-adjustment: 1.2
+            gas-prices: 0.1ATOM
+            min-gas-amount: 0
+            debug: true
+            timeout: 20s
+            block-timeout: ""
+            output-format: json
+            sign-mode: direct
+            extra-codecs: []
+            coin-type: 0
+            signing-algorithm: ""
+            broadcast-mode: batch
+            min-loop-duration: 0s
+paths:
+    gaia-celi-path:
+        src:
+            chain-id: gaia
+        dst:
+            chain-id: celinium
+        src-channel-filter:
+            rule: ""
+            channel-list: []

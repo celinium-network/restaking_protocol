@@ -6,14 +6,14 @@ WORKDIR /opt
 
 RUN apk add --update curl make git libc-dev bash gcc linux-headers eudev-dev python3
 
-RUN mkdir /opt/coordinator
+RUN mkdir /opt/consumer
 
-COPY . /opt/coordinator/
+COPY . /opt/consumer/
 
 ENV GOPROXY=https://goproxy.cn,direct
 
-RUN cd /opt/coordinator \
-    && go install ./cmd/coordinatord
+RUN cd /opt/consumer \
+    && go install ./cmd/consumerd
 
 FROM alpine:3.15
 
@@ -25,13 +25,12 @@ ENV PATH="/path/to/bash:$PATH"
 
 COPY --from=builder /go/bin/consumerd /usr/local/bin/
 
-COPY ./docker/scripts/start_coordinator.sh /opt/start_coordinator.sh
-# COPY ./docker/scripts/helper.sh /opt/helper.sh
-# COPY ./docker/scripts/liquidstake.sh /opt/liquidstake.sh
+COPY --from=builder /opt/consumer/tests/docker/scripts/scripts/start_consumer.sh /opt/start_consumer.sh
+COPY --from=builder /opt/consumer/tests/docker/scripts/scripts/helper.sh /opt/helper.sh
 
-RUN chmod +x /opt/start_coordinator.sh
-# RUN chmod +x /opt/helper.sh
+RUN chmod +x /opt/start_consumer.sh
+RUN chmod +x /opt/helper.sh
 
 EXPOSE 26657 26656 1317 9090
 
-ENTRYPOINT ["/opt/start_coordinator.sh"]
+ENTRYPOINT ["/opt/start_consumer.sh"]
