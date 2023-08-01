@@ -19,7 +19,6 @@ import (
 
 	rsconsumer "github.com/celinium-network/restaking_protocol/app/consumer"
 	rscoordinator "github.com/celinium-network/restaking_protocol/app/coordinator"
-	"github.com/celinium-network/restaking_protocol/app/params"
 
 	restakingtypes "github.com/celinium-network/restaking_protocol/x/restaking/types"
 )
@@ -114,8 +113,8 @@ func NewIntegrationTestSuite() *IntegrationTestSuite {
 		ctx := consumerChian.GetContext()
 		consumerApp.RestakingConsumerKeeper.InitGenesis(ctx, nil)
 		// TODO the params of coordinator and consumer maybe in different package
-		consumerApp.MTStakingKeeper.AddMTStakingDenom(ctx, params.DefaultBondDenom)
-		consumerApp.MTStakingKeeper.SetEquivalentNativeCoinMultiplier(ctx, 1, params.DefaultBondDenom, sdk.MustNewDecFromStr("1"))
+		consumerApp.MTStakingKeeper.AddMTStakingDenom(ctx, rscoordinator.DefaultBondDenom)
+		consumerApp.MTStakingKeeper.SetEquivalentNativeCoinMultiplier(ctx, 1, rscoordinator.DefaultBondDenom, sdk.MustNewDecFromStr("1"))
 
 		return consumerChian, consumerApp
 	}

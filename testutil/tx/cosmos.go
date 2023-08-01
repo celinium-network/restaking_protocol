@@ -27,12 +27,12 @@ import (
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 
 	app "github.com/celinium-network/restaking_protocol/app/consumer"
-	"github.com/celinium-network/restaking_protocol/app/params"
+	coordapp "github.com/celinium-network/restaking_protocol/app/coordinator"
 )
 
 var (
 	feeAmt     = math.Pow10(16)
-	DefaultFee = sdk.NewCoin(params.DefaultBondDenom, sdk.NewIntFromUint64(uint64(feeAmt)))
+	DefaultFee = sdk.NewCoin(coordapp.DefaultBondDenom, sdk.NewIntFromUint64(uint64(feeAmt)))
 )
 
 // CosmosTxArgs contains the params to create a cosmos tx
@@ -68,7 +68,7 @@ func PrepareCosmosTx(
 
 	var fees sdk.Coins
 	if args.GasPrice != nil {
-		fees = sdk.Coins{{Denom: params.DefaultBondDenom, Amount: args.GasPrice.MulRaw(int64(args.Gas))}}
+		fees = sdk.Coins{{Denom: coordapp.DefaultBondDenom, Amount: args.GasPrice.MulRaw(int64(args.Gas))}}
 	} else {
 		fees = sdk.Coins{DefaultFee}
 	}

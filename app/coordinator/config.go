@@ -1,4 +1,4 @@
-package params
+package coordinator
 
 import (
 	"github.com/cosmos/cosmos-sdk/types/address"
@@ -9,10 +9,10 @@ import (
 )
 
 const (
-	DefaultBondDenom = "CELI"
+	DefaultBondDenom = "CNTR" // coordinator token
 
 	// Bech32PrefixAccAddr defines the Bech32 prefix of an account's address.
-	Bech32PrefixAccAddr = "celi"
+	Bech32PrefixAccAddr = "coordinator"
 )
 
 var (
@@ -30,15 +30,6 @@ var (
 
 func init() {
 	SetAddressPrefixes()
-	RegisterDenoms()
-}
-
-// RegisterDenoms registers token denoms.
-func RegisterDenoms() {
-	err := sdk.RegisterDenom(DefaultBondDenom, sdk.OneDec())
-	if err != nil {
-		panic(err)
-	}
 }
 
 // SetAddressPrefixes builds the Config with Bech32 addressPrefix and publKeyPrefix for accounts, validators, and consensus nodes and verifies that addreeses have correct format.

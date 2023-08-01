@@ -2,7 +2,9 @@ package integration
 
 import (
 	"cosmossdk.io/math"
+	rsconsumer "github.com/celinium-network/restaking_protocol/app/consumer"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
 )
 
@@ -58,9 +60,10 @@ func (s *IntegrationTestSuite) TestReward() {
 	validator, found := consumerApp.StakingKeeper.GetValidator(consumerCtx, valAddr)
 	s.Require().True(found)
 
-	consumerApp.DistrKeeper.AllocateTokensToValidator(consumerCtx, validator, sdk.DecCoins{
-		sdk.NewDecCoinFromDec("stake", sdk.MustNewDecFromStr("100000000")),
-	})
+	rewardsCoin := sdk.NewCoin(rsconsumer.DefaultBondDenom, sdk.MustNewDecFromStr("100000000000").RoundInt())
+	consumerApp.BankKeeper.MintCoins(consumerCtx, ibctransfertypes.ModuleName, sdk.NewCoins(rewardsCoin))
+	consumerApp.BankKeeper.SendCoinsFromModuleToModule(consumerCtx, ibctransfertypes.ModuleName, distrtypes.ModuleName, sdk.NewCoins(rewardsCoin))
+	consumerApp.DistrKeeper.AllocateTokensToValidator(consumerCtx, validator, sdk.DecCoins{sdk.NewDecCoinFromCoin(rewardsCoin)})
 
 	// s.RelayIBCPacket(s.path, coordCtx.EventManager().ABCIEvents(), user.String())
 	events = coordCtx.EventManager().ABCIEvents()

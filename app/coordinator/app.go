@@ -120,8 +120,7 @@ import (
 )
 
 const (
-	AccountAddressPrefix = "cosmos"
-	Name                 = "restaking_protocol"
+	Name = "coordinator"
 )
 
 // this line is used by starport scaffolding # stargate/wasm/app/enabledProposals
@@ -155,12 +154,12 @@ var (
 		genutil.NewAppModuleBasic(genutiltypes.DefaultMessageValidator),
 		bank.AppModuleBasic{},
 		capability.AppModuleBasic{},
-		staking.AppModuleBasic{},
-		mint.AppModuleBasic{},
+		stakingModule{},
+		mintModule{},
 		distr.AppModuleBasic{},
 		gov.NewAppModuleBasic(getGovProposalHandlers()),
 		params.AppModuleBasic{},
-		crisis.AppModuleBasic{},
+		crisisModule{},
 		slashing.AppModuleBasic{},
 		feegrantmodule.AppModuleBasic{},
 		groupmodule.AppModuleBasic{},

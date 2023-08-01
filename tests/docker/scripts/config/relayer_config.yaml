@@ -1,0 +1,59 @@
+global:
+    api-listen-addr: :5183
+    timeout: 10s
+    memo: ""
+    light-cache-size: 20
+chains:
+    coordinator:
+        type: cosmos
+        value:
+            key-directory: /root/.relayer/keys/coordinator
+            key: CoordinatorValidator0
+            chain-id: coordinator
+            rpc-addr: http://coordinator-validator-1:26657
+            account-prefix: coordinator
+            keyring-backend: test
+            gas-adjustment: 2
+            gas-prices: 0.001CNTR
+            min-gas-amount: 0
+            debug: true
+            timeout: 10s
+            block-timeout: ""
+            output-format: json
+            sign-mode: direct
+            extra-codecs: []
+            coin-type: 0
+            signing-algorithm: ""
+            broadcast-mode: batch
+            min-loop-duration: 0s
+    consumer:
+        type: cosmos
+        value:
+            key-directory: /root/.relayer/keys/consumer
+            key: NormalConsumerValidator0
+            chain-id: consumer
+            rpc-addr: http://normal-consumer-1:26657
+            account-prefix: consumer
+            keyring-backend: test
+            gas-adjustment: 2
+            gas-prices: 0.1NCT
+            min-gas-amount: 0
+            debug: true
+            timeout: 20s
+            block-timeout: ""
+            output-format: json
+            sign-mode: direct
+            extra-codecs: []
+            coin-type: 0
+            signing-algorithm: ""
+            broadcast-mode: batch
+            min-loop-duration: 0s
+paths:
+    coordinator-consumer-path:
+        src:
+            chain-id: coordinator
+        dst:
+            chain-id: consumer
+        src-channel-filter:
+            rule: ""
+            channel-list: []
