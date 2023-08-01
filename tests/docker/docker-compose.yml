@@ -10,12 +10,6 @@ services:
       - "1317:1317"
       - "26656:26656"
       - "26657:26657"
-    # logging:
-    #   driver: syslog
-    #   options:
-    #     syslog-address: "tcp://127.0.0.1:514"
-    #     syslog-facility: "local0"
-    #     tag: "gaia-validator-1"    
     environment:
       - VALIDATOR_NAME=CoordinatorValidator0
       - CHAIN_NODE=coordinatord
@@ -24,6 +18,9 @@ services:
     volumes:
       - ./scripts/start_gaia.sh:/opt/start_gaia.sh
       - ./scripts/helper.sh:/opt/helper.sh
+      - ./coordinator/config:/root/.coordinator/config
+      - ./coordinator/data:/root/.coordinator/data
+      - ./coordinator/keyring:/root/.coordinator/keyring-test      
   normal-consumer-1:
     build:
       dockerfile: tests/docker/dockerfiles/Dockerfile.consumer
@@ -34,37 +31,28 @@ services:
       - "1318:1317"
       - "26666:26656"
       - "26667:26657"
-    # logging:
-    #   driver: syslog
-    #   options:
-    #     syslog-address: "tcp://127.0.0.1:514"
-    #     syslog-facility: "local1"
-    #     tag: "celinium"    
     environment:
       - VALIDATOR_NAME=NormalConsumerValidator0
       - CHAIN_NODE=consumerd
-      - CHAIN_ID=normal-consuemr 
+      - CHAIN_ID=consumer 
       - DENOM=NCT
     volumes:
       - ./scripts/start_celi.sh:/opt/start_celi.sh
       - ./scripts/helper.sh:/opt/helper.sh
+      - ./consumer/config:/root/.consumer/config
+      - ./consumer/data:/root/.consumer/data
+      - ./consumer/keyring:/root/.consumer/keyring-test      
   relayer:
     build:
-      dockerfile: dockerfiles/Dockerfile.relayer
-      context: .
+      dockerfile: tests/docker/dockerfiles/Dockerfile.relayer
+      context: ../../
     restart: unless-stopped
-    # logging:
-    #   driver: syslog
-    #   options:
-    #     syslog-address: "tcp://127.0.0.1:514"
-    #     syslog-facility: "local2"
-    #     tag: "relayer"
     depends_on:
       - coordinator-validator-1
       - normal-consumer-1  
     volumes:
-      - ./coordinator/keyring:/root/.relayer/keys/gaia/keyring-test
-      - ./consumer/keyring:/root/.relayer/keys/celinium/keyring-test
+      - ./coordinator/keyring:/root/.relayer/keys/coordinator/keyring-test
+      - ./consumer/keyring:/root/.relayer/keys/consumer/keyring-test
 volumes:
   coordinator:
   consumer:

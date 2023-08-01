@@ -25,8 +25,8 @@ ENV PATH="/path/to/bash:$PATH"
 
 COPY --from=builder /go/bin/consumerd /usr/local/bin/
 
-COPY --from=builder /opt/consumer/tests/docker/scripts/scripts/start_consumer.sh /opt/start_consumer.sh
-COPY --from=builder /opt/consumer/tests/docker/scripts/scripts/helper.sh /opt/helper.sh
+COPY --from=builder /opt/consumer/tests/docker/scripts/start_consumer.sh /opt/start_consumer.sh
+COPY --from=builder /opt/consumer/tests/docker/scripts/helper.sh /opt/helper.sh
 
 RUN chmod +x /opt/start_consumer.sh
 RUN chmod +x /opt/helper.sh

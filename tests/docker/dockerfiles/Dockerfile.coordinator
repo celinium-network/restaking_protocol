@@ -23,8 +23,6 @@ ENV PATH="/path/to/bash:$PATH"
 
 COPY --from=builder /go/bin/coordinatord /usr/local/bin/
 
-RUN ls -al /opt/coordinator
-
 COPY --from=builder /opt/coordinator/tests/docker/scripts/start_coordinator.sh /opt/start_coordinator.sh
 COPY --from=builder /opt/coordinator/tests/docker/scripts/helper.sh /opt/helper.sh
 

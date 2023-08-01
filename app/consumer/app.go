@@ -127,8 +127,7 @@ import (
 )
 
 const (
-	AccountAddressPrefix = "cosmos"
-	Name                 = "restaking_protocol"
+	Name = "consumer"
 )
 
 // this line is used by starport scaffolding # stargate/wasm/app/enabledProposals

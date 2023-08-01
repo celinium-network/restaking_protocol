@@ -4,17 +4,17 @@ global:
     memo: ""
     light-cache-size: 20
 chains:
-    celinium:
+    coordinator:
         type: cosmos
         value:
-            key-directory: /root/.relayer/keys/celinium
-            key: celi-0
-            chain-id: celinium
-            rpc-addr: http://celinium:26657
-            account-prefix: celi
+            key-directory: /root/.relayer/keys/coordinator
+            key: CoordinatorValidator0
+            chain-id: coordinator
+            rpc-addr: http://coordinator-validator-1:26657
+            account-prefix: coordinator
             keyring-backend: test
-            gas-adjustment: 1.2
-            gas-prices: 0.001CELI
+            gas-adjustment: 2
+            gas-prices: 0.001CNTR
             min-gas-amount: 0
             debug: true
             timeout: 10s
@@ -26,17 +26,17 @@ chains:
             signing-algorithm: ""
             broadcast-mode: batch
             min-loop-duration: 0s
-    gaia:
+    consumer:
         type: cosmos
         value:
-            key-directory: /root/.relayer/keys/gaia
-            key: gaia-0
-            chain-id: gaia
-            rpc-addr: http://gaia-validator-1:26657
-            account-prefix: cosmos
+            key-directory: /root/.relayer/keys/consumer
+            key: NormalConsumerValidator0
+            chain-id: consumer
+            rpc-addr: http://normal-consumer-1:26657
+            account-prefix: consumer
             keyring-backend: test
-            gas-adjustment: 1.2
-            gas-prices: 0.1ATOM
+            gas-adjustment: 2
+            gas-prices: 0.1NCT
             min-gas-amount: 0
             debug: true
             timeout: 20s
@@ -49,11 +49,11 @@ chains:
             broadcast-mode: batch
             min-loop-duration: 0s
 paths:
-    gaia-celi-path:
+    coordinator-consumer-path:
         src:
-            chain-id: gaia
+            chain-id: coordinator
         dst:
-            chain-id: celinium
+            chain-id: consumer
         src-channel-filter:
             rule: ""
             channel-list: []
