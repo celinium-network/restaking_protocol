@@ -1,6 +1,6 @@
 version: "3.9"
 services:
-  coordinator-validator-1:
+  coordinator:
     build:
       dockerfile: tests/docker/dockerfiles/Dockerfile.coordinator
       context: ../../
@@ -21,7 +21,7 @@ services:
       - ./coordinator/config:/root/.coordinator/config
       - ./coordinator/data:/root/.coordinator/data
       - ./coordinator/keyring:/root/.coordinator/keyring-test      
-  normal-consumer-1:
+  consumer:
     build:
       dockerfile: tests/docker/dockerfiles/Dockerfile.consumer
       context: ../../
@@ -48,11 +48,80 @@ services:
       context: ../../
     restart: unless-stopped
     depends_on:
-      - coordinator-validator-1
-      - normal-consumer-1  
+      - coordinator
+      - consumer  
     volumes:
       - ./coordinator/keyring:/root/.relayer/keys/coordinator/keyring-test
       - ./consumer/keyring:/root/.relayer/keys/consumer/keyring-test
+  postgres:
+    image: postgres
+    container_name: coordinator_postgres
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ${PG_DATA}:/var/lib/postgresql/data   
+      - ${BDJUNO_SCHEMA}:/scripts 
+  bdjuno:
+    image: bdjuno
+    container_name: coordinator_bdjuno
+    volumes:
+      - ./coordinator_bdjuno/:/root/.bdjuno/
+    depends_on:
+      - coordinator
+      - consumer
+      - postgres
+  hasura-postgres:
+    image: postgres:15
+    restart: always
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: postgrespassword
+  graphql-engine:
+    image: hasura/graphql-engine:v2.31.0
+    ports:
+      - "8080:8080"
+    restart: always
+    environment:
+      ## postgres database to store Hasura metadata
+      HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://postgres:postgrespassword@hasura-postgres:5432/postgres
+      ## this env var can be used to add the above postgres database to Hasura as a data source. this can be removed/updated based on your needs
+      # PG_DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/bdjuno
+      HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/bdjuno
+      ## enable the console served by server
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
+      ## enable debugging mode. It is recommended to disable this in production
+      HASURA_GRAPHQL_DEV_MODE: "true"
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
+      ## uncomment next line to run console offline (i.e load console assets from server instead of CDN)
+      # HASURA_GRAPHQL_CONSOLE_ASSETS_DIR: /srv/console-assets
+      ## uncomment next line to set an admin secret
+      HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
+      HASURA_GRAPHQL_METADATA_DEFAULTS: '{"backend_configs":{"dataconnector":{"athena":{"uri":"http://data-connector-agent:8081/api/v1/athena"},"mariadb":{"uri":"http://data-connector-agent:8081/api/v1/mariadb"},"mysql8":{"uri":"http://data-connector-agent:8081/api/v1/mysql"},"oracle":{"uri":"http://data-connector-agent:8081/api/v1/oracle"},"snowflake":{"uri":"http://data-connector-agent:8081/api/v1/snowflake"}}}}'
+      HASURA_GRAPHQL_UNAUTHORIZED_ROLE: "anonymous"
+      ACTION_BASE_URL: "http://bdjuno:3000"
+    depends_on:
+      data-connector-agent:
+        condition: service_healthy
+  data-connector-agent:
+    image: hasura/graphql-data-connector:v2.31.0
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      QUARKUS_LOG_LEVEL: ERROR # FATAL, ERROR, WARN, INFO, DEBUG, TRACE
+      ## https://quarkus.io/guides/opentelemetry#configuration-reference
+      QUARKUS_OPENTELEMETRY_ENABLED: "false"
+      ## QUARKUS_OPENTELEMETRY_TRACER_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/api/v1/athena/health"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 5s                 
 volumes:
   coordinator:
   consumer:
+  db_data:

@@ -1,0 +1,1 @@
+{"title":"add restaking consumer","description":"description","chain_id":"consumer","unbonding_period":1814400000000000,"timeout_period":600000000000,"transfer_timeout_period":600000000000,"restaking_tokens":["CNTR"],"reward_tokens":["NCT"],"transfer_channel_id":"channel-0","deposit":"10000000CNTR"}

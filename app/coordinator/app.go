@@ -115,6 +115,7 @@ import (
 	appparams "github.com/celinium-network/restaking_protocol/app/params"
 
 	"github.com/celinium-network/restaking_protocol/x/restaking/coordinator"
+	coordinatorclient "github.com/celinium-network/restaking_protocol/x/restaking/coordinator/client/cli"
 	coordinatorkeeper "github.com/celinium-network/restaking_protocol/x/restaking/coordinator/keeper"
 	coordinatortypes "github.com/celinium-network/restaking_protocol/x/restaking/coordinator/types"
 )
@@ -136,6 +137,7 @@ func getGovProposalHandlers() []govclient.ProposalHandler {
 		ibcclientclient.UpdateClientProposalHandler,
 		ibcclientclient.UpgradeProposalHandler,
 		// this line is used by starport scaffolding # stargate/app/govProposalHandler
+		coordinatorclient.ConsumerAdditionProposalHandler,
 	)
 
 	return govProposalHandlers
@@ -157,7 +159,7 @@ var (
 		stakingModule{},
 		mintModule{},
 		distr.AppModuleBasic{},
-		gov.NewAppModuleBasic(getGovProposalHandlers()),
+		newGovModule(),
 		params.AppModuleBasic{},
 		crisisModule{},
 		slashing.AppModuleBasic{},
