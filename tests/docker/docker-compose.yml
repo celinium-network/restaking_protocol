@@ -1,6 +1,6 @@
 version: "3.9"
 services:
-  coordinator-validator-1:
+  coordinator:
     build:
       dockerfile: tests/docker/dockerfiles/Dockerfile.coordinator
       context: ../../
@@ -21,7 +21,7 @@ services:
       - ./coordinator/config:/root/.coordinator/config
       - ./coordinator/data:/root/.coordinator/data
       - ./coordinator/keyring:/root/.coordinator/keyring-test      
-  normal-consumer-1:
+  consumer:
     build:
       dockerfile: tests/docker/dockerfiles/Dockerfile.consumer
       context: ../../
@@ -48,8 +48,8 @@ services:
       context: ../../
     restart: unless-stopped
     depends_on:
-      - coordinator-validator-1
-      - normal-consumer-1  
+      - coordinator
+      - consumer  
     volumes:
       - ./coordinator/keyring:/root/.relayer/keys/coordinator/keyring-test
       - ./consumer/keyring:/root/.relayer/keys/consumer/keyring-test
