@@ -1,11 +1,10 @@
-docker-compose down --volumes --remove-orphans
+docker rmi -f docker-coordinator
+docker rmi -f docker-consumer
+docker rmi -f docker-relayer
 
-sudo rm -rf gaia_validator_1
+docker rm docker-consumer-1
+docker rm docker-coordinator-1
+docker rm docker-relayer-1
 
-sudo rm -rf celinium_node
-
-docker rmi docker-gaia-validator-1
-
-docker rmi docker-relayer
-
-# docker rmi celinium
+sudo rm -rf tests/docker/consumer
+sudo rm -rf tests/docker/coordinator

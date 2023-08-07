@@ -10,7 +10,7 @@ chains:
             key-directory: /root/.relayer/keys/coordinator
             key: CoordinatorValidator0
             chain-id: coordinator
-            rpc-addr: http://coordinator-validator-1:26657
+            rpc-addr: http://coordinator:26657
             account-prefix: coordinator
             keyring-backend: test
             gas-adjustment: 2
@@ -32,7 +32,7 @@ chains:
             key-directory: /root/.relayer/keys/consumer
             key: NormalConsumerValidator0
             chain-id: consumer
-            rpc-addr: http://normal-consumer-1:26657
+            rpc-addr: http://consumer:26657
             account-prefix: consumer
             keyring-backend: test
             gas-adjustment: 2
